@@ -4,7 +4,10 @@ Assurance harness targeting [golf-web-app](https://github.com/ayyadam/golf-web-a
 
 ## Status
 
-**Phase 0** — skeleton and CI. The harness collects, runs, and publishes reports. Subsequent phases add real assurance work; see `docs/test-strategy.md` (phase 1).
+**Phase 1** — strategy and risk register in place. Subsequent phases extend the test layers described in the strategy.
+
+- [`docs/test-strategy.md`](docs/test-strategy.md) — how we assure golf-web-app, with rationale and findings to date
+- [`docs/risk-register.md`](docs/risk-register.md) — risks tracked and what mitigates each one
 
 ## Stack
 
@@ -35,6 +38,9 @@ Grows phase by phase. Today:
 testing-system/
 ├── pyproject.toml
 ├── .python-version
+├── docs/
+│   ├── test-strategy.md         # phase 1: how we assure
+│   └── risk-register.md         # phase 1: what we worry about
 ├── tests/                       # tests OF the harness itself
 │   └── test_smoke.py
 └── .github/workflows/
