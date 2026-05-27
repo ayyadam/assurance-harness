@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [master, dev]
 
+# Opt all jobs into Node.js 24 ahead of GitHub's 2026-06-02 default switch.
+# Some actions we depend on (e.g. actions/upload-artifact) have not yet
+# published Node 24 majors. This env var is the GitHub-recommended bridge
+# until they do.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
   lint:
     name: Lint (ruff)
