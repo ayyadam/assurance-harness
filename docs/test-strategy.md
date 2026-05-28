@@ -62,7 +62,7 @@ Layers planned across the project. Each layer has an explicit "why this exists" 
 | Contract | **Done** | Schemathesis vs OpenAPI | `testing-system/contract/` | Verify the JSON API conforms to its spec under property-based inputs |
 | UI / E2E journeys | **Done** | Playwright + pytest | `testing-system/functional/` | Exercise the booking journey and access-control boundaries in a real browser, as a member experiences them |
 | Accessibility | **Done** | axe-core (axe-playwright-python) | `testing-system/nonfunctional/accessibility/` | WCAG 2.1 A/AA sweep of key pages; gate the PR on serious + critical violations, track the rest |
-| Performance | **Planned (phase 5)** | k6 or Locust | `testing-system/nonfunctional/performance/` | Define throughput/latency budgets for hot paths, fail on regression |
+| Performance | **Done** | k6 (thresholds-as-code) | `testing-system/nonfunctional/performance/` | Latency/error budgets on the read-path API; fail the PR on regression beyond budget |
 | Data quality | **Planned (phase 6)** | Great Expectations / pandera | `testing-system/data_quality/` | Validate seed and snapshot data conform to documented expectations |
 | AI evaluation | **Planned (phase 8)** | LLM-judge + golden set + deterministic assertions | `testing-system/ai_evaluation/` | Evaluate the planned natural-language booking feature against a rubric |
 | Production observability | **Planned (phase 11)** | Prometheus + Grafana + Loki | `testing-system/observability/` | Assess running systems and capture assurance evidence from production-style telemetry |
@@ -82,7 +82,7 @@ A traditional test pyramid does not map cleanly onto this project because the SU
 | flake8 | Lint for golf-web-app (pre-existing; ruff migration deferred) | Yes |
 | Playwright | UI / E2E browser automation | Yes |
 | Schemathesis | Property-based API contract testing | Yes |
-| k6 | Performance load generation | Pending phase 5b |
+| k6 | Performance load generation (thresholds-as-code) | Yes |
 | axe-core (axe-playwright-python) | Accessibility checks (WCAG 2.1 A/AA) | Yes |
 | Great Expectations / pandera | Data quality | Pending phase 6 |
 | GitHub Actions | CI/CD on both repos | Yes |
@@ -106,8 +106,9 @@ Two pipelines, two repos, distinct responsibilities.
 - Contract tests (Schemathesis) — checks out golf-web-app, brings it up via compose, seeds it, and fuzzes the JSON API against its OpenAPI spec
 - Functional tests (Playwright) — same SUT bring-up, then drives the booking and access-control journeys in headless Chromium; screenshots and traces are captured on failure
 - Accessibility (axe-core) — same SUT bring-up, then runs the WCAG 2.1 A/AA sweep over key pages and fails on serious + critical violations; per-page axe JSON is uploaded as evidence
+- Performance (k6) — same SUT bring-up, then runs a short ramped load against the read-path API; the k6 thresholds are the budget, so a regression beyond them fails the job. Summary JSON is uploaded as evidence
 
-The contract, functional, and accessibility jobs each stand up their own ephemeral SUT from source (compose `up --build` + `seed.py`), so they need no deployed instance. In later phases the workflow will gain perf (k6) and data-quality suites against the same pattern.
+The contract, functional, accessibility, and performance jobs each stand up their own ephemeral SUT from source (compose `up --build` + `seed.py`), so they need no deployed instance. Performance is the one layer not driven by pytest — k6 is its own runner with thresholds-as-code — which is why its budget lives in the k6 script rather than an assertion. In later phases the workflow will gain a data-quality suite against the same pattern.
 
 All test reports (JUnit, HTML, coverage) are uploaded as GitHub Actions artifacts and retained per GitHub's defaults (90 days). The downloadable HTML report is the canonical evidence artifact for a given commit.
 
@@ -140,6 +141,7 @@ Defects found mid-PR (like the SQLite-vs-Postgres finding below) are fixed in th
 | Contract test report | GitHub Actions artifact `contract-test-reports` on each run | 90 days |
 | Functional test report + Playwright traces/screenshots (on failure) | GitHub Actions artifact `functional-test-reports` on each run | 90 days |
 | Accessibility report + per-page axe JSON | GitHub Actions artifact `accessibility-reports` on each run | 90 days |
+| Performance summary (k6 metrics JSON) | GitHub Actions artifact `performance-reports` on each run | 90 days |
 | Container image | `ghcr.io/ayyadam/golf-web-app:sha-xxxxxxx` | Indefinite |
 | GitHub Release notes | Releases tab on golf-web-app, only for `master` pushes | Indefinite |
 | Findings | §11 below | Indefinite (committed to repo) |
@@ -227,7 +229,7 @@ The full phased plan lives in conversational notes; the abbreviated public form:
 | 3 | Playwright user journeys (functional) | **Done** |
 | 4 | Schemathesis contract tests | **Done** |
 | 5a | Accessibility (axe) sweep + gate in CI | **Done** |
-| 5b | Performance (k6) budgets in CI | Planned |
+| 5b | Performance (k6) budgets in CI | **Done** |
 | 6 | Great Expectations on data | Planned |
 | 7 | golf-web-app AI feature (natural-language booking) | Planned |
 | 8 | AI evaluation harness | Planned |
