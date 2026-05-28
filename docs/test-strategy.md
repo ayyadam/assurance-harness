@@ -2,7 +2,7 @@
 
 **Status:** living document — updated as the assurance harness matures.
 **Owner:** Adam (acting as Digital Assurance Engineer)
-**Last updated:** 2026-05-27
+**Last updated:** 2026-05-28
 
 ---
 
@@ -60,7 +60,7 @@ Layers planned across the project. Each layer has an explicit "why this exists" 
 | Integration (Postgres-backed) | **Done** | pytest + Postgres service container | `golf-web-app/tests/unit/` (same suite, real DB) | Catch defects that depend on real DB behaviour (FK enforcement, transaction semantics) — SQLite locally hides these |
 | Deployability smoke | **Done** | Docker Compose health check | `golf-web-app/.github/workflows/ci-cd.yml` | Prove the production stack starts cleanly and serves `/` on every push |
 | Contract | **Done** | Schemathesis vs OpenAPI | `testing-system/contract/` | Verify the JSON API conforms to its spec under property-based inputs |
-| UI / E2E journeys | **Planned (phase 3)** | Playwright + pytest | `testing-system/functional/` | Anchor user-facing assurance for booking, membership, admin flows |
+| UI / E2E journeys | **Done** | Playwright + pytest | `testing-system/functional/` | Exercise the booking journey and access-control boundaries in a real browser, as a member experiences them |
 | Accessibility | **Planned (phase 5)** | axe-playwright | `testing-system/nonfunctional/accessibility/` | Budget violations as code, fail PRs that regress a11y |
 | Performance | **Planned (phase 5)** | k6 or Locust | `testing-system/nonfunctional/performance/` | Define throughput/latency budgets for hot paths, fail on regression |
 | Data quality | **Planned (phase 6)** | Great Expectations / pandera | `testing-system/data_quality/` | Validate seed and snapshot data conform to documented expectations |
@@ -80,7 +80,7 @@ A traditional test pyramid does not map cleanly onto this project because the SU
 | pytest | Test runner everywhere | Yes |
 | ruff | Lint + format for testing-system | Yes |
 | flake8 | Lint for golf-web-app (pre-existing; ruff migration deferred) | Yes |
-| Playwright | UI / E2E browser automation | Pending phase 3 |
+| Playwright | UI / E2E browser automation | Yes |
 | Schemathesis | Property-based API contract testing | Yes |
 | k6 | Performance load generation | Pending phase 5 |
 | axe-playwright | Accessibility checks | Pending phase 5 |
@@ -102,9 +102,11 @@ Two pipelines, two repos, distinct responsibilities.
 
 **`testing-system/.github/workflows/assurance.yml`** — runs the harness. Triggers on push and PR to `master` and `dev`.
 - Lint (ruff check + format) — must pass
-- Pytest with JUnit + HTML reports uploaded as artifacts
+- Pytest (tests of the harness itself) with JUnit + HTML reports uploaded as artifacts
+- Contract tests (Schemathesis) — checks out golf-web-app, brings it up via compose, seeds it, and fuzzes the JSON API against its OpenAPI spec
+- Functional tests (Playwright) — same SUT bring-up, then drives the booking and access-control journeys in headless Chromium; screenshots and traces are captured on failure
 
-In later phases the `assurance.yml` workflow will pull the GHCR image of golf-web-app, bring it up via compose, and run functional/contract/perf/a11y/data-quality suites against it.
+The contract and functional jobs each stand up their own ephemeral SUT from source (compose `up --build` + `seed.py`), so they need no deployed instance. In later phases the workflow will gain perf, a11y, and data-quality suites against the same pattern.
 
 All test reports (JUnit, HTML, coverage) are uploaded as GitHub Actions artifacts and retained per GitHub's defaults (90 days). The downloadable HTML report is the canonical evidence artifact for a given commit.
 
@@ -134,6 +136,8 @@ Defects found mid-PR (like the SQLite-vs-Postgres finding below) are fixed in th
 | Unit test HTML report | GitHub Actions artifact `unit-test-reports` on each run | 90 days |
 | Coverage report | Same artifact, `coverage/` subfolder | 90 days |
 | Pytest report (harness) | GitHub Actions artifact `pytest-reports` on each run | 90 days |
+| Contract test report | GitHub Actions artifact `contract-test-reports` on each run | 90 days |
+| Functional test report + Playwright traces/screenshots (on failure) | GitHub Actions artifact `functional-test-reports` on each run | 90 days |
 | Container image | `ghcr.io/ayyadam/golf-web-app:sha-xxxxxxx` | Indefinite |
 | GitHub Release notes | Releases tab on golf-web-app, only for `master` pushes | Indefinite |
 | Findings | §11 below | Indefinite (committed to repo) |
@@ -201,7 +205,7 @@ The full phased plan lives in conversational notes; the abbreviated public form:
 | 0 | testing-system skeleton (uv, pytest, ruff, CI) | **Done** |
 | 1 | Test strategy + risk register | **Done** |
 | 2 | golf-web-app JSON API + OpenAPI spec | **Done** |
-| 3 | Playwright user journeys (functional) | Planned |
+| 3 | Playwright user journeys (functional) | **Done** |
 | 4 | Schemathesis contract tests | **Done** |
 | 5 | a11y (axe) + perf (k6) budgets in CI | Planned |
 | 6 | Great Expectations on data | Planned |

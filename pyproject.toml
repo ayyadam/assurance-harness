@@ -14,6 +14,8 @@ dev = [
     "ruff>=0.7",
     "schemathesis>=4.20.2",
     "requests>=2.34.2",
+    "pytest-playwright>=0.5",
+    "playwright>=1.49",
 ]
 
 [tool.uv]

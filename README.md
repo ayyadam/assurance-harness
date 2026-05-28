@@ -4,7 +4,7 @@ Assurance harness targeting [golf-web-app](https://github.com/ayyadam/golf-web-a
 
 ## Status
 
-**Phase 1** — strategy and risk register in place. Subsequent phases extend the test layers described in the strategy.
+Strategy and risk register in place; the JSON API contract layer (Schemathesis) and the UI/E2E functional layer (Playwright) are live in CI. Subsequent phases extend the test layers described in the strategy.
 
 - [`docs/test-strategy.md`](docs/test-strategy.md) — how we assure golf-web-app, with rationale and findings to date
 - [`docs/risk-register.md`](docs/risk-register.md) — risks tracked and what mitigates each one
@@ -13,6 +13,8 @@ Assurance harness targeting [golf-web-app](https://github.com/ayyadam/golf-web-a
 
 - **Python 3.12**, managed with [uv](https://docs.astral.sh/uv/)
 - **pytest** as the test runner, with JUnit + HTML reporting
+- **Schemathesis** for property-based API contract tests
+- **Playwright** for UI / E2E functional tests
 - **ruff** for lint + format
 - **GitHub Actions** for CI
 
@@ -45,18 +47,33 @@ testing-system/
 ├── contract/                    # phase 4: Schemathesis API contract tests
 │   ├── conftest.py
 │   └── test_api_contract.py
+├── functional/                  # phase 3: Playwright UI / E2E journeys
+│   ├── conftest.py
+│   ├── test_public_pages.py
+│   ├── test_member_journey.py
+│   └── test_access_control.py
 ├── tests/                       # tests OF the harness itself
 │   └── test_smoke.py
 └── .github/workflows/
-    └── assurance.yml            # lint + pytest + contract in CI
+    └── assurance.yml            # lint + pytest + contract + functional in CI
 ```
 
-Contract tests need the SUT running and are excluded from the default
-`pytest` run. To run them locally:
+Contract and functional tests need the SUT running and are excluded from the
+default `pytest` run. To run them locally, first bring up the SUT:
 
 ```bash
 cd ../golf-web-app && docker compose up -d && docker compose exec web python seed.py
-cd ../testing-system && uv run pytest contract/
+```
+
+Then, from this repo:
+
+```bash
+# API contract tests
+uv run pytest contract/
+
+# UI / E2E functional tests (one-time browser download first)
+uv run playwright install chromium
+uv run pytest functional/
 ```
 
 ## Related
