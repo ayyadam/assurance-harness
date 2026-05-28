@@ -17,6 +17,10 @@ dev = [
     "pytest-playwright>=0.5",
     "playwright>=1.49",
     "axe-playwright-python>=0.1.4",
+    "pandera[pandas]>=0.20",
+    "pandas>=2.2",
+    "sqlalchemy>=2.0",
+    "psycopg2-binary>=2.9",
 ]
 
 [tool.uv]
