@@ -1,0 +1,13 @@
+# Schemathesis configuration for golf-web-app contract tests.
+#
+# The positive_data_acceptance check sends schema-conformant data and expects
+# the API to accept it. We extend the default accepted-status list with 422:
+# Schemathesis treats some inputs as "valid" that our API legitimately rejects
+# with a validation error (e.g. an optional date query param given a
+# non-date string). A 422 there is correct REST behaviour, not a defect.
+#
+# We deliberately do NOT list any 5xx code — a server error is always a real
+# failure.
+
+[checks.positive_data_acceptance]
+expected-statuses = [200, 201, 401, 403, 404, 409, 422]

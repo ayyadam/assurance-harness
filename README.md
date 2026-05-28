@@ -38,13 +38,25 @@ Grows phase by phase. Today:
 testing-system/
 ├── pyproject.toml
 ├── .python-version
+├── schemathesis.toml            # contract-test check config
 ├── docs/
 │   ├── test-strategy.md         # phase 1: how we assure
 │   └── risk-register.md         # phase 1: what we worry about
+├── contract/                    # phase 4: Schemathesis API contract tests
+│   ├── conftest.py
+│   └── test_api_contract.py
 ├── tests/                       # tests OF the harness itself
 │   └── test_smoke.py
 └── .github/workflows/
-    └── assurance.yml            # lint + pytest in CI
+    └── assurance.yml            # lint + pytest + contract in CI
+```
+
+Contract tests need the SUT running and are excluded from the default
+`pytest` run. To run them locally:
+
+```bash
+cd ../golf-web-app && docker compose up -d && docker compose exec web python seed.py
+cd ../testing-system && uv run pytest contract/
 ```
 
 ## Related
