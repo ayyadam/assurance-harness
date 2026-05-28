@@ -145,3 +145,50 @@ jobs:
       - name: Tear down SUT
         if: always()
         run: cd sut && docker compose down -v
+
+  accessibility:
+    name: Accessibility (axe)
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check out the system under test (golf-web-app)
+        uses: actions/checkout@v5
+        with:
+          repository: ayyadam/golf-web-app
+          ref: develop
+          path: sut
+      - name: Build, start, and seed the SUT
+        run: |
+          cd sut
+          docker compose up -d --build
+          for i in $(seq 1 30); do
+            if curl -fs http://localhost:5000/ > /dev/null; then
+              echo "SUT is up"; break
+            fi
+            echo "waiting for SUT to come up ($i/30)..."; sleep 2
+          done
+          docker compose exec -T web python seed.py
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --dev
+      - name: Install Playwright browser
+        run: uv run playwright install --with-deps chromium
+      - name: Run accessibility sweep
+        env:
+          SUT_BASE_URL: http://localhost:5000
+        run: |
+          mkdir -p reports
+          uv run pytest nonfunctional/accessibility/ \
+            --junitxml=reports/a11y-junit.xml \
+            --html=reports/a11y.html --self-contained-html
+      - name: Upload accessibility reports
+        uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: accessibility-reports
+          path: reports/
+      - name: Tear down SUT
+        if: always()
+        run: cd sut && docker compose down -v

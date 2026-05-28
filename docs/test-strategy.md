@@ -61,7 +61,7 @@ Layers planned across the project. Each layer has an explicit "why this exists" 
 | Deployability smoke | **Done** | Docker Compose health check | `golf-web-app/.github/workflows/ci-cd.yml` | Prove the production stack starts cleanly and serves `/` on every push |
 | Contract | **Done** | Schemathesis vs OpenAPI | `testing-system/contract/` | Verify the JSON API conforms to its spec under property-based inputs |
 | UI / E2E journeys | **Done** | Playwright + pytest | `testing-system/functional/` | Exercise the booking journey and access-control boundaries in a real browser, as a member experiences them |
-| Accessibility | **Planned (phase 5)** | axe-playwright | `testing-system/nonfunctional/accessibility/` | Budget violations as code, fail PRs that regress a11y |
+| Accessibility | **Done** | axe-core (axe-playwright-python) | `testing-system/nonfunctional/accessibility/` | WCAG 2.1 A/AA sweep of key pages; gate the PR on serious + critical violations, track the rest |
 | Performance | **Planned (phase 5)** | k6 or Locust | `testing-system/nonfunctional/performance/` | Define throughput/latency budgets for hot paths, fail on regression |
 | Data quality | **Planned (phase 6)** | Great Expectations / pandera | `testing-system/data_quality/` | Validate seed and snapshot data conform to documented expectations |
 | AI evaluation | **Planned (phase 8)** | LLM-judge + golden set + deterministic assertions | `testing-system/ai_evaluation/` | Evaluate the planned natural-language booking feature against a rubric |
@@ -82,8 +82,8 @@ A traditional test pyramid does not map cleanly onto this project because the SU
 | flake8 | Lint for golf-web-app (pre-existing; ruff migration deferred) | Yes |
 | Playwright | UI / E2E browser automation | Yes |
 | Schemathesis | Property-based API contract testing | Yes |
-| k6 | Performance load generation | Pending phase 5 |
-| axe-playwright | Accessibility checks | Pending phase 5 |
+| k6 | Performance load generation | Pending phase 5b |
+| axe-core (axe-playwright-python) | Accessibility checks (WCAG 2.1 A/AA) | Yes |
 | Great Expectations / pandera | Data quality | Pending phase 6 |
 | GitHub Actions | CI/CD on both repos | Yes |
 | GHCR | Container artifact storage | Yes |
@@ -105,8 +105,9 @@ Two pipelines, two repos, distinct responsibilities.
 - Pytest (tests of the harness itself) with JUnit + HTML reports uploaded as artifacts
 - Contract tests (Schemathesis) — checks out golf-web-app, brings it up via compose, seeds it, and fuzzes the JSON API against its OpenAPI spec
 - Functional tests (Playwright) — same SUT bring-up, then drives the booking and access-control journeys in headless Chromium; screenshots and traces are captured on failure
+- Accessibility (axe-core) — same SUT bring-up, then runs the WCAG 2.1 A/AA sweep over key pages and fails on serious + critical violations; per-page axe JSON is uploaded as evidence
 
-The contract and functional jobs each stand up their own ephemeral SUT from source (compose `up --build` + `seed.py`), so they need no deployed instance. In later phases the workflow will gain perf, a11y, and data-quality suites against the same pattern.
+The contract, functional, and accessibility jobs each stand up their own ephemeral SUT from source (compose `up --build` + `seed.py`), so they need no deployed instance. In later phases the workflow will gain perf (k6) and data-quality suites against the same pattern.
 
 All test reports (JUnit, HTML, coverage) are uploaded as GitHub Actions artifacts and retained per GitHub's defaults (90 days). The downloadable HTML report is the canonical evidence artifact for a given commit.
 
@@ -138,6 +139,7 @@ Defects found mid-PR (like the SQLite-vs-Postgres finding below) are fixed in th
 | Pytest report (harness) | GitHub Actions artifact `pytest-reports` on each run | 90 days |
 | Contract test report | GitHub Actions artifact `contract-test-reports` on each run | 90 days |
 | Functional test report + Playwright traces/screenshots (on failure) | GitHub Actions artifact `functional-test-reports` on each run | 90 days |
+| Accessibility report + per-page axe JSON | GitHub Actions artifact `accessibility-reports` on each run | 90 days |
 | Container image | `ghcr.io/ayyadam/golf-web-app:sha-xxxxxxx` | Indefinite |
 | GitHub Release notes | Releases tab on golf-web-app, only for `master` pushes | Indefinite |
 | Findings | §11 below | Indefinite (committed to repo) |
@@ -196,6 +198,23 @@ All five fixed in golf-web-app (`fix/api-error-contract`). The handicap range (-
 **Generalisation**
 An OpenAPI spec generated from code is necessary but not sufficient — it documents the *shape* of declared responses, not the *full set* of responses the code actually produces. Contract fuzzing closes that gap. This finding maps to R-006 (now mitigated).
 
+### F-004 — Accessibility sweep found WCAG AA contrast gaps and a missing form label
+
+**Date:** 2026-05-28
+**Surfaced by:** First run of the axe-core sweep (`nonfunctional/accessibility/`) over six key pages
+**Severity:** Mixed (one critical missing label; serious colour-contrast across the dark theme)
+
+The WCAG 2.1 A/AA sweep passed on home, membership, and course, but flagged three pages with two systemic root causes:
+
+1. **Colour contrast (serious).** Bootstrap's default success `#198754` and danger `#dc3545`, used as text/outline colour on the near-black dark theme, measured 3.86–4.17:1 — under the 4.5:1 AA minimum. Affected outline buttons and `.text-success` links on login, member dashboard, and book-tee-time.
+2. **Missing form label (critical).** flatpickr's `altInput: true` generates a visible date input with no accessible name; the original input that carries the `<label for=...>` is hidden. Screen-reader users got an unnamed field on the booking page.
+
+**Resolution**
+Both fixed in golf-web-app (`fix/a11y-contrast-and-labels`, PR #7): dark-theme CSS overrides lift the resting success/danger foregrounds above 4.5:1 (hover fills kept dark enough for white text); flatpickr's `onReady` now copies the label text into an `aria-label` on the alt input. The sweep passes all six pages at the serious + critical gate. minor/moderate issues are tracked in the saved axe JSON but do not gate.
+
+**Generalisation**
+A component library's defaults are not automatically accessible in a custom theme — Bootstrap's semantic colours assume a light background. And progressive-enhancement widgets (flatpickr) can *remove* accessibility the underlying HTML already had. Both are invisible to functional tests, which is exactly why an automated a11y gate earns its place. Maps to R-008 (now mitigated).
+
 ## 12. Roadmap
 
 The full phased plan lives in conversational notes; the abbreviated public form:
@@ -207,7 +226,8 @@ The full phased plan lives in conversational notes; the abbreviated public form:
 | 2 | golf-web-app JSON API + OpenAPI spec | **Done** |
 | 3 | Playwright user journeys (functional) | **Done** |
 | 4 | Schemathesis contract tests | **Done** |
-| 5 | a11y (axe) + perf (k6) budgets in CI | Planned |
+| 5a | Accessibility (axe) sweep + gate in CI | **Done** |
+| 5b | Performance (k6) budgets in CI | Planned |
 | 6 | Great Expectations on data | Planned |
 | 7 | golf-web-app AI feature (natural-language booking) | Planned |
 | 8 | AI evaluation harness | Planned |
