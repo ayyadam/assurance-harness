@@ -59,7 +59,7 @@ Layers planned across the project. Each layer has an explicit "why this exists" 
 | Unit (in-process) | **Done** | pytest | `golf-web-app/tests/unit/` | Fast, deterministic coverage of services, models, route handlers |
 | Integration (Postgres-backed) | **Done** | pytest + Postgres service container | `golf-web-app/tests/unit/` (same suite, real DB) | Catch defects that depend on real DB behaviour (FK enforcement, transaction semantics) — SQLite locally hides these |
 | Deployability smoke | **Done** | Docker Compose health check | `golf-web-app/.github/workflows/ci-cd.yml` | Prove the production stack starts cleanly and serves `/` on every push |
-| Contract | **Planned (phase 4)** | Schemathesis vs OpenAPI | `testing-system/contract/` | Verify the planned JSON API conforms to its spec under property-based inputs |
+| Contract | **Done** | Schemathesis vs OpenAPI | `testing-system/contract/` | Verify the JSON API conforms to its spec under property-based inputs |
 | UI / E2E journeys | **Planned (phase 3)** | Playwright + pytest | `testing-system/functional/` | Anchor user-facing assurance for booking, membership, admin flows |
 | Accessibility | **Planned (phase 5)** | axe-playwright | `testing-system/nonfunctional/accessibility/` | Budget violations as code, fail PRs that regress a11y |
 | Performance | **Planned (phase 5)** | k6 or Locust | `testing-system/nonfunctional/performance/` | Define throughput/latency budgets for hot paths, fail on regression |
@@ -81,7 +81,7 @@ A traditional test pyramid does not map cleanly onto this project because the SU
 | ruff | Lint + format for testing-system | Yes |
 | flake8 | Lint for golf-web-app (pre-existing; ruff migration deferred) | Yes |
 | Playwright | UI / E2E browser automation | Pending phase 3 |
-| Schemathesis | Property-based API contract testing | Pending phase 4 |
+| Schemathesis | Property-based API contract testing | Yes |
 | k6 | Performance load generation | Pending phase 5 |
 | axe-playwright | Accessibility checks | Pending phase 5 |
 | Great Expectations / pandera | Data quality | Pending phase 6 |
@@ -172,6 +172,26 @@ The `golf-web-app` workflow had a `lint` job configured against flake8 from the 
 **Generalisation**
 A CI gate that is not actually enforced is worse than no gate, because it implies a level of assurance it does not provide. The lint enforcement is now meaningful and gates merges. (See R-005 in the risk register.)
 
+### F-003 — Contract testing surfaced five spec-vs-behaviour mismatches
+
+**Date:** 2026-05-28
+**Surfaced by:** First run of the Schemathesis contract suite (`contract/`) against the running Postgres-backed API
+**Severity:** Mixed (one 500 crash; the rest contract/documentation defects)
+
+The v1 JSON API shipped with an auto-generated OpenAPI spec, but property-based contract testing proved the spec documented happy paths while the real API diverged in five ways:
+
+1. **Wrong status semantics.** Business-state rejections (past tee time, full, already booked) returned `400 Bad Request`; these are conflicts with current state, corrected to `409 Conflict`.
+2. **Type mismatch.** `MemberOut.handicap` serialized as a string (`"12.3"`) while the spec declared `number`. Switched to a float field.
+3. **Invalid timestamp format.** `booked_at` was a naive datetime with no offset — not a valid RFC 3339 `date-time`. Now emitted as UTC with a `Z` suffix.
+4. **Undocumented status code.** Malformed JSON bodies return `400`, undocumented on the token and booking endpoints. Now documented.
+5. **500 crash.** Input containing lone surrogate characters crashed the auth endpoint (psycopg2 cannot encode them). Added a UTF-8 validator so such input is rejected cleanly with `422`. **Reproduced only against Postgres, not local SQLite** — the same lesson as F-001.
+
+**Resolution**
+All five fixed in golf-web-app (`fix/api-error-contract`). The handicap range (-10 to 54) was also expressed in the schema so it is part of the published contract. The contract suite now passes all six operations. One Schemathesis config choice was made: `positive_data_acceptance` accepts `422`, because input-validation rejections are correct REST behaviour, not defects (`schemathesis.toml`).
+
+**Generalisation**
+An OpenAPI spec generated from code is necessary but not sufficient — it documents the *shape* of declared responses, not the *full set* of responses the code actually produces. Contract fuzzing closes that gap. This finding maps to R-006 (now mitigated).
+
 ## 12. Roadmap
 
 The full phased plan lives in conversational notes; the abbreviated public form:
@@ -179,10 +199,10 @@ The full phased plan lives in conversational notes; the abbreviated public form:
 | Phase | Goal | Status |
 |---|---|---|
 | 0 | testing-system skeleton (uv, pytest, ruff, CI) | **Done** |
-| 1 | Test strategy + risk register | **In progress** |
-| 2 | golf-web-app JSON API + OpenAPI spec | Planned |
+| 1 | Test strategy + risk register | **Done** |
+| 2 | golf-web-app JSON API + OpenAPI spec | **Done** |
 | 3 | Playwright user journeys (functional) | Planned |
-| 4 | Schemathesis contract tests | Planned |
+| 4 | Schemathesis contract tests | **Done** |
 | 5 | a11y (axe) + perf (k6) budgets in CI | Planned |
 | 6 | Great Expectations on data | Planned |
 | 7 | golf-web-app AI feature (natural-language booking) | Planned |
