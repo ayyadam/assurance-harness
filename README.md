@@ -17,6 +17,7 @@ Strategy and risk register in place; the JSON API contract layer (Schemathesis) 
 - **Playwright** for UI / E2E functional tests
 - **axe-core** (axe-playwright-python) for WCAG 2.1 A/AA accessibility checks
 - **k6** for performance budgets (thresholds-as-code)
+- **pandera** for data-quality checks on the live database
 - **ruff** for lint + format
 - **GitHub Actions** for CI
 
@@ -60,10 +61,13 @@ testing-system/
 │   │   └── test_accessibility.py
 │   └── performance/             # phase 5b: k6 thresholds-as-code
 │       └── api_load.js
+├── data_quality/                # phase 6: pandera schemas + invariants
+│   ├── conftest.py
+│   └── test_data_quality.py
 ├── tests/                       # tests OF the harness itself
 │   └── test_smoke.py
 └── .github/workflows/
-    └── assurance.yml            # lint + pytest + contract + functional + a11y + perf in CI
+    └── assurance.yml            # lint + pytest + contract + functional + a11y + perf + data-quality in CI
 ```
 
 Contract and functional tests need the SUT running and are excluded from the
@@ -85,6 +89,9 @@ uv run pytest functional/
 
 # Accessibility sweep (axe-core, WCAG 2.1 A/AA)
 uv run pytest nonfunctional/accessibility/
+
+# Data-quality checks (pandera against the live database)
+uv run pytest data_quality/
 ```
 
 Performance is run by k6 (not pytest). With k6 installed:

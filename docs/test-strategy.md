@@ -63,7 +63,7 @@ Layers planned across the project. Each layer has an explicit "why this exists" 
 | UI / E2E journeys | **Done** | Playwright + pytest | `testing-system/functional/` | Exercise the booking journey and access-control boundaries in a real browser, as a member experiences them |
 | Accessibility | **Done** | axe-core (axe-playwright-python) | `testing-system/nonfunctional/accessibility/` | WCAG 2.1 A/AA sweep of key pages; gate the PR on serious + critical violations, track the rest |
 | Performance | **Done** | k6 (thresholds-as-code) | `testing-system/nonfunctional/performance/` | Latency/error budgets on the read-path API; fail the PR on regression beyond budget |
-| Data quality | **Planned (phase 6)** | Great Expectations / pandera | `testing-system/data_quality/` | Validate seed and snapshot data conform to documented expectations |
+| Data quality | **Done** | pandera (schemas + invariants) | `testing-system/data_quality/` | Validate the live database against column contracts and business-rule invariants (e.g. 18 holes with a 1..18 stroke-index permutation) |
 | AI evaluation | **Planned (phase 8)** | LLM-judge + golden set + deterministic assertions | `testing-system/ai_evaluation/` | Evaluate the planned natural-language booking feature against a rubric |
 | Production observability | **Planned (phase 11)** | Prometheus + Grafana + Loki | `testing-system/observability/` | Assess running systems and capture assurance evidence from production-style telemetry |
 | Tests of the harness itself | **Stub (phase 0)** | pytest | `testing-system/tests/` | The harness is software too. Agents and judges get tested like any other component |
@@ -84,7 +84,7 @@ A traditional test pyramid does not map cleanly onto this project because the SU
 | Schemathesis | Property-based API contract testing | Yes |
 | k6 | Performance load generation (thresholds-as-code) | Yes |
 | axe-core (axe-playwright-python) | Accessibility checks (WCAG 2.1 A/AA) | Yes |
-| Great Expectations / pandera | Data quality | Pending phase 6 |
+| pandera | Data quality (schemas + business invariants) | Yes |
 | GitHub Actions | CI/CD on both repos | Yes |
 | GHCR | Container artifact storage | Yes |
 | Prometheus + Grafana | Production-style observability | Pending phase 11 |
@@ -107,8 +107,9 @@ Two pipelines, two repos, distinct responsibilities.
 - Functional tests (Playwright) — same SUT bring-up, then drives the booking and access-control journeys in headless Chromium; screenshots and traces are captured on failure
 - Accessibility (axe-core) — same SUT bring-up, then runs the WCAG 2.1 A/AA sweep over key pages and fails on serious + critical violations; per-page axe JSON is uploaded as evidence
 - Performance (k6) — same SUT bring-up, then runs a short ramped load against the read-path API; the k6 thresholds are the budget, so a regression beyond them fails the job. Summary JSON is uploaded as evidence
+- Data quality (pandera) — same SUT bring-up, then reads the live Postgres tables and validates them against column contracts and business invariants
 
-The contract, functional, accessibility, and performance jobs each stand up their own ephemeral SUT from source (compose `up --build` + `seed.py`), so they need no deployed instance. Performance is the one layer not driven by pytest — k6 is its own runner with thresholds-as-code — which is why its budget lives in the k6 script rather than an assertion. In later phases the workflow will gain a data-quality suite against the same pattern.
+The contract, functional, accessibility, performance, and data-quality jobs each stand up their own ephemeral SUT from source (compose `up --build` + `seed.py`), so they need no deployed instance. Performance is the one layer not driven by pytest — k6 is its own runner with thresholds-as-code — which is why its budget lives in the k6 script rather than an assertion.
 
 All test reports (JUnit, HTML, coverage) are uploaded as GitHub Actions artifacts and retained per GitHub's defaults (90 days). The downloadable HTML report is the canonical evidence artifact for a given commit.
 
@@ -142,6 +143,7 @@ Defects found mid-PR (like the SQLite-vs-Postgres finding below) are fixed in th
 | Functional test report + Playwright traces/screenshots (on failure) | GitHub Actions artifact `functional-test-reports` on each run | 90 days |
 | Accessibility report + per-page axe JSON | GitHub Actions artifact `accessibility-reports` on each run | 90 days |
 | Performance summary (k6 metrics JSON) | GitHub Actions artifact `performance-reports` on each run | 90 days |
+| Data-quality report | GitHub Actions artifact `data-quality-reports` on each run | 90 days |
 | Container image | `ghcr.io/ayyadam/golf-web-app:sha-xxxxxxx` | Indefinite |
 | GitHub Release notes | Releases tab on golf-web-app, only for `master` pushes | Indefinite |
 | Findings | §11 below | Indefinite (committed to repo) |
@@ -244,7 +246,7 @@ The full phased plan lives in conversational notes; the abbreviated public form:
 | 4 | Schemathesis contract tests | **Done** |
 | 5a | Accessibility (axe) sweep + gate in CI | **Done** |
 | 5b | Performance (k6) budgets in CI | **Done** |
-| 6 | Great Expectations on data | Planned |
+| 6 | Data quality (pandera) on the live database | **Done** |
 | 7 | golf-web-app AI feature (natural-language booking) | Planned |
 | 8 | AI evaluation harness | Planned |
 | 9 | Risk-prioritisation agent (PR diff → ranked test plan) | Planned |
