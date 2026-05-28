@@ -2,7 +2,7 @@
 
 **Status:** living document — updated as risks are surfaced, mitigated, or accepted.
 **Owner:** Adam
-**Last updated:** 2026-05-27
+**Last updated:** 2026-05-28
 
 This register drives test prioritisation. See [`test-strategy.md` §8](test-strategy.md#8-risk-based-prioritisation) for how it informs decisions.
 
@@ -23,7 +23,7 @@ A row in this register is **a risk to product quality**, not a defect. A defect 
 | R-001 | Local test environment (in-memory SQLite) is more permissive than CI (Postgres) — FK violations and other strictness gaps mask real bugs locally | M | M | 4 | **mitigated** | SQLAlchemy `Engine.connect` event listener in `golf-web-app/tests/conftest.py` enables `PRAGMA foreign_keys=ON` on SQLite. See [Finding F-001](test-strategy.md#f-001--local-sqlite-hides-foreign-key-violations-that-postgres-catches-in-ci) |
 | R-002 | Concurrent bookings of the same tee slot, range bay, or coaching slot cause overbooking or constraint violation | M | H | 6 | **open** | Planned: property-based contract test on booking endpoints (phase 4 Schemathesis), explicit concurrency test in functional layer |
 | R-003 | Authentication bypass via session/cookie manipulation or weak password handling | L | H | 3 | **open** | Planned: collaboration with security team / dedicated security review pass; defensive baseline checks in functional layer |
-| R-004 | Authorization bypass — a logged-in member accesses admin routes | M | H | 6 | **partially mitigated** | Existing unit tests verify 403/redirect on admin routes when accessed by non-admin (`tests/unit/test_admin_routes.py`); coverage of every admin route not yet complete |
+| R-004 | Authorization bypass — a logged-in member accesses admin routes | M | H | 6 | **partially mitigated** | Unit tests verify 403/redirect on admin routes for non-admins (`tests/unit/test_admin_routes.py`); functional test `functional/test_access_control.py` now confirms the boundary holds in a real browser (member bounced off `/admin`, anonymous user sent to login). Per-route coverage of every admin page not yet complete |
 | R-005 | CI lint gate exists in workflow but is not enforced — quality drift accumulates undetected | — | — | — | **mitigated** | Workflow trigger fixed in `chore/ci-pipeline-rework` (was `main`, should have been `master`/`develop`). See [Finding F-002](test-strategy.md#f-002--82-latent-style-violations-exposed-on-first-lint-enforcement) |
 | R-006 | No service-boundary contract verification for the JSON API — clients (including the harness) drift from the server's actual behaviour | M | M | 4 | **mitigated** | Schemathesis property-based contract tests in `contract/` run against the live API in CI. Surfaced and fixed 5 spec/behaviour mismatches — see [Finding F-003](test-strategy.md#f-003--contract-testing-surfaced-five-spec-vs-behaviour-mismatches) |
 | R-007 | No performance baseline — regressions in latency or throughput land undetected | M | M | 4 | **open** | Planned (phase 5): k6 thresholds-as-code in CI, fail PR on regression beyond budget |
