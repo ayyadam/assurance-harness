@@ -62,7 +62,7 @@ Layers planned across the project. Each layer has an explicit "why this exists" 
 | Contract | **Done** | Schemathesis vs OpenAPI | `testing-system/contract/` | Verify the JSON API conforms to its spec under property-based inputs |
 | UI / E2E journeys | **Done** | Playwright + pytest | `testing-system/functional/` | Exercise the booking journey and access-control boundaries in a real browser, as a member experiences them |
 | Accessibility | **Done** | axe-core (axe-playwright-python) | `testing-system/nonfunctional/accessibility/` | WCAG 2.1 A/AA sweep of key pages; gate the PR on serious + critical violations, track the rest |
-| Performance | **Planned (phase 5)** | k6 or Locust | `testing-system/nonfunctional/performance/` | Define throughput/latency budgets for hot paths, fail on regression |
+| Performance | **Done** | k6 (thresholds-as-code) | `testing-system/nonfunctional/performance/` | Latency/error budgets on the read-path API; fail the PR on regression beyond budget |
 | Data quality | **Planned (phase 6)** | Great Expectations / pandera | `testing-system/data_quality/` | Validate seed and snapshot data conform to documented expectations |
 | AI evaluation | **Planned (phase 8)** | LLM-judge + golden set + deterministic assertions | `testing-system/ai_evaluation/` | Evaluate the planned natural-language booking feature against a rubric |
 | Production observability | **Planned (phase 11)** | Prometheus + Grafana + Loki | `testing-system/observability/` | Assess running systems and capture assurance evidence from production-style telemetry |
@@ -82,7 +82,7 @@ A traditional test pyramid does not map cleanly onto this project because the SU
 | flake8 | Lint for golf-web-app (pre-existing; ruff migration deferred) | Yes |
 | Playwright | UI / E2E browser automation | Yes |
 | Schemathesis | Property-based API contract testing | Yes |
-| k6 | Performance load generation | Pending phase 5b |
+| k6 | Performance load generation (thresholds-as-code) | Yes |
 | axe-core (axe-playwright-python) | Accessibility checks (WCAG 2.1 A/AA) | Yes |
 | Great Expectations / pandera | Data quality | Pending phase 6 |
 | GitHub Actions | CI/CD on both repos | Yes |
@@ -106,8 +106,9 @@ Two pipelines, two repos, distinct responsibilities.
 - Contract tests (Schemathesis) — checks out golf-web-app, brings it up via compose, seeds it, and fuzzes the JSON API against its OpenAPI spec
 - Functional tests (Playwright) — same SUT bring-up, then drives the booking and access-control journeys in headless Chromium; screenshots and traces are captured on failure
 - Accessibility (axe-core) — same SUT bring-up, then runs the WCAG 2.1 A/AA sweep over key pages and fails on serious + critical violations; per-page axe JSON is uploaded as evidence
+- Performance (k6) — same SUT bring-up, then runs a short ramped load against the read-path API; the k6 thresholds are the budget, so a regression beyond them fails the job. Summary JSON is uploaded as evidence
 
-The contract, functional, and accessibility jobs each stand up their own ephemeral SUT from source (compose `up --build` + `seed.py`), so they need no deployed instance. In later phases the workflow will gain perf (k6) and data-quality suites against the same pattern.
+The contract, functional, accessibility, and performance jobs each stand up their own ephemeral SUT from source (compose `up --build` + `seed.py`), so they need no deployed instance. Performance is the one layer not driven by pytest — k6 is its own runner with thresholds-as-code — which is why its budget lives in the k6 script rather than an assertion. In later phases the workflow will gain a data-quality suite against the same pattern.
 
 All test reports (JUnit, HTML, coverage) are uploaded as GitHub Actions artifacts and retained per GitHub's defaults (90 days). The downloadable HTML report is the canonical evidence artifact for a given commit.
 
@@ -140,6 +141,7 @@ Defects found mid-PR (like the SQLite-vs-Postgres finding below) are fixed in th
 | Contract test report | GitHub Actions artifact `contract-test-reports` on each run | 90 days |
 | Functional test report + Playwright traces/screenshots (on failure) | GitHub Actions artifact `functional-test-reports` on each run | 90 days |
 | Accessibility report + per-page axe JSON | GitHub Actions artifact `accessibility-reports` on each run | 90 days |
+| Performance summary (k6 metrics JSON) | GitHub Actions artifact `performance-reports` on each run | 90 days |
 | Container image | `ghcr.io/ayyadam/golf-web-app:sha-xxxxxxx` | Indefinite |
 | GitHub Release notes | Releases tab on golf-web-app, only for `master` pushes | Indefinite |
 | Findings | §11 below | Indefinite (committed to repo) |
@@ -215,6 +217,20 @@ Both fixed in golf-web-app (`fix/a11y-contrast-and-labels`, PR #7): dark-theme C
 **Generalisation**
 A component library's defaults are not automatically accessible in a custom theme — Bootstrap's semantic colours assume a light background. And progressive-enhancement widgets (flatpickr) can *remove* accessibility the underlying HTML already had. Both are invisible to functional tests, which is exactly why an automated a11y gate earns its place. Maps to R-008 (now mitigated).
 
+### F-005 — Performance gate caught an N+1 query in the tee-times endpoint
+
+**Date:** 2026-05-28
+**Surfaced by:** First CI run of the k6 performance gate (`nonfunctional/performance/`)
+**Severity:** Major (latency scales with row count; would worsen as bookings grow)
+
+The k6 gate passed locally but failed in CI: `GET /api/v1/tee-times` p95 was ~653ms against the 500ms budget, while `/api/v1/competitions` sat at 3.85ms. The asymmetry pointed at the endpoint, not the runner. `TeeTimeOut` serializes `slots_remaining` → `booked_count`, which summed the `TeeTime.bookings` relationship; with `lazy='dynamic'` that fired one bookings query per row — ~150 round-trips for a week of slots. A faster local Postgres masked it (174ms); the slower shared CI runner exposed it.
+
+**Resolution**
+Fixed in golf-web-app (`fix/api-teetime-nplus1`, PR #8): `TeeTime.bookings` switched to `lazy='selectin'`, batch-loading all bookings for the loaded set in a single query (N+1 → 2). Local p95 fell from ~174ms to ~31ms; the 500ms budget now passes with large margin on CI. `TeeTime.bookings` is only ever summed (never used as a dynamic query), so the change is safe.
+
+**Generalisation**
+Two lessons. First, an N+1 is invisible to functional and contract tests — they assert *correctness*, not *cost* — so a performance gate earns its place. Second, perf results are environment-sensitive: a budget that passes on a fast dev machine can fail on a slower shared runner, and that divergence is a feature here — it exposed a real defect rather than hiding it (cf. the SQLite-vs-Postgres lesson in F-001). Maps to R-007 (now mitigated).
+
 ## 12. Roadmap
 
 The full phased plan lives in conversational notes; the abbreviated public form:
@@ -227,7 +243,7 @@ The full phased plan lives in conversational notes; the abbreviated public form:
 | 3 | Playwright user journeys (functional) | **Done** |
 | 4 | Schemathesis contract tests | **Done** |
 | 5a | Accessibility (axe) sweep + gate in CI | **Done** |
-| 5b | Performance (k6) budgets in CI | Planned |
+| 5b | Performance (k6) budgets in CI | **Done** |
 | 6 | Great Expectations on data | Planned |
 | 7 | golf-web-app AI feature (natural-language booking) | Planned |
 | 8 | AI evaluation harness | Planned |

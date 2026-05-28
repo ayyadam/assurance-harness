@@ -16,6 +16,7 @@ Strategy and risk register in place; the JSON API contract layer (Schemathesis) 
 - **Schemathesis** for property-based API contract tests
 - **Playwright** for UI / E2E functional tests
 - **axe-core** (axe-playwright-python) for WCAG 2.1 A/AA accessibility checks
+- **k6** for performance budgets (thresholds-as-code)
 - **ruff** for lint + format
 - **GitHub Actions** for CI
 
@@ -54,13 +55,15 @@ testing-system/
 │   ├── test_member_journey.py
 │   └── test_access_control.py
 ├── nonfunctional/
-│   └── accessibility/           # phase 5a: axe-core WCAG 2.1 A/AA sweep
-│       ├── conftest.py
-│       └── test_accessibility.py
+│   ├── accessibility/           # phase 5a: axe-core WCAG 2.1 A/AA sweep
+│   │   ├── conftest.py
+│   │   └── test_accessibility.py
+│   └── performance/             # phase 5b: k6 thresholds-as-code
+│       └── api_load.js
 ├── tests/                       # tests OF the harness itself
 │   └── test_smoke.py
 └── .github/workflows/
-    └── assurance.yml            # lint + pytest + contract + functional + a11y in CI
+    └── assurance.yml            # lint + pytest + contract + functional + a11y + perf in CI
 ```
 
 Contract and functional tests need the SUT running and are excluded from the
@@ -82,6 +85,20 @@ uv run pytest functional/
 
 # Accessibility sweep (axe-core, WCAG 2.1 A/AA)
 uv run pytest nonfunctional/accessibility/
+```
+
+Performance is run by k6 (not pytest). With k6 installed:
+
+```bash
+k6 run nonfunctional/performance/api_load.js
+```
+
+Or via Docker, with no local k6 install:
+
+```bash
+SUT_BASE_URL=http://host.docker.internal:5000 \
+  docker run --rm -i -e SUT_BASE_URL -v "$PWD:/work" -w /work \
+  grafana/k6 run nonfunctional/performance/api_load.js
 ```
 
 ## Related
