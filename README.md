@@ -54,7 +54,8 @@ testing-system/
 │   ├── conftest.py
 │   ├── test_public_pages.py
 │   ├── test_member_journey.py
-│   └── test_access_control.py
+│   ├── test_access_control.py
+│   └── test_booking_assistant.py  # phase 7: NL booking assistant UI
 ├── nonfunctional/
 │   ├── accessibility/           # phase 5a: axe-core WCAG 2.1 A/AA sweep
 │   │   ├── conftest.py
