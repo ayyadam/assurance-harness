@@ -247,6 +247,34 @@ Documented `400 Malformed request body` on the endpoint (golf-web-app PR #10), m
 **Generalisation**
 The F-003 lesson held for the new AI feature on day one: an auto-generated spec documents the happy paths the author thought of, not the full set of responses the framework actually produces. The standing contract gate caught the gap automatically the moment the endpoint shipped — no extra effort. Note what contract fuzzing did *not* need to know: that the endpoint is AI-backed is irrelevant at the HTTP boundary; it is asserted like any other service contract. (The model's *semantic* quality is assured separately — see the roadmap's evaluation harness.)
 
+### F-007 — Assistant silently truncated availability to 6 of N matching slots
+
+**Date:** 2026-05-29
+**Surfaced by:** Manual exploration of the live AI feature (real Ollama) during phase-7 review
+**Severity:** Major (the member cannot see or select the majority of genuinely available slots)
+
+Clicking through the assistant with the real model, an availability request — *"the afternoon of Saturday 30th May for 2 players"* — proposed only 6 slots. `find_candidate_slots` defaulted to `limit=6`, and on the assistant path that capped list **is** the entire visible result set, so 46 of the 52 genuinely bookable afternoon slots were hidden with no indication they existed.
+
+**Resolution**
+Fixed in golf-web-app (`fix/assistant-show-all-slots`, PR #11): the default `limit` becomes `None` (return all matching slots, earliest-first); the `limit` param stays for callers that want a shortlist. A unit test asserts the uncapped return.
+
+**Generalisation**
+Every automated gate passed — contract, functional and performance assert *correctness* and *cost*, not whether the feature surfaces what the member actually asked for. This was found by a human exploring the live feature, which is exactly why exploratory testing complements the deterministic spine rather than being replaced by it. The cases found here became the seed of the phase-8 golden set (`ai_evaluation/golden_set.yaml`). Maps to R-011.
+
+### F-008 — Assistant silently dropped a time constraint it could not represent
+
+**Date:** 2026-05-29
+**Surfaced by:** Manual exploration of the live AI feature (real Ollama)
+**Severity:** Major (the member's stated constraint is silently ignored, so wrong slots are proposed)
+
+A request like *"Tuesday morning from 9am"* proposed slots **before** 9am. The root cause was *not* the model: `BookingIntent` could express only a half-day `period`, with no field for a specific time, so "from 9am" was unrepresentable and silently discarded — the model extracted everything the schema allowed.
+
+**Resolution**
+Fixed in golf-web-app (`feature/assistant-time-window`, PR #12): added `not_before`/`not_after` (an inclusive time window) to the intent, threaded through the model JSON schema + prompt, the deterministic stub, the matcher, the API schema and the interpretation banner; an exact time ("at 10am") falls out as the degenerate window `[10:00, 10:00]`. A follow-on model quirk — deriving redundant bounds from the bare word "morning" — was tightened in the same PR's prompt.
+
+**Generalisation**
+Distinguish a *model* error from a *system* error: the model was not hallucinating; the system could not express the request and, worse, dropped it silently rather than telling the member. The fix was deterministic (schema + matcher), not prompt-tuning. A representable-but-unmet constraint should degrade *transparently* — the UI shows the interpretation so the member can see and correct it. The genuine model errors found alongside this (bare weekdays resolving to the wrong date) are deferred to the phase-8 evaluation harness and recorded in `ai_evaluation/golden_set.yaml`. Maps to R-011.
+
 ## 12. Roadmap
 
 The full phased plan lives in conversational notes; the abbreviated public form:
