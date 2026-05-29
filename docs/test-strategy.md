@@ -20,10 +20,10 @@ It is deliberately a *living* document — every phase of work updates the relev
 
 `golf-web-app` is a Flask + SQLAlchemy + Postgres web application for managing a golf club: tee-time bookings, competitions, coaching, range bays, and membership requests. Server-rendered Jinja templates with Bootstrap, Flask-Login for authentication, Docker Compose for the local stack, GitHub Container Registry for image distribution.
 
-Two planned additions extend the assurance surface:
+Two additions extend the assurance surface:
 
-- A small JSON API (`/api/v1/...`) so service-boundary contract testing has something to assert against
-- A natural-language booking feature backed by an LLM with tool-calling so the AI-evaluation harness has something real to evaluate
+- A small JSON API (`/api/v1/...`) so service-boundary contract testing has something to assert against — **delivered** (phase 2)
+- A natural-language booking feature backed by a local LLM (Ollama) so the AI-evaluation harness has something real to evaluate — **delivered** (phase 7). The feature follows an *interpret-and-propose* design: the model only extracts a structured intent from free text; deterministic code validates it and proposes genuinely bookable slots, and the member confirms. The model never books — that boundary is the control against hallucinated or injected instructions.
 
 ## 3. Goals and non-goals
 
@@ -60,7 +60,7 @@ Layers planned across the project. Each layer has an explicit "why this exists" 
 | Integration (Postgres-backed) | **Done** | pytest + Postgres service container | `golf-web-app/tests/unit/` (same suite, real DB) | Catch defects that depend on real DB behaviour (FK enforcement, transaction semantics) — SQLite locally hides these |
 | Deployability smoke | **Done** | Docker Compose health check | `golf-web-app/.github/workflows/ci-cd.yml` | Prove the production stack starts cleanly and serves `/` on every push |
 | Contract | **Done** | Schemathesis vs OpenAPI | `testing-system/contract/` | Verify the JSON API conforms to its spec under property-based inputs |
-| UI / E2E journeys | **Done** | Playwright + pytest | `testing-system/functional/` | Exercise the booking journey and access-control boundaries in a real browser, as a member experiences them |
+| UI / E2E journeys | **Done** | Playwright + pytest | `testing-system/functional/` | Exercise the booking journey, the natural-language booking assistant, and access-control boundaries in a real browser, as a member experiences them |
 | Accessibility | **Done** | axe-core (axe-playwright-python) | `testing-system/nonfunctional/accessibility/` | WCAG 2.1 A/AA sweep of key pages; gate the PR on serious + critical violations, track the rest |
 | Performance | **Done** | k6 (thresholds-as-code) | `testing-system/nonfunctional/performance/` | Latency/error budgets on the read-path API; fail the PR on regression beyond budget |
 | Data quality | **Done** | pandera (schemas + invariants) | `testing-system/data_quality/` | Validate the live database against column contracts and business-rule invariants (e.g. 18 holes with a 1..18 stroke-index permutation) |
@@ -233,6 +233,20 @@ Fixed in golf-web-app (`fix/api-teetime-nplus1`, PR #8): `TeeTime.bookings` swit
 **Generalisation**
 Two lessons. First, an N+1 is invisible to functional and contract tests — they assert *correctness*, not *cost* — so a performance gate earns its place. Second, perf results are environment-sensitive: a budget that passes on a fast dev machine can fail on a slower shared runner, and that divergence is a feature here — it exposed a real defect rather than hiding it (cf. the SQLite-vs-Postgres lesson in F-001). Maps to R-007 (now mitigated).
 
+### F-006 — Contract fuzzing caught an undocumented 400 on the new AI endpoint
+
+**Date:** 2026-05-29
+**Surfaced by:** Schemathesis contract suite, first run against the new `/api/v1/booking-assistant` endpoint
+**Severity:** Minor (contract/documentation gap, no crash)
+
+The natural-language booking endpoint (phase 7) shipped with documented responses 200/401/422. On its first contract run, property-based fuzzing sent a request body that was not valid JSON (a raw NUL byte); the API returned 400 Bad Request — Flask rejects a malformed body before the view runs — and that 400 was undocumented, so the spec under-described the endpoint's real behaviour.
+
+**Resolution**
+Documented `400 Malformed request body` on the endpoint (golf-web-app PR #10), matching the existing booking endpoint. The contract suite now passes all seven operations.
+
+**Generalisation**
+The F-003 lesson held for the new AI feature on day one: an auto-generated spec documents the happy paths the author thought of, not the full set of responses the framework actually produces. The standing contract gate caught the gap automatically the moment the endpoint shipped — no extra effort. Note what contract fuzzing did *not* need to know: that the endpoint is AI-backed is irrelevant at the HTTP boundary; it is asserted like any other service contract. (The model's *semantic* quality is assured separately — see the roadmap's evaluation harness.)
+
 ## 12. Roadmap
 
 The full phased plan lives in conversational notes; the abbreviated public form:
@@ -247,7 +261,7 @@ The full phased plan lives in conversational notes; the abbreviated public form:
 | 5a | Accessibility (axe) sweep + gate in CI | **Done** |
 | 5b | Performance (k6) budgets in CI | **Done** |
 | 6 | Data quality (pandera) on the live database | **Done** |
-| 7 | golf-web-app AI feature (natural-language booking) | Planned |
+| 7 | golf-web-app AI feature (natural-language booking, local Ollama) | **Done** |
 | 8 | AI evaluation harness | Planned |
 | 9 | Risk-prioritisation agent (PR diff → ranked test plan) | Planned |
 | 10 | Triage agent (CI failure clustering) | Planned |
