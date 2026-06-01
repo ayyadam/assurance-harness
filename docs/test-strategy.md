@@ -64,7 +64,7 @@ Layers planned across the project. Each layer has an explicit "why this exists" 
 | Accessibility | **Done** | axe-core (axe-playwright-python) | `testing-system/nonfunctional/accessibility/` | WCAG 2.1 A/AA sweep of key pages; gate the PR on serious + critical violations, track the rest |
 | Performance | **Done** | k6 (thresholds-as-code) | `testing-system/nonfunctional/performance/` | Latency/error budgets on the read-path API; fail the PR on regression beyond budget |
 | Data quality | **Done** | pandera (schemas + invariants) | `testing-system/data_quality/` | Validate the live database against column contracts and business-rule invariants (e.g. 18 holes with a 1..18 stroke-index permutation) |
-| AI evaluation | **Planned (phase 8)** | LLM-judge + golden set + deterministic assertions | `testing-system/ai_evaluation/` | Evaluate the planned natural-language booking feature against a rubric |
+| AI evaluation | **In progress (phase 8 — deterministic v1 delivered)** | Golden set + deterministic field scoring (delivered); LLM-judge tier next | [`testing-system/ai_evaluation/`](../ai_evaluation/README.md) | Black-box eval of the natural-language booking feature; quantifies model accuracy, safety and latency across a model list. First comparison report: see [`ai_evaluation/reports/report.md`](../ai_evaluation/reports/report.md) |
 | Production observability | **Planned (phase 11)** | Prometheus + Grafana + Loki | `testing-system/observability/` | Assess running systems and capture assurance evidence from production-style telemetry |
 | Tests of the harness itself | **Stub (phase 0)** | pytest | `testing-system/tests/` | The harness is software too. Agents and judges get tested like any other component |
 
@@ -290,7 +290,7 @@ The full phased plan lives in conversational notes; the abbreviated public form:
 | 5b | Performance (k6) budgets in CI | **Done** |
 | 6 | Data quality (pandera) on the live database | **Done** |
 | 7 | golf-web-app AI feature (natural-language booking, local Ollama) | **Done** |
-| 8 | AI evaluation harness | Planned |
+| 8 | AI evaluation harness | **In progress** — deterministic v1 done; LLM-judge tier next |
 | 9 | Risk-prioritisation agent (PR diff → ranked test plan) | Planned |
 | 10 | Triage agent (CI failure clustering) | Planned |
 | 11 | Prometheus + Grafana observability stack | Planned |
