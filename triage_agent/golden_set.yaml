@@ -1,0 +1,77 @@
+# Triage-agent golden set — expected category + R-ID per known CI failure cluster.
+#
+# Ground truth for the v1 v2 evaluation tier. Each entry pairs a cluster
+# signature (test_path, test_name, error_class) with the (category, R-ID) a
+# reviewer would assign after looking at the failure in context.
+#
+# Construction principle: the expected value is what a Digital Assurance
+# Engineer would conclude after reading the failure log AND the register row
+# it most plausibly maps to. Defensibility > convenience.
+#
+# Signatures must match the agent's heuristic clustering output exactly
+# (test_path = "<step>" for step failures with the canonical "<job>::<step>"
+# in test_name). The eval looks up by signature against `reports/report.json`.
+
+clusters:
+  # Cluster 1 — recurrence of R-018 after the supposed fix.
+  # Run #31 (post-merge dev push of PR #13) hit the new 30s wait_for_url
+  # timeout, meaning the timing race wasn't fully eliminated by the bump.
+  # This is the textbook R-018 signature (TimeoutError after navigating
+  # click in functional tests).
+  - id: r-018-timeout-booking-assistant
+    signature:
+      test_path: functional/test_booking_assistant.py
+      test_name: test_assistant_interprets_request_and_books_a_slot
+      error_class: playwright._impl._errors.TimeoutError
+    expected_category: flake
+    expected_risk_id: R-018
+
+  # Cluster 2 — ruff format step failure.
+  # Honest: none of {flake, defect, infra, env} fit a "developer forgot to
+  # run ruff before push" miss. Within the closed vocabulary, `defect` is
+  # the closest (reproducible from the code at that commit), and that's
+  # what the eval scores. The README documents this category-fit gap.
+  - id: ruff-format-step
+    signature:
+      test_path: "<step>"
+      test_name: "Lint (ruff)::ruff format check"
+      error_class: "<step-failure>"
+    expected_category: defect
+    expected_risk_id: null
+
+  # Cluster 3 — first known occurrence of the R-018 pattern.
+  # Run #18 (PR #7 merge push) shows the original `expect.to_have_url` 5s
+  # AssertionError shape on a *different* functional test
+  # (test_member_books_a_tee_time). The agent should see this as the same
+  # flake family as cluster 1 even though the test name differs.
+  - id: r-018-assertion-member-journey
+    signature:
+      test_path: functional/test_member_journey.py
+      test_name: test_member_books_a_tee_time
+      error_class: AssertionError
+    expected_category: flake
+    expected_risk_id: R-018
+
+  # Cluster 4 — k6 threshold breach on tee-times endpoint.
+  # This IS the F-005 N+1 finding. Real defect in the SUT (lazy='dynamic'
+  # firing N+1 bookings queries), surfaced by the perf gate, fixed under
+  # F-005 by switching to lazy='selectin'. R-007 is the owning risk row.
+  - id: k6-teetimes-threshold-breach
+    signature:
+      test_path: "<step>"
+      test_name: "Performance (k6)::Run k6 load test"
+      error_class: "<step-failure>"
+    expected_category: defect
+    expected_risk_id: R-007
+
+  # Cluster 5 — schemathesis contract failure.
+  # This is the F-003 finding (the original 5 spec-vs-behaviour mismatches
+  # on the v1 API). Defect family — real misalignment between the OpenAPI
+  # spec and the running API. R-006 is the owning risk row.
+  - id: schemathesis-contract-mismatch
+    signature:
+      test_path: "<step>"
+      test_name: "Contract Tests (Schemathesis)::Run contract tests"
+      error_class: "<step-failure>"
+    expected_category: defect
+    expected_risk_id: R-006

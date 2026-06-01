@@ -75,9 +75,46 @@ The agent caught one genuinely useful historical finding I would have missed oth
 - **The agent cannot read traces / screenshots.** Playwright `--tracing=retain-on-failure` artefacts are uploaded by CI but the triage agent only sees the textual log. Real flake diagnosis (e.g. "the dashboard was 502ing, not just slow") needs the trace artefact — out of scope for v1.
 - **Categorisation is judgement.** The agent labelled the ruff lint failure as `defect` even though it's really "developer forgot to format" — the available category set (flake/defect/infra/env) doesn't fit it cleanly. A future revision could add `tooling` or `developer-error` categories if the dataset grows.
 
+## v1 v2 — golden-set evaluation tier
+
+The agent is now scored against a labelled golden set on every change. [`golden_set.yaml`](golden_set.yaml) records, per known cluster signature, the (category, R-ID) a reviewer would assign after looking at the failure in context. The evaluator (`triage_agent.eval`) reads the agent's cached `reports/report.json` and reports per-axis accuracy plus a combined both-right score — deterministic, no LLM in the scoring path.
+
+Mirrors `risk_agent.eval` in pattern: cheap re-scoring after a golden-set edit; `--refresh` to re-run the agent against live `gh` data before scoring.
+
+```bash
+uv run python -m triage_agent.eval           # score against cached report.json
+uv run python -m triage_agent.eval --refresh # re-fetch + re-cluster + re-categorise first
+```
+
+### Baseline (v1 v1 agent, five clusters)
+
+Reported in [`reports/eval-report.md`](reports/eval-report.md):
+
+| Metric | Value |
+|---|---|
+| Cases | 5 |
+| Clusters found in report | 5 / 5 |
+| **Category accuracy** | **1.000** (5/5) |
+| **R-ID accuracy** | **1.000** (5/5) |
+| **Combined (both right)** | **1.000** (5/5) |
+
+5/5 on each axis. The agent correctly categorised every cluster and picked the right register R-ID (or correctly returned `null` for the ruff-format failure). The baseline is the deliverable — any future regression below 5/5 is now immediately visible, and any agent change (prompt, model, schema) is measurable against this.
+
+### Honest caveats on the baseline
+
+A 100% result with five cases needs context:
+
+- **The dataset is small.** Five clusters across five distinct signatures means each is its own cluster of one. A repo with higher CI volume would surface real cluster sizes and stress the heuristic more.
+- **All cases are from one repo.** `golf-web-app` CI failures aren't in the set. Cross-repo triage would change the distribution.
+- **The "hardest" call in this set is the ruff lint mapping.** None of `{flake, defect, infra, env}` fits "developer forgot to run ruff before push" cleanly; both the golden set and the agent pick `defect` as the closest available label. That's a category-set limit, not an agent strength.
+- **The triage problem is more constrained than risk-prioritisation.** Each cluster is one specific failure signature with one obvious category and one obvious R-ID (if any). The risk_agent's open-ended N-of-18 ranking is genuinely harder, which is why the risk_agent eval baseline sits at F1 0.526 while this one sits at 1.000. Same evaluation discipline, different problem shape.
+
+These caveats limit how strong the *single number* is — but the **process** stands: a labelled set in the repo, a scorer in the repo, a numeric baseline future changes are measured against.
+
 ## Roadmap (this agent)
 
 - [x] v1 v1: heuristic clustering + LLM categorisation + R-ID xref, evidence on this repo's last 30 days
-- [ ] v1 v2: golden-set evaluation tier (same pattern as `risk_agent.eval`) — expected cluster/category/R-ID per known failure, deterministic scorer
+- [x] v1 v2: golden-set evaluation tier with deterministic scorer (5/5 baseline)
+- [ ] v1 v3 candidates: grow the dataset (cross-repo failures); add `tooling` / `developer-error` to the category vocabulary if the ruff-class miss recurs
 - [ ] Pull Playwright traces into the diagnosis (LLM-judged failure mode beyond the textual log)
 - [ ] Cross-repo triage (`golf-web-app` + `testing-system` together)
