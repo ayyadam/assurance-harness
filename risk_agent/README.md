@@ -100,16 +100,49 @@ The same four historic PRs (overwritten reports under [`reports/`](reports/)):
 | [`pr-8-plan.md`](reports/pr-8-plan.md)  | golf-web-app #8 (N+1)    | 6 → 3 | R-007 (direct) | All 3 correct (R-007 `covered_by` is canonical `"k6 performance gate"`) |
 | [`pr-7-plan.md`](reports/pr-7-plan.md)  | golf-web-app #7 (a11y)   | 6 → 2 | R-008 (direct) | All 2 correct |
 
-## Remaining open failure mode
+## v2 v2 — golden-set evaluation tier
 
-**R-002 over-pull on booking PRs.** Booking-touching PRs still occasionally rank R-002 (concurrent overbooking) at `direct` even when the diff doesn't change concurrency semantics. This is a judgement issue the relevance scale didn't fix — the model genuinely thinks "booking code = R-002 raised". Honest documentation of the limit: the reviewer should sanity-check the top entry on booking-area PRs.
+The agent is now scored against a labelled golden set on every change. [`golden_set.yaml`](golden_set.yaml) records, per historic PR, the register risks a reviewer would call relevant at the relevance they warrant. The evaluator (`risk_agent.eval`) reads the agent's cached output (the per-PR plan JSON in [`reports/`](reports/)) and reports precision, recall, F1, and relevance accuracy — deterministic, no LLM in the scoring path.
 
-The structural addressable failure modes have been addressed. Further improvement (to R-002 specifically and to ranking quality more broadly) needs *measurement* — a small PR golden set of (diff → expected risks at expected relevance) that we can score the agent against on every change. That is v2 v2.
+This treats the agent like any other model under test (mirroring the phase-8 pattern for the booking assistant). The golden set is the source of truth; the agent is measured against it.
 
-## v2 v2 — planned
+```bash
+uv run python -m risk_agent.eval                  # score against cached reports
+uv run python -m risk_agent.eval --refresh        # re-run agent on every case first (slow)
+```
 
-- A small `risk_agent/golden_set.yaml` of historic PRs with expected ranks (id + relevance) and expected `covered_by`. Deterministic scoring like the phase-8 evaluator: set-equality on ranks, exact match on `covered_by`. Treats the agent like any other model under test.
-- GitHub Action that posts the plan as a PR comment, gated on a label (`/prioritise`).
+### Baseline (v2 v1 agent, four historic PRs)
+
+Reported in [`reports/eval-report.md`](reports/eval-report.md):
+
+| Metric | Value |
+|---|---|
+| Cases | 4 |
+| True positives | 5 |
+| False positives (over-pull) | 7 |
+| False negatives (missed) | 2 |
+| **Precision** | **0.417** |
+| **Recall** | **0.714** |
+| **F1** | **0.526** |
+| Relevance accuracy on TPs | 0.800 (4/5) |
+
+The eval lands on a baseline with **good recall, weaker precision** — the agent catches most of what should be flagged but over-pulls. Concrete failure patterns:
+
+- **R-018 over-pull (4/4 cases).** The agent raises R-018 (functional flake) on every demo PR — even on PR #8 (a one-line model loading-strategy change) and PR #7 (CSS + a single aria-label assignment). The diff genuinely doesn't change anything the functional suite asserts on. This is a candidate for v2 v3 prompt tightening, or for a deterministic "skip risks whose mitigation layer the diff doesn't touch" filter.
+- **R-002 over-pull on PR #12.** The v1 failure mode #3 (R-002 raised on any booking change without concurrency semantics) is now quantified — it shows as a false positive in the eval and is no longer hand-waved away.
+- **R-006 + R-008 missed on PR #12.** The agent caught R-011/R-012 (the AI surface) but missed the boundary risks that a careful reviewer would flag — the BookingIntentOut schema change (R-006 contract) and the template banner change (R-008 a11y). Both are 2 (plausible) on the golden set; the agent didn't surface them at all.
+
+The eval is the deliverable. Scoring lower than 0.526 on a future change is now a measurable regression; pushing it higher is now a measurable improvement. The interesting work (R-018 over-pull, missed-boundary-risks) is now scoped against numbers, not vibes.
+
+### Honest caveats on the golden set itself
+
+The golden set is a judgement call (what *would* a reviewer raise on each historic PR), not a ground truth handed down from the universe. Specifically:
+
+- Four cases is a small sample. Variance per added case is high.
+- The expected sets reflect *my* assurance reading of each PR. A different reviewer's set might differ at the margins — particularly on the plausible (`relevance: 2`) end.
+- The golden set should grow with the repo. New historic PRs are cheap to add.
+
+These caveats limit how strong any *single number* is, but they don't undermine the **process**: the agent now has a numerical baseline that future changes are scored against, and the scorer is in the repo so the golden set can be argued over openly.
 
 ## Roadmap (this agent)
 
@@ -117,5 +150,6 @@ The structural addressable failure modes have been addressed. Further improvemen
 - [x] v1: Evidence captured against four historic SUT PRs
 - [x] v2 v1: Deterministic `is_gap` and `covered_by`-enum tightening
 - [x] v2 v1: Relevance scale (2/3) self-filtering for lower-rank noise
-- [ ] v2 v2: PR golden-set evaluation tier
-- [ ] v2 v2: GitHub Action variant
+- [x] v2 v2: PR golden-set evaluation tier with deterministic scorer
+- [ ] v2 v3 candidates (now measurable): R-018 over-pull fix; missed-boundary-risk recall (R-006/R-008 on schema/template changes); grow the golden set
+- [ ] GitHub Action variant — deferred; needs a hosted-LLM commitment to actually run in CI without violating R-014

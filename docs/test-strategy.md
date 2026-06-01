@@ -2,7 +2,7 @@
 
 **Status:** living document — updated as the assurance harness matures.
 **Owner:** Adam (acting as Digital Assurance Engineer)
-**Last updated:** 2026-06-01 *(post phase-9 v2 v1; F-009 added)*
+**Last updated:** 2026-06-01 *(post phase-9 v2 v2; F-009 added)*
 
 ---
 
@@ -65,7 +65,7 @@ Layers planned across the project. Each layer has an explicit "why this exists" 
 | Performance | **Done** | k6 (thresholds-as-code) | `testing-system/nonfunctional/performance/` | Latency/error budgets on the read-path API; fail the PR on regression beyond budget |
 | Data quality | **Done** | pandera (schemas + invariants) | `testing-system/data_quality/` | Validate the live database against column contracts and business-rule invariants (e.g. 18 holes with a 1..18 stroke-index permutation) |
 | AI evaluation | **Done (phase 8 v1)** | Black-box golden-set scoring (deterministic + LLM-judge) | [`testing-system/ai_evaluation/`](../ai_evaluation/README.md) | Quantifies model accuracy, safety, latency across a model list. Two grading tiers — deterministic field equality + an LLM-judge (holistic 0-10 + per-rubric fuzzy pass/fail). Current 5-model report: [`ai_evaluation/reports/report.md`](../ai_evaluation/reports/report.md) |
-| Risk-prioritisation (advisory) | **Done (phase 9 v2 v1)** | Local Ollama agent with structured output + deterministic post-processing | [`testing-system/risk_agent/`](../risk_agent/README.md) | Given a PR diff + the live risk register, produces a ranked test plan with `covered_by` per risk, coverage-gap flags, relevance label (`direct` / `plausible`), and exploratory probes. Advisory only, not a CI gate. v2 v1 made `covered_by` and `is_gap` deterministic (closed vocab + register-status lookup) and introduced a relevance scale that self-filters speculative tail entries — retiring three of v1's four documented failure modes. Evidence under [`risk_agent/reports/`](../risk_agent/reports/) — four historic PRs, average ranks per PR dropped 6 → 3. The PR golden-set evaluation tier is planned for v2 v2 |
+| Risk-prioritisation (advisory) | **Done (phase 9 v2 v2)** | Local Ollama agent + deterministic post-processing + golden-set eval | [`testing-system/risk_agent/`](../risk_agent/README.md) | Given a PR diff + the live risk register, produces a ranked test plan with `covered_by` per risk, coverage-gap flags, relevance label (`direct` / `plausible`), and exploratory probes. Advisory only, not a CI gate. v2 v1 made `covered_by` and `is_gap` deterministic; v2 v2 added a golden-set evaluation tier ([`risk_agent.eval`](../risk_agent/eval.py)) that scores the agent against expected ranks per historic PR (precision, recall, F1 — deterministic, no LLM in scoring). Current baseline: F1 0.526 (precision 0.417 / recall 0.714) across 4 cases. The baseline is the deliverable — future changes are now scored against measurable numbers. See [`risk_agent/reports/eval-report.md`](../risk_agent/reports/eval-report.md) |
 | Production observability | **Planned (phase 11)** | Prometheus + Grafana + Loki | `testing-system/observability/` | Assess running systems and capture assurance evidence from production-style telemetry |
 | Tests of the harness itself | **Stub (phase 0)** | pytest | `testing-system/tests/` | The harness is software too. Agents and judges get tested like any other component |
 
@@ -317,7 +317,7 @@ The full phased plan lives in conversational notes; the abbreviated public form:
 | 6 | Data quality (pandera) on the live database | **Done** |
 | 7 | golf-web-app AI feature (natural-language booking, local Ollama) | **Done** |
 | 8 | AI evaluation harness | **Done (v1)** — deterministic + LLM-judge (holistic + fuzzy) |
-| 9 | Risk-prioritisation agent (PR diff → ranked test plan) | **Done (v2 v1)** — deterministic post-processing for `covered_by` + `is_gap`; relevance scale self-filters noise; v2 v2 (golden-set eval + PR-comment Action) planned |
+| 9 | Risk-prioritisation agent (PR diff → ranked test plan) | **Done (v2 v2)** — v2 v1 added deterministic `covered_by` + `is_gap` and a relevance scale; v2 v2 added a golden-set evaluation tier with deterministic scoring (precision/recall/F1). Baseline F1 0.526 across 4 cases — measurable now. PR-comment Action deferred (needs hosted-LLM commitment) |
 | 10 | Triage agent (CI failure clustering) | Planned |
 | 11 | Prometheus + Grafana observability stack | Planned |
 | 12 | Exploratory testing agent + tests of agents | Planned |
