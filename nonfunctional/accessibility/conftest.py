@@ -28,7 +28,8 @@ from playwright.sync_api import Page
 SUT_BASE_URL = os.getenv("SUT_BASE_URL", "http://localhost:5000")
 
 # Where per-page axe JSON results are written for evidence / CI artifacts.
-REPORT_DIR = Path(__file__).resolve().parent.parent.parent / "reports" / "a11y"
+# Nonfunctional layers own their evidence dir, matching ai_evaluation/ and risk_agent/.
+REPORT_DIR = Path(__file__).resolve().parent.parent / "reports" / "a11y"
 
 
 @dataclass(frozen=True)

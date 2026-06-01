@@ -63,6 +63,6 @@ export default function () {
 export function handleSummary(data) {
   return {
     stdout: textSummary(data, { indent: " ", enableColors: false }),
-    "reports/perf/summary.json": JSON.stringify(data, null, 2),
+    "nonfunctional/reports/perf/summary.json": JSON.stringify(data, null, 2),
   };
 }

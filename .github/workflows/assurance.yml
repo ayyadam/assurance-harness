@@ -179,16 +179,16 @@ jobs:
         env:
           SUT_BASE_URL: http://localhost:5000
         run: |
-          mkdir -p reports
+          mkdir -p nonfunctional/reports
           uv run pytest nonfunctional/accessibility/ \
-            --junitxml=reports/a11y-junit.xml \
-            --html=reports/a11y.html --self-contained-html
+            --junitxml=nonfunctional/reports/a11y-junit.xml \
+            --html=nonfunctional/reports/a11y.html --self-contained-html
       - name: Upload accessibility reports
         uses: actions/upload-artifact@v5
         if: always()
         with:
           name: accessibility-reports
-          path: reports/
+          path: nonfunctional/reports/
       - name: Tear down SUT
         if: always()
         run: cd sut && docker compose down -v
@@ -222,14 +222,14 @@ jobs:
         env:
           SUT_BASE_URL: http://localhost:5000
         run: |
-          mkdir -p reports/perf
+          mkdir -p nonfunctional/reports/perf
           k6 run nonfunctional/performance/api_load.js
       - name: Upload performance reports
         uses: actions/upload-artifact@v5
         if: always()
         with:
           name: performance-reports
-          path: reports/
+          path: nonfunctional/reports/
       - name: Tear down SUT
         if: always()
         run: cd sut && docker compose down -v
