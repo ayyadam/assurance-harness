@@ -1,0 +1,54 @@
+{
+  "summary": "This PR adds time-of-day constraints (`not_before` and `not_after`) to the booking assistant's schema, parsing logic, and unit tests.",
+  "ranked_risks": [
+    {
+      "id": "R-011",
+      "rationale": "The diff introduces new logic for parsing and applying time-of-day constraints, which could lead to incorrect slot proposals if not handled correctly. This directly impacts the risk of AI hallucinations or selecting wrong slots.",
+      "covered_by": "ai_evaluation/",
+      "action": "Run the golden-set cases in `ai_evaluation/` to ensure the new time bounds are respected",
+      "is_gap": false
+    },
+    {
+      "id": "R-012",
+      "rationale": "The diff modifies how user input is parsed and interpreted, which could introduce vulnerabilities if not properly constrained. The structured-output boundary must hold for all new inputs.",
+      "covered_by": "ai_evaluation/",
+      "action": "Run the safety pass in `ai_evaluation/` to ensure no prompt injection can bypass time constraints",
+      "is_gap": false
+    },
+    {
+      "id": "R-002",
+      "rationale": "The diff introduces new logic that could lead to overbooking if not properly synchronized with existing booking constraints. This could cause concurrent bookings of the same tee slot.",
+      "covered_by": "none",
+      "action": "Add a concurrency test in `functional/test_booking_assistant.py` to simulate concurrent bookings with time-of-day constraints",
+      "is_gap": true
+    },
+    {
+      "id": "R-008",
+      "rationale": "The diff modifies the booking assistant's schema and parsing logic, which could introduce accessibility issues if not properly validated.",
+      "covered_by": "axe-core WCAG 2.1 A/AA sweep",
+      "action": "Run `axe-core` over the updated booking page to ensure no new accessibility regressions are introduced",
+      "is_gap": false
+    },
+    {
+      "id": "R-006",
+      "rationale": "The diff modifies the JSON API schema, which could lead to drift from the server's actual behavior if not properly verified.",
+      "covered_by": "Schemathesis property-based contract tests",
+      "action": "Re-run Schemathesis against the live API to ensure no new spec/behavior mismatches are introduced by this change",
+      "is_gap": false
+    },
+    {
+      "id": "R-007",
+      "rationale": "The diff introduces new logic that could impact performance if not optimized. This could lead to latency or throughput regressions.",
+      "covered_by": "k6 thresholds-as-code",
+      "action": "Run the k6 load test in `nonfunctional/performance/api_load.js` to ensure no performance regression is introduced by this change",
+      "is_gap": false
+    }
+  ],
+  "exploratory_probes": [
+    "Manually test booking a tee time with explicit time-of-day constraints (e.g., 'from 9am' and 'before noon') in the browser.",
+    "Use `curl` to send JSON API requests with different combinations of `not_before` and `not_after` values, ensuring they are correctly interpreted by the server.",
+    "Simulate concurrent bookings using two separate sessions or incognito windows to check for overbooking issues.",
+    "Test edge cases like setting `not_before` after `not_after` to ensure proper error handling."
+  ],
+  "model": "qwen2.5:32b-instruct-q4_K_M"
+}

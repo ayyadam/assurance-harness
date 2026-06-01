@@ -1,0 +1,54 @@
+{
+  "summary": "This PR changes the relationship loading strategy in `TeeTime` model to avoid N+1 query issues when listing tee times.",
+  "ranked_risks": [
+    {
+      "id": "R-007",
+      "rationale": "The diff addresses an N+1 query issue, which directly impacts performance. The change could introduce a regression if not properly tested.",
+      "covered_by": "k6 thresholds-as-code",
+      "action": "Re-run the k6 performance tests to ensure no regressions in latency or throughput.",
+      "is_gap": false
+    },
+    {
+      "id": "R-017",
+      "rationale": "The diff modifies a model file, which could indirectly affect CI processes. However, this risk is mitigated by ensuring the workflow uses updated actions.",
+      "covered_by": "actions/checkout@v5, actions/setup-python@v6, actions/upload-artifact@v5, astral-sh/setup-uv@v5",
+      "action": "Verify that the CI pipeline runs smoothly with the new changes.",
+      "is_gap": false
+    },
+    {
+      "id": "R-002",
+      "rationale": "The diff modifies booking-related logic, which could potentially affect concurrent bookings and lead to overbooking or constraint violations.",
+      "covered_by": "none",
+      "action": "Add a concurrency test in the functional layer to ensure no overbooking occurs with this change.",
+      "is_gap": true
+    },
+    {
+      "id": "R-011",
+      "rationale": "The diff modifies booking-related logic, which could affect how AI-generated bookings are handled. This might introduce new issues if not properly validated.",
+      "covered_by": "ai_evaluation/",
+      "action": "Run the golden-set cases in `ai_evaluation/` to ensure no regressions in AI booking behavior.",
+      "is_gap": false
+    },
+    {
+      "id": "R-012",
+      "rationale": "The diff modifies booking-related logic, which could affect how inputs are handled. This might introduce new issues if not properly validated.",
+      "covered_by": "phase-8 eval (ai_evaluation/)",
+      "action": "Run the safety pass in `ai_evaluation/` to ensure no prompt injection vulnerabilities exist.",
+      "is_gap": false
+    },
+    {
+      "id": "R-013",
+      "rationale": "The diff modifies booking-related logic, which could affect production observability if not properly monitored.",
+      "covered_by": "none",
+      "action": "Add monitoring for the new changes in a future phase to ensure observability.",
+      "is_gap": true
+    }
+  ],
+  "exploratory_probes": [
+    "Manually test listing tee times with multiple bookings and observe performance metrics.",
+    "Use `curl` to simulate concurrent booking requests and check for overbooking issues.",
+    "Verify that the new relationship loading strategy does not introduce any unexpected behavior in the UI.",
+    "Check the logs for any unexpected queries or errors after applying the changes."
+  ],
+  "model": "qwen2.5:32b-instruct-q4_K_M"
+}
