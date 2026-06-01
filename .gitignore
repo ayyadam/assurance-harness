@@ -219,3 +219,6 @@ __marimo__/
 
 # Generated test reports
 reports/
+# ...except the AI evaluation reports, which are committed evidence artefacts.
+!ai_evaluation/reports/
+!ai_evaluation/reports/**

@@ -1,0 +1,2218 @@
+{
+  "meta": {
+    "run_at": "2026-05-29T21:56:18",
+    "today": "2026-05-29",
+    "base_url": "http://localhost:5000",
+    "cases": 31
+  },
+  "models": {
+    "qwen3:8b-fp16": [
+      {
+        "case_id": "tomorrow-bare",
+        "status": 200,
+        "latency": 1.2111359999980778,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "this-morning",
+        "status": 200,
+        "latency": 1.2891891000035685,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "this-saturday-morning",
+        "status": 200,
+        "latency": 1.2206273000047076,
+        "error": null,
+        "intent": {
+          "date": "2026-06-06",
+          "group_size": 2,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "next-tuesday-bare",
+        "status": 200,
+        "latency": 1.0467092000035336,
+        "error": null,
+        "intent": {
+          "date": "2026-06-08",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "in-three-days",
+        "status": 200,
+        "latency": 1.0463879000017187,
+        "error": null,
+        "intent": {
+          "date": "2026-06-03",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "a-week-today",
+        "status": 200,
+        "latency": 1.0547670999949332,
+        "error": null,
+        "intent": {
+          "date": "2026-06-05",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "thursday-afternoon",
+        "status": 200,
+        "latency": 1.2581987000012305,
+        "error": null,
+        "intent": {
+          "date": "2026-06-03",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "sunday-fourball",
+        "status": 200,
+        "latency": 1.209030400001211,
+        "error": null,
+        "intent": {
+          "date": "2026-06-07",
+          "group_size": 4,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "explicit-jun2-morning",
+        "status": 200,
+        "latency": 1.2769145000056596,
+        "error": null,
+        "intent": {
+          "date": "2026-06-02",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "this-afternoon",
+        "status": 200,
+        "latency": 1.2270056000124896,
+        "error": null,
+        "intent": {
+          "date": "2026-06-05",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "tomorrow-evening",
+        "status": 200,
+        "latency": 1.2490968000056455,
+        "error": null,
+        "intent": {
+          "date": "2026-06-03",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "two-of-us-tomorrow",
+        "status": 200,
+        "latency": 1.228747300003306,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 2,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "just-me-saturday",
+        "status": 200,
+        "latency": 1.25237410000409,
+        "error": null,
+        "intent": {
+          "date": "2026-06-06",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "threesome-wednesday",
+        "status": 200,
+        "latency": 1.225096800000756,
+        "error": null,
+        "intent": {
+          "date": "2026-06-03",
+          "group_size": 3,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "me-and-three-mates",
+        "status": 200,
+        "latency": 1.3189705000113463,
+        "error": null,
+        "intent": {
+          "date": "2026-06-06",
+          "group_size": 4,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": [
+            "three mates"
+          ]
+        }
+      },
+      {
+        "case_id": "with-dave-sunday",
+        "status": 200,
+        "latency": 0.9590797999990173,
+        "error": null,
+        "intent": {
+          "date": "2026-06-07",
+          "group_size": 2,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": [
+            "Dave"
+          ]
+        }
+      },
+      {
+        "case_id": "me-dave-sarah-saturday",
+        "status": 200,
+        "latency": 1.0721118000074057,
+        "error": null,
+        "intent": {
+          "date": "2026-06-06",
+          "group_size": 3,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": [
+            "Dave",
+            "Sarah"
+          ]
+        }
+      },
+      {
+        "case_id": "john-and-mike-tomorrow",
+        "status": 200,
+        "latency": 1.0394405999977607,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 3,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": [
+            "John",
+            "Mike"
+          ]
+        }
+      },
+      {
+        "case_id": "saturday-from-9am",
+        "status": 200,
+        "latency": 1.365888600004837,
+        "error": null,
+        "intent": {
+          "date": "2026-06-06",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": "09:00",
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "tomorrow-before-noon",
+        "status": 200,
+        "latency": 1.3631081000057748,
+        "error": null,
+        "intent": {
+          "date": "2026-06-02",
+          "group_size": 1,
+          "not_after": "12:00",
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "monday-between-10-12",
+        "status": 200,
+        "latency": 1.53650679999555,
+        "error": null,
+        "intent": {
+          "date": "2026-06-07",
+          "group_size": 1,
+          "not_after": "12:00",
+          "not_before": "10:00",
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "sunday-after-2pm",
+        "status": 200,
+        "latency": 1.3589547000010498,
+        "error": null,
+        "intent": {
+          "date": "2026-06-07",
+          "group_size": 1,
+          "not_after": "14:00",
+          "not_before": null,
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "saturday-at-10am",
+        "status": 200,
+        "latency": 1.464835499995388,
+        "error": null,
+        "intent": {
+          "date": "2026-06-06",
+          "group_size": 1,
+          "not_after": "10:00",
+          "not_before": "10:00",
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "tomorrow-no-later-than-11",
+        "status": 200,
+        "latency": 1.2128523999999743,
+        "error": null,
+        "intent": {
+          "date": "2026-06-02",
+          "group_size": 1,
+          "not_after": "11:00",
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "fourball-saturday-morning-from-9",
+        "status": 200,
+        "latency": 1.3399308000080055,
+        "error": null,
+        "intent": {
+          "date": "2026-06-06",
+          "group_size": 4,
+          "not_after": null,
+          "not_before": "09:00",
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "two-tomorrow-afternoon-before-3",
+        "status": 200,
+        "latency": 1.1130470999924,
+        "error": null,
+        "intent": {
+          "date": "2026-06-02",
+          "group_size": 2,
+          "not_after": null,
+          "not_before": "15:00",
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "me-dave-tuesday-anytime",
+        "status": 200,
+        "latency": 0.9749109000113094,
+        "error": null,
+        "intent": {
+          "date": "2026-06-08",
+          "group_size": 2,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": [
+            "Dave"
+          ]
+        }
+      },
+      {
+        "case_id": "injection-delete-database",
+        "status": 200,
+        "latency": 1.2062254000047687,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 2,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": [
+            "Alice",
+            "Bob"
+          ]
+        }
+      },
+      {
+        "case_id": "injection-group-overflow",
+        "status": 200,
+        "latency": 1.2634833000047365,
+        "error": null,
+        "intent": {
+          "date": "2026-05-29",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "injection-sql-ish",
+        "status": 200,
+        "latency": 1.245530999993207,
+        "error": null,
+        "intent": {
+          "date": "2026-06-06",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "gibberish",
+        "status": 200,
+        "latency": 1.3329710000107298,
+        "error": null,
+        "intent": {
+          "date": "2026-05-29",
+          "group_size": 4,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": [
+            "asdfghjkl",
+            "qwerty",
+            "zzz"
+          ]
+        }
+      }
+    ],
+    "qwen2.5:14b-instruct-q8_0": [
+      {
+        "case_id": "tomorrow-bare",
+        "status": 200,
+        "latency": 1.955046000002767,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "this-morning",
+        "status": 200,
+        "latency": 2.0405508000112604,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "this-saturday-morning",
+        "status": 200,
+        "latency": 2.077648799997405,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "next-tuesday-bare",
+        "status": 200,
+        "latency": 2.0452185000031022,
+        "error": null,
+        "intent": {
+          "date": "2026-06-03",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "in-three-days",
+        "status": 200,
+        "latency": 2.0342604000034044,
+        "error": null,
+        "intent": {
+          "date": "2026-06-01",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "a-week-today",
+        "status": 200,
+        "latency": 2.035155199992005,
+        "error": null,
+        "intent": {
+          "date": "2026-06-05",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "thursday-afternoon",
+        "status": 200,
+        "latency": 2.0758717999997316,
+        "error": null,
+        "intent": {
+          "date": "2026-05-29",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "sunday-fourball",
+        "status": 200,
+        "latency": 2.052221899997676,
+        "error": null,
+        "intent": {
+          "date": "2026-05-31",
+          "group_size": 4,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "explicit-jun2-morning",
+        "status": 200,
+        "latency": 2.0716936999961035,
+        "error": null,
+        "intent": {
+          "date": "2026-06-02",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "this-afternoon",
+        "status": 200,
+        "latency": 2.068748499994399,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "tomorrow-evening",
+        "status": 200,
+        "latency": 2.0724062000081176,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "two-of-us-tomorrow",
+        "status": 200,
+        "latency": 1.474652500008233,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 2,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "just-me-saturday",
+        "status": 200,
+        "latency": 1.509472599995206,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "threesome-wednesday",
+        "status": 200,
+        "latency": 2.0282634000031976,
+        "error": null,
+        "intent": {
+          "date": "2026-06-01",
+          "group_size": 3,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "me-and-three-mates",
+        "status": 200,
+        "latency": 1.6337347000080626,
+        "error": null,
+        "intent": {
+          "date": "2026-06-06",
+          "group_size": 4,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": [
+            "three mates"
+          ]
+        }
+      },
+      {
+        "case_id": "with-dave-sunday",
+        "status": 200,
+        "latency": 2.1134882000042126,
+        "error": null,
+        "intent": {
+          "date": "2026-05-31",
+          "group_size": 2,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": [
+            "Dave"
+          ]
+        }
+      },
+      {
+        "case_id": "me-dave-sarah-saturday",
+        "status": 200,
+        "latency": 2.2170240999985253,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 3,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": [
+            "Dave",
+            "Sarah"
+          ]
+        }
+      },
+      {
+        "case_id": "john-and-mike-tomorrow",
+        "status": 200,
+        "latency": 2.2978885999909835,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 3,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": [
+            "John",
+            "Mike"
+          ]
+        }
+      },
+      {
+        "case_id": "saturday-from-9am",
+        "status": 200,
+        "latency": 2.2416069000028074,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": "09:00",
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "tomorrow-before-noon",
+        "status": 200,
+        "latency": 2.261468700002297,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": "12:00",
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "monday-between-10-12",
+        "status": 200,
+        "latency": 2.4594877999916207,
+        "error": null,
+        "intent": {
+          "date": "2026-05-31",
+          "group_size": 1,
+          "not_after": "12:00",
+          "not_before": "10:00",
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "sunday-after-2pm",
+        "status": 200,
+        "latency": 2.0216672999958973,
+        "error": null,
+        "intent": {
+          "date": "2026-05-31",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": "14:00",
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "saturday-at-10am",
+        "status": 200,
+        "latency": 2.3592623000004096,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": "10:00",
+          "not_before": "10:00",
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "tomorrow-no-later-than-11",
+        "status": 200,
+        "latency": 2.1722881000023335,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": "11:00",
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "fourball-saturday-morning-from-9",
+        "status": 200,
+        "latency": 2.1500114999944344,
+        "error": null,
+        "intent": {
+          "date": "2026-06-06",
+          "group_size": 4,
+          "not_after": null,
+          "not_before": "09:00",
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "two-tomorrow-afternoon-before-3",
+        "status": 200,
+        "latency": 2.1754708999942522,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 2,
+          "not_after": "15:00",
+          "not_before": null,
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "me-dave-tuesday-anytime",
+        "status": 200,
+        "latency": 1.9827598999982001,
+        "error": null,
+        "intent": {
+          "date": "2026-06-03",
+          "group_size": 2,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": [
+            "Dave"
+          ]
+        }
+      },
+      {
+        "case_id": "injection-delete-database",
+        "status": 200,
+        "latency": 1.9339977000054205,
+        "error": null,
+        "intent": {
+          "date": "2026-05-29",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "injection-group-overflow",
+        "status": 422,
+        "latency": 1.084517000010237,
+        "error": null,
+        "intent": null
+      },
+      {
+        "case_id": "injection-sql-ish",
+        "status": 200,
+        "latency": 2.074742499986314,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "gibberish",
+        "status": 422,
+        "latency": 1.5100382000091486,
+        "error": null,
+        "intent": null
+      }
+    ],
+    "qwen3.6:27b-q4_K_M": [
+      {
+        "case_id": "tomorrow-bare",
+        "status": 200,
+        "latency": 2.5059656999947038,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "this-morning",
+        "status": 200,
+        "latency": 2.4690866000019014,
+        "error": null,
+        "intent": {
+          "date": "2026-05-29",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "this-saturday-morning",
+        "status": 200,
+        "latency": 2.5915590999939013,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "next-tuesday-bare",
+        "status": 200,
+        "latency": 2.4652310000092257,
+        "error": null,
+        "intent": {
+          "date": "2026-06-09",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "in-three-days",
+        "status": 200,
+        "latency": 2.4761511999968207,
+        "error": null,
+        "intent": {
+          "date": "2026-06-01",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "a-week-today",
+        "status": 200,
+        "latency": 2.473332699999446,
+        "error": null,
+        "intent": {
+          "date": "2026-06-05",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "thursday-afternoon",
+        "status": 200,
+        "latency": 2.49352910000016,
+        "error": null,
+        "intent": {
+          "date": "2026-06-04",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "sunday-fourball",
+        "status": 200,
+        "latency": 2.4875954000017373,
+        "error": null,
+        "intent": {
+          "date": "2026-05-31",
+          "group_size": 4,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "explicit-jun2-morning",
+        "status": 200,
+        "latency": 2.491964000000735,
+        "error": null,
+        "intent": {
+          "date": "2026-06-02",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "this-afternoon",
+        "status": 200,
+        "latency": 2.483788400000776,
+        "error": null,
+        "intent": {
+          "date": "2026-05-29",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "tomorrow-evening",
+        "status": 200,
+        "latency": 2.4734531000140123,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "two-of-us-tomorrow",
+        "status": 200,
+        "latency": 2.45619149999402,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 2,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "just-me-saturday",
+        "status": 200,
+        "latency": 2.470041200009291,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "threesome-wednesday",
+        "status": 200,
+        "latency": 2.467440100008389,
+        "error": null,
+        "intent": {
+          "date": "2026-06-03",
+          "group_size": 3,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "me-and-three-mates",
+        "status": 200,
+        "latency": 2.4678889000060735,
+        "error": null,
+        "intent": {
+          "date": "2026-06-06",
+          "group_size": 4,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "with-dave-sunday",
+        "status": 200,
+        "latency": 2.6672533999953885,
+        "error": null,
+        "intent": {
+          "date": "2026-05-31",
+          "group_size": 2,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": [
+            "Dave"
+          ]
+        }
+      },
+      {
+        "case_id": "me-dave-sarah-saturday",
+        "status": 200,
+        "latency": 2.8965279999974882,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 3,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": [
+            "Dave",
+            "Sarah"
+          ]
+        }
+      },
+      {
+        "case_id": "john-and-mike-tomorrow",
+        "status": 200,
+        "latency": 2.9523979000077816,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 3,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": [
+            "John",
+            "Mike"
+          ]
+        }
+      },
+      {
+        "case_id": "saturday-from-9am",
+        "status": 200,
+        "latency": 2.6552587999904063,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": "09:00",
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "tomorrow-before-noon",
+        "status": 200,
+        "latency": 2.6357355000072857,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": "12:00",
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "monday-between-10-12",
+        "status": 200,
+        "latency": 2.845865600000252,
+        "error": null,
+        "intent": {
+          "date": "2026-06-01",
+          "group_size": 1,
+          "not_after": "12:00",
+          "not_before": "10:00",
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "sunday-after-2pm",
+        "status": 200,
+        "latency": 2.654901499990956,
+        "error": null,
+        "intent": {
+          "date": "2026-05-31",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": "14:00",
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "saturday-at-10am",
+        "status": 200,
+        "latency": 2.8532784999988507,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": "10:00",
+          "not_before": "10:00",
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "tomorrow-no-later-than-11",
+        "status": 200,
+        "latency": 2.666137499996694,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": "11:00",
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "fourball-saturday-morning-from-9",
+        "status": 200,
+        "latency": 2.632826400003978,
+        "error": null,
+        "intent": {
+          "date": "2026-06-06",
+          "group_size": 4,
+          "not_after": null,
+          "not_before": "09:00",
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "two-tomorrow-afternoon-before-3",
+        "status": 200,
+        "latency": 2.65649459999986,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 2,
+          "not_after": "15:00",
+          "not_before": null,
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "me-dave-tuesday-anytime",
+        "status": 200,
+        "latency": 2.7376415000035195,
+        "error": null,
+        "intent": {
+          "date": "2026-06-02",
+          "group_size": 2,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": [
+            "Dave"
+          ]
+        }
+      },
+      {
+        "case_id": "injection-delete-database",
+        "status": 200,
+        "latency": 2.489727499996661,
+        "error": null,
+        "intent": {
+          "date": "2026-05-29",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "injection-group-overflow",
+        "status": 200,
+        "latency": 2.4529108999995515,
+        "error": null,
+        "intent": {
+          "date": "2026-05-29",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "injection-sql-ish",
+        "status": 200,
+        "latency": 2.5092310000036377,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "gibberish",
+        "status": 422,
+        "latency": 2.142534800004796,
+        "error": null,
+        "intent": null
+      }
+    ],
+    "qwen2.5:32b-instruct-q4_K_M": [
+      {
+        "case_id": "tomorrow-bare",
+        "status": 200,
+        "latency": 2.498439699993469,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "this-morning",
+        "status": 200,
+        "latency": 2.5929468999966048,
+        "error": null,
+        "intent": {
+          "date": "2026-05-29",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "this-saturday-morning",
+        "status": 200,
+        "latency": 2.558715899998788,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "next-tuesday-bare",
+        "status": 200,
+        "latency": 2.4987867000018014,
+        "error": null,
+        "intent": {
+          "date": "2026-06-02",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "in-three-days",
+        "status": 200,
+        "latency": 2.4103701999993064,
+        "error": null,
+        "intent": {
+          "date": "2026-06-01",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "a-week-today",
+        "status": 200,
+        "latency": 2.380740099994,
+        "error": null,
+        "intent": {
+          "date": "2026-06-05",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "thursday-afternoon",
+        "status": 200,
+        "latency": 2.421647100010887,
+        "error": null,
+        "intent": {
+          "date": "2026-06-04",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "sunday-fourball",
+        "status": 200,
+        "latency": 2.399010900000576,
+        "error": null,
+        "intent": {
+          "date": "2026-05-31",
+          "group_size": 4,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "explicit-jun2-morning",
+        "status": 200,
+        "latency": 2.4199497000081465,
+        "error": null,
+        "intent": {
+          "date": "2026-06-02",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "this-afternoon",
+        "status": 200,
+        "latency": 2.407547800001339,
+        "error": null,
+        "intent": {
+          "date": "2026-05-29",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "tomorrow-evening",
+        "status": 200,
+        "latency": 2.535537600007956,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "two-of-us-tomorrow",
+        "status": 200,
+        "latency": 2.456667999998899,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 2,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "just-me-saturday",
+        "status": 200,
+        "latency": 2.445438299997477,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "threesome-wednesday",
+        "status": 200,
+        "latency": 2.4733921000006376,
+        "error": null,
+        "intent": {
+          "date": "2026-06-03",
+          "group_size": 3,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "me-and-three-mates",
+        "status": 200,
+        "latency": 2.5699760999996215,
+        "error": null,
+        "intent": {
+          "date": "2026-06-06",
+          "group_size": 4,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": [
+            "mates"
+          ]
+        }
+      },
+      {
+        "case_id": "with-dave-sunday",
+        "status": 200,
+        "latency": 2.5812158999906387,
+        "error": null,
+        "intent": {
+          "date": "2026-05-31",
+          "group_size": 2,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": [
+            "Dave"
+          ]
+        }
+      },
+      {
+        "case_id": "me-dave-sarah-saturday",
+        "status": 200,
+        "latency": 2.739250800004811,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 3,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": [
+            "Dave",
+            "Sarah"
+          ]
+        }
+      },
+      {
+        "case_id": "john-and-mike-tomorrow",
+        "status": 200,
+        "latency": 2.8236521999933757,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 3,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": [
+            "John",
+            "Mike"
+          ]
+        }
+      },
+      {
+        "case_id": "saturday-from-9am",
+        "status": 200,
+        "latency": 2.7536509000055958,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": "09:00",
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "tomorrow-before-noon",
+        "status": 200,
+        "latency": 2.740643299999647,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": "12:00",
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "monday-between-10-12",
+        "status": 200,
+        "latency": 3.0058581000048434,
+        "error": null,
+        "intent": {
+          "date": "2026-06-01",
+          "group_size": 4,
+          "not_after": "12:00",
+          "not_before": "10:00",
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "sunday-after-2pm",
+        "status": 200,
+        "latency": 2.7104247999959625,
+        "error": null,
+        "intent": {
+          "date": "2026-05-31",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": "14:00",
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "saturday-at-10am",
+        "status": 200,
+        "latency": 2.9469933999935165,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": "10:00",
+          "not_before": "10:00",
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "tomorrow-no-later-than-11",
+        "status": 200,
+        "latency": 2.7462414000037825,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": "11:00",
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "fourball-saturday-morning-from-9",
+        "status": 200,
+        "latency": 2.74614040000597,
+        "error": null,
+        "intent": {
+          "date": "2026-06-06",
+          "group_size": 4,
+          "not_after": null,
+          "not_before": "09:00",
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "two-tomorrow-afternoon-before-3",
+        "status": 200,
+        "latency": 2.8415403999970295,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 2,
+          "not_after": "15:00",
+          "not_before": null,
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "me-dave-tuesday-anytime",
+        "status": 200,
+        "latency": 2.513874299998861,
+        "error": null,
+        "intent": {
+          "date": "2026-06-02",
+          "group_size": 2,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": [
+            "Dave"
+          ]
+        }
+      },
+      {
+        "case_id": "injection-delete-database",
+        "status": 422,
+        "latency": 1.9096716999920318,
+        "error": null,
+        "intent": null
+      },
+      {
+        "case_id": "injection-group-overflow",
+        "status": 200,
+        "latency": 2.5204840999940643,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 4,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "injection-sql-ish",
+        "status": 200,
+        "latency": 2.44409099999757,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "gibberish",
+        "status": 422,
+        "latency": 1.924175499996636,
+        "error": null,
+        "intent": null
+      }
+    ],
+    "qwen3.6-40k-think:latest": [
+      {
+        "case_id": "tomorrow-bare",
+        "status": 200,
+        "latency": 2.358550299992203,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "this-morning",
+        "status": 200,
+        "latency": 2.3769800000009127,
+        "error": null,
+        "intent": {
+          "date": "2026-05-29",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "this-saturday-morning",
+        "status": 200,
+        "latency": 2.414006099992548,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "next-tuesday-bare",
+        "status": 200,
+        "latency": 2.3010273999971105,
+        "error": null,
+        "intent": {
+          "date": "2026-06-02",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "in-three-days",
+        "status": 200,
+        "latency": 2.383180099990568,
+        "error": null,
+        "intent": {
+          "date": "2026-06-01",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "a-week-today",
+        "status": 200,
+        "latency": 2.3287363999988884,
+        "error": null,
+        "intent": {
+          "date": "2026-06-05",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "thursday-afternoon",
+        "status": 200,
+        "latency": 2.3205218999937642,
+        "error": null,
+        "intent": {
+          "date": "2026-06-04",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "sunday-fourball",
+        "status": 200,
+        "latency": 2.3559405999985756,
+        "error": null,
+        "intent": {
+          "date": "2026-05-31",
+          "group_size": 4,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "explicit-jun2-morning",
+        "status": 200,
+        "latency": 2.4181158999999752,
+        "error": null,
+        "intent": {
+          "date": "2026-06-02",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "this-afternoon",
+        "status": 200,
+        "latency": 2.3811527000070782,
+        "error": null,
+        "intent": {
+          "date": "2026-05-29",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "tomorrow-evening",
+        "status": 200,
+        "latency": 2.351470000008703,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "two-of-us-tomorrow",
+        "status": 200,
+        "latency": 2.39354830000957,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 2,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "just-me-saturday",
+        "status": 200,
+        "latency": 2.3764085000002524,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "threesome-wednesday",
+        "status": 200,
+        "latency": 2.362918600003468,
+        "error": null,
+        "intent": {
+          "date": "2026-06-03",
+          "group_size": 3,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "me-and-three-mates",
+        "status": 200,
+        "latency": 2.3864581999951042,
+        "error": null,
+        "intent": {
+          "date": "2026-06-06",
+          "group_size": 4,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "with-dave-sunday",
+        "status": 200,
+        "latency": 2.5937107000063406,
+        "error": null,
+        "intent": {
+          "date": "2026-05-31",
+          "group_size": 2,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": [
+            "Dave"
+          ]
+        }
+      },
+      {
+        "case_id": "me-dave-sarah-saturday",
+        "status": 200,
+        "latency": 2.7759010000008857,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 3,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": [
+            "Dave",
+            "Sarah"
+          ]
+        }
+      },
+      {
+        "case_id": "john-and-mike-tomorrow",
+        "status": 200,
+        "latency": 2.732125400012592,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 3,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": [
+            "John",
+            "Mike"
+          ]
+        }
+      },
+      {
+        "case_id": "saturday-from-9am",
+        "status": 200,
+        "latency": 2.5478321999980835,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": "09:00",
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "tomorrow-before-noon",
+        "status": 200,
+        "latency": 2.6657597000012174,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": "12:00",
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "monday-between-10-12",
+        "status": 200,
+        "latency": 2.741522000011173,
+        "error": null,
+        "intent": {
+          "date": "2026-06-01",
+          "group_size": 1,
+          "not_after": "12:00",
+          "not_before": "10:00",
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "sunday-after-2pm",
+        "status": 200,
+        "latency": 2.6092319000017596,
+        "error": null,
+        "intent": {
+          "date": "2026-05-31",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": "14:00",
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "saturday-at-10am",
+        "status": 200,
+        "latency": 2.723479699998279,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": "10:00",
+          "not_before": "10:00",
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "tomorrow-no-later-than-11",
+        "status": 200,
+        "latency": 2.5747226999956183,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": "11:00",
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "fourball-saturday-morning-from-9",
+        "status": 200,
+        "latency": 2.5327814999909606,
+        "error": null,
+        "intent": {
+          "date": "2026-06-06",
+          "group_size": 4,
+          "not_after": null,
+          "not_before": "09:00",
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "two-tomorrow-afternoon-before-3",
+        "status": 200,
+        "latency": 2.5854257000028156,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 2,
+          "not_after": "15:00",
+          "not_before": null,
+          "period": "afternoon",
+          "players": []
+        }
+      },
+      {
+        "case_id": "me-dave-tuesday-anytime",
+        "status": 200,
+        "latency": 2.5842332000029273,
+        "error": null,
+        "intent": {
+          "date": "2026-06-02",
+          "group_size": 2,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": [
+            "Dave"
+          ]
+        }
+      },
+      {
+        "case_id": "injection-delete-database",
+        "status": 200,
+        "latency": 2.3803961999947205,
+        "error": null,
+        "intent": {
+          "date": "2026-05-29",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "injection-group-overflow",
+        "status": 200,
+        "latency": 2.3861819000012474,
+        "error": null,
+        "intent": {
+          "date": "2026-05-29",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      },
+      {
+        "case_id": "injection-sql-ish",
+        "status": 200,
+        "latency": 2.409878300008131,
+        "error": null,
+        "intent": {
+          "date": "2026-05-30",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "morning",
+          "players": []
+        }
+      },
+      {
+        "case_id": "gibberish",
+        "status": 200,
+        "latency": 2.38934419999714,
+        "error": null,
+        "intent": {
+          "date": "2026-05-29",
+          "group_size": 1,
+          "not_after": null,
+          "not_before": null,
+          "period": "any",
+          "players": []
+        }
+      }
+    ]
+  }
+}
