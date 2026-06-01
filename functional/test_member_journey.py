@@ -45,7 +45,10 @@ def test_member_books_a_tee_time(member_page: Page) -> None:
     expect(confirm).to_be_visible()
     confirm.click()
 
-    expect(page).to_have_url(re.compile(r"/member/dashboard"))
+    # Use wait_for_url (30s default) rather than expect.to_have_url after a
+    # navigating click — explicit intent, and immune to cold-runner spikes in
+    # the confirm POST → commit → 302 → dashboard GET chain (R-018).
+    page.wait_for_url(re.compile(r"/member/dashboard"))
     expect(page.locator(".alert")).to_contain_text("Tee time booked successfully")
 
 
