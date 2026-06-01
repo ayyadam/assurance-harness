@@ -7,7 +7,7 @@ _Repo: ayyadam/golf-web-app_
 
 ## Summary
 
-This PR changes CSS and JavaScript to improve WCAG 2.1 AA accessibility on the dark theme.
+This PR changes CSS and JavaScript to fix WCAG 2.1 AA accessibility violations on the dark theme.
 
 ## Changed files
 
@@ -16,60 +16,28 @@ This PR changes CSS and JavaScript to improve WCAG 2.1 AA accessibility on the d
 
 ## Ranked risks
 
-### 1. R-008
+### 1. R-008 — _direct_
 
-**Why:** The diff modifies styles and adds aria-label attributes to address WCAG violations, directly addressing this risk.
+**Why:** The diff directly addresses WCAG 2.1 AA colour contrast issues in the dark theme by modifying CSS styles and adding aria-label attributes to ensure accessibility compliance.
 
 **Covered by:** axe-core sweep
 
-**Action:** Re-run the axe-core WCAG 2.1 A/AA sweep on key pages to ensure no new accessibility issues are introduced.
+**Action:** Re-run the axe-core WCAG 2.1 A/AA sweep over six key pages to verify that no new violations have been introduced.
 
-### 2. R-004
+### 2. R-018 — _plausible_
 
-**Why:** The diff modifies styles and JavaScript, which could potentially affect access control if there are conditional styles or scripts that depend on user roles. However, the mitigation is only partially in place.
+**Why:** The diff modifies JavaScript and CSS files which could potentially affect functional test assertions related to navigation and click events.
 
-**Covered by:** unit tests and functional test
+**Covered by:** Playwright functional suite
 
-**Action:** Manually probe admin routes to ensure authorization controls still function correctly.
-
-### 3. R-013 — **COVERAGE GAP**
-
-**Why:** The diff modifies front-end code, which could introduce new observability issues if there are any logging or monitoring changes. However, this risk is currently open with no mitigation in place.
-
-**Covered by:** none
-
-**Action:** Manually check for any new logging or monitoring statements that might need to be added.
-
-### 4. R-015
-
-**Why:** The diff modifies front-end code, which could potentially introduce PII if there are any hardcoded strings or data. However, the mitigation is in place.
-
-**Covered by:** synthetic fixture data
-
-**Action:** Manually review the changes to ensure no real PII is introduced.
-
-### 5. R-012
-
-**Why:** The diff modifies front-end code that could potentially affect user inputs, which might indirectly impact prompt injection risks. However, this risk is partially mitigated.
-
-**Covered by:** structured-output boundary
-
-**Action:** Manually probe the input fields to ensure they do not allow unauthorised actions.
-
-### 6. R-014
-
-**Why:** The diff modifies front-end code, which could potentially affect CI runner behavior if there are any changes that impact build or test scripts. However, this risk is mitigated.
-
-**Covered by:** hosted runners with deployability smoke check
-
-**Action:** Manually verify the CI pipeline to ensure it runs correctly on hosted runners.
+**Action:** Manually probe the booking confirmation flow in a browser to ensure that there are no flaky tests due to changes in the dark theme accessibility.
 
 ## Exploratory probes
 
-- Check if the dark theme has proper contrast for all text and buttons using a color contrast checker tool.
-- Verify that the alt input fields have the correct aria-label attributes by inspecting the elements in the browser developer tools.
-- Manually test admin routes to ensure they are still properly restricted to authorized users.
-- Use a screen reader to verify that the dark theme is fully accessible for visually impaired users.
+- Check if the contrast ratio for success and danger buttons meets WCAG 2.1 AA standards on both light and dark themes.
+- Verify that the aria-label attributes are correctly applied to all date input fields by inspecting the elements in a browser developer tools.
+- Test the booking confirmation flow manually in a browser with the dark theme enabled to ensure no new accessibility issues have been introduced.
+- Run the axe-core WCAG 2.1 A/AA sweep locally on key pages to catch any potential violations not caught by automated tests.
 
 ---
 

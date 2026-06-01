@@ -72,33 +72,50 @@ Outputs:
 | [`pr-8-plan.md`](reports/pr-8-plan.md)  | golf-web-app #8 (N+1 fix) | **R-007** (performance) | Yes |
 | [`pr-7-plan.md`](reports/pr-7-plan.md)  | golf-web-app #7 (a11y contrast) | **R-008** (accessibility) | Yes |
 
-On four diverse PRs across four different test layers, the agent correctly identifies the headline risk at rank #1 every time, with `covered_by` pointing at the layer that already addresses it. That is the part of the plan a reviewer is most likely to act on, and it is reliably right.
+On four diverse PRs across four different test layers, the agent flags 2–4 register risks each (down from 6 in v1's padded top-6 lists), with `covered_by` and `is_gap` deterministically derived from the register row (not the model). The reviewer reads top-down and stops where the value ends.
 
 One probe the agent suggested on PR #12 that was *not* in the manual exploration: *"setting `not_before` after `not_after` to ensure proper error handling"*. The inverted-window case is now a candidate for a real golden-set entry. The agent surfaced a real coverage idea.
 
-## Known failure modes
+## v2 v1 — what changed and why
 
-These are documented openly because honesty about agent limits is part of the assurance story. Each is observable in the committed evidence:
+v1 ran four demo PRs and exposed four observable failure modes. v2 v1 keeps the same architecture (Ollama structured output, register-driven schema, advisory only) and retires three of them through post-processing:
 
-1. **Lower-ranked entries are noisier than #1.** On every demo PR, ranks #1 (and often #2) are sharp; ranks #4–6 tend to stretch — e.g. PR #7 (a11y) raised R-012 (prompt injection) because the diff touches "user inputs" via CSS/JS. The reviewer should weight the top of the list, not the long tail.
-2. **`is_gap` misclassification under low-confidence ranks.** Despite an explicit rule in the system prompt, the agent occasionally marks a *partially-mitigated* risk as a coverage gap (seen on PR #11 for R-012). The structural fix would be to compute `is_gap` deterministically from the parsed status field rather than asking the model — a v2 candidate.
-3. **R-002 over-pull on any booking change.** Booking-touching PRs frequently rank R-002 (concurrent overbooking) on the basis that they "change booking logic". Most of the time the diff does not change concurrency semantics. Reviewer should sanity-check before acting.
-4. **`covered_by` strings can be malformed.** On PR #8, R-017's `covered_by` was returned as a literal action-version list rather than a layer name. Schema allows any string; tightening this is a v2 candidate.
+| Failure mode (v1) | Status in v2 v1 | How |
+|---|---|---|
+| **Lower-rank noise** — ranks #4–6 stretched on every PR | **Substantially reduced** | Schema now requires a `relevance` integer constrained to `{2: "plausible", 3: "direct"}`. Speculative entries (the old #4–6 tail) literally can't be emitted; the model self-filters. Average entries per PR dropped from 6 → 3 |
+| **`is_gap` mis-classification** — partially-mitigated risks sometimes flagged GAP | **Retired (structural)** | `is_gap` is no longer a model output. It's computed at register parse time from the row's `status` (true iff `status == "open"`). |
+| **`covered_by` malformed strings** — PR #8 R-017 emitted an action-version list, not a layer | **Retired (structural)** | `covered_by` is no longer a model output. It's derived from the register's mitigation column at parse time via a closed-vocabulary keyword map (e.g. `"ai_evaluation/"`, `"Schemathesis contract suite"`, `"k6 performance gate"`). Unclassified rows return a visible `"see register (no canonical layer detected)"` rather than a malformed string. |
+| **R-002 over-pull on booking PRs** — flagged on any booking-area change | **Open** | The model still over-claims R-002 as `direct` on PR #12 even though the diff doesn't change concurrency semantics. This is a judgement issue inside the relevance scoring, not a structural one; addressing it needs a PR golden set with expected ranks so we can measure regression (v2 v2). |
 
-The pattern is consistent: the agent is reliably useful at the top of its ranking and noisy at the tail. That is exactly the failure mode an advisory tool can tolerate (the reviewer reads top-down and stops where the value ends) but a gate could not.
+The model still drives summary, rationale, action, and exploratory probes — the parts where its judgement actually earns its place. The structural fields (`covered_by`, `is_gap`) are deterministic. Failure modes that *can* be retired by post-processing have been.
 
-## v2 candidates
+### Re-run results
 
-- Compute `is_gap` deterministically from the parsed register `status` field rather than asking the model, so failure mode (2) cannot occur.
-- Pin `covered_by` to a closed vocabulary of layer names (an enum, like risk IDs) so failure mode (4) cannot occur.
-- Score every risk 0–3 internally, then surface only those ≥2 — addresses failure mode (1).
+The same four historic PRs (overwritten reports under [`reports/`](reports/)):
+
+| Report | PR | Ranks (v1 → v2 v1) | Top entry | `is_gap` correctness |
+|---|---|---|---|---|
+| [`pr-12-plan.md`](reports/pr-12-plan.md) | golf-web-app #12 (F-008) | 6 → 4 | R-002 (direct), R-011 (direct) both at relevance 3 | All 4 correct |
+| [`pr-11-plan.md`](reports/pr-11-plan.md) | golf-web-app #11 (F-007) | 6 → 3 | R-011 (direct) | All 3 correct (R-012 no longer wrongly flagged GAP) |
+| [`pr-8-plan.md`](reports/pr-8-plan.md)  | golf-web-app #8 (N+1)    | 6 → 3 | R-007 (direct) | All 3 correct (R-007 `covered_by` is canonical `"k6 performance gate"`) |
+| [`pr-7-plan.md`](reports/pr-7-plan.md)  | golf-web-app #7 (a11y)   | 6 → 2 | R-008 (direct) | All 2 correct |
+
+## Remaining open failure mode
+
+**R-002 over-pull on booking PRs.** Booking-touching PRs still occasionally rank R-002 (concurrent overbooking) at `direct` even when the diff doesn't change concurrency semantics. This is a judgement issue the relevance scale didn't fix — the model genuinely thinks "booking code = R-002 raised". Honest documentation of the limit: the reviewer should sanity-check the top entry on booking-area PRs.
+
+The structural addressable failure modes have been addressed. Further improvement (to R-002 specifically and to ranking quality more broadly) needs *measurement* — a small PR golden set of (diff → expected risks at expected relevance) that we can score the agent against on every change. That is v2 v2.
+
+## v2 v2 — planned
+
+- A small `risk_agent/golden_set.yaml` of historic PRs with expected ranks (id + relevance) and expected `covered_by`. Deterministic scoring like the phase-8 evaluator: set-equality on ranks, exact match on `covered_by`. Treats the agent like any other model under test.
 - GitHub Action that posts the plan as a PR comment, gated on a label (`/prioritise`).
-- A small "PR golden set" that records expected #1-ranked risks for each historic PR, scored like the phase-8 deterministic tier. Treats the agent like any other model under test.
 
 ## Roadmap (this agent)
 
-- [x] CLI: `--pr` / `--diff` against the parsed register, with structured output
-- [x] Evidence captured against four historic SUT PRs
-- [ ] Deterministic `is_gap` and `covered_by`-enum tightening (v2)
-- [ ] GitHub Action variant (v2)
-- [ ] "PR golden set" evaluation tier (phase 12 / "tests of agents")
+- [x] v1: CLI: `--pr` / `--diff` against the parsed register, with structured output
+- [x] v1: Evidence captured against four historic SUT PRs
+- [x] v2 v1: Deterministic `is_gap` and `covered_by`-enum tightening
+- [x] v2 v1: Relevance scale (2/3) self-filtering for lower-rank noise
+- [ ] v2 v2: PR golden-set evaluation tier
+- [ ] v2 v2: GitHub Action variant

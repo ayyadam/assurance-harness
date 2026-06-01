@@ -7,7 +7,7 @@ _Repo: ayyadam/golf-web-app_
 
 ## Summary
 
-This PR changes the relationship loading strategy in `TeeTime` model to avoid N+1 query issues when listing tee times.
+This PR changes the relationship loading strategy in `app/models/booking.py` to address an N+1 query issue when listing tee times.
 
 ## Changed files
 
@@ -15,60 +15,36 @@ This PR changes the relationship loading strategy in `TeeTime` model to avoid N+
 
 ## Ranked risks
 
-### 1. R-007
+### 1. R-007 — _direct_
 
-**Why:** The diff addresses an N+1 query issue, which directly impacts performance. The change could introduce a regression if not properly tested.
+**Why:** The diff addresses an N+1 query issue which directly impacts performance. The risk of undetected performance regressions is highly relevant.
 
-**Covered by:** k6 thresholds-as-code
+**Covered by:** k6 performance gate
 
-**Action:** Re-run the k6 performance tests to ensure no regressions in latency or throughput.
+**Action:** Re-run the k6 performance tests to ensure that the PR does not introduce any new latency or throughput issues.
 
-### 2. R-017
+### 2. R-005 — _plausible_
 
-**Why:** The diff modifies a model file, which could indirectly affect CI processes. However, this risk is mitigated by ensuring the workflow uses updated actions.
+**Why:** The diff modifies database relationship loading which could indirectly affect code quality. Ensuring linting is enforced helps catch potential issues.
 
-**Covered by:** actions/checkout@v5, actions/setup-python@v6, actions/upload-artifact@v5, astral-sh/setup-uv@v5
+**Covered by:** CI workflow configuration
 
-**Action:** Verify that the CI pipeline runs smoothly with the new changes.
+**Action:** Verify that the CI lint gate is triggered and passes for this PR.
 
-### 3. R-002 — **COVERAGE GAP**
+### 3. R-018 — _plausible_
 
-**Why:** The diff modifies booking-related logic, which could potentially affect concurrent bookings and lead to overbooking or constraint violations.
+**Why:** The diff changes how bookings are loaded which could affect functional test stability if there are timing issues. Ensuring tests do not flake due to these changes is important.
 
-**Covered by:** none
+**Covered by:** Playwright functional suite
 
-**Action:** Add a concurrency test in the functional layer to ensure no overbooking occurs with this change.
-
-### 4. R-011
-
-**Why:** The diff modifies booking-related logic, which could affect how AI-generated bookings are handled. This might introduce new issues if not properly validated.
-
-**Covered by:** ai_evaluation/
-
-**Action:** Run the golden-set cases in `ai_evaluation/` to ensure no regressions in AI booking behavior.
-
-### 5. R-012
-
-**Why:** The diff modifies booking-related logic, which could affect how inputs are handled. This might introduce new issues if not properly validated.
-
-**Covered by:** phase-8 eval (ai_evaluation/)
-
-**Action:** Run the safety pass in `ai_evaluation/` to ensure no prompt injection vulnerabilities exist.
-
-### 6. R-013 — **COVERAGE GAP**
-
-**Why:** The diff modifies booking-related logic, which could affect production observability if not properly monitored.
-
-**Covered by:** none
-
-**Action:** Add monitoring for the new changes in a future phase to ensure observability.
+**Action:** Run the functional tests multiple times in CI to ensure they pass consistently.
 
 ## Exploratory probes
 
-- Manually test listing tee times with multiple bookings and observe performance metrics.
-- Use `curl` to simulate concurrent booking requests and check for overbooking issues.
-- Verify that the new relationship loading strategy does not introduce any unexpected behavior in the UI.
-- Check the logs for any unexpected queries or errors after applying the changes.
+- Manually list tee times via the API and measure response time before and after applying this PR.
+- Check if there are any new linting issues introduced by the changes in `app/models/booking.py`.
+- Run a cold-container functional test suite to ensure that timing-related flakiness does not occur due to these changes.
+- Verify that the performance baseline metrics (latency, throughput) do not regress after applying this PR.
 
 ---
 
