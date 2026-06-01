@@ -10,6 +10,7 @@ The report (markdown + JSON) is written under ai_evaluation/reports/ as the
 committed evidence artifact. This is a local, on-demand tool — it needs a real
 Ollama-backed SUT and is never run in hosted CI (which uses the stub).
 """
+
 from __future__ import annotations
 
 import argparse
@@ -42,6 +43,7 @@ services:
 
 # ── SUT orchestration (compare mode) ──────────────────────────────────────
 
+
 def wait_for_health(base_url: str, timeout: float = 120.0) -> None:
     deadline = time.time() + timeout
     while time.time() < deadline:
@@ -56,15 +58,13 @@ def wait_for_health(base_url: str, timeout: float = 120.0) -> None:
 
 def configure_sut(sut_dir: Path, model: str, base_url: str) -> None:
     """Point the SUT at ``model`` via the gitignored override and recreate it."""
-    (sut_dir / "docker-compose.override.yml").write_text(
-        OVERRIDE_TEMPLATE.format(model=model), encoding="utf-8"
-    )
-    subprocess.run(["docker", "compose", "up", "-d"], cwd=sut_dir, check=True,
-                   capture_output=True, text=True)
+    (sut_dir / "docker-compose.override.yml").write_text(OVERRIDE_TEMPLATE.format(model=model), encoding="utf-8")
+    subprocess.run(["docker", "compose", "up", "-d"], cwd=sut_dir, check=True, capture_output=True, text=True)
     wait_for_health(base_url)
 
 
 # ── metrics ────────────────────────────────────────────────────────────────
+
 
 def _accuracy_cases(results: list[CaseResult]) -> list[CaseResult]:
     return [r for r in results if r.kind == "accuracy" and r.error is None]
@@ -113,6 +113,7 @@ def _pct(correct: int, total: int) -> str:
 
 # ── reporting ──────────────────────────────────────────────────────────────
 
+
 def render_markdown(meta: dict, per_model: dict[str, list[CaseResult]]) -> str:
     models = list(per_model)
     lines: list[str] = []
@@ -121,8 +122,10 @@ def render_markdown(meta: dict, per_model: dict[str, list[CaseResult]]) -> str:
     lines.append(f"- **Run:** {meta['run_at']}  (today = {meta['today']})")
     lines.append(f"- **SUT:** {meta['base_url']} (black-box via `/api/v1/booking-assistant`)")
     lines.append(f"- **Golden set:** {meta['cases']} cases")
-    lines.append("- **Grading:** deterministic field scoring; safety cases graded on no-5xx + "
-                 "in-schema + clamped. Latency is warm (model pre-loaded before timing).")
+    lines.append(
+        "- **Grading:** deterministic field scoring; safety cases graded on no-5xx + "
+        "in-schema + clamped. Latency is warm (model pre-loaded before timing)."
+    )
     lines.append("")
 
     lines.append("## Summary")
@@ -167,8 +170,10 @@ def render_markdown(meta: dict, per_model: dict[str, list[CaseResult]]) -> str:
             continue
         for r in failed:
             if r.kind == "safety":
-                lines.append(f"- **{r.case_id}** (safety) — status {r.status_code}, "
-                             f"{'error: ' + r.error if r.error else 'not deemed safe'}")
+                lines.append(
+                    f"- **{r.case_id}** (safety) — status {r.status_code}, "
+                    f"{'error: ' + r.error if r.error else 'not deemed safe'}"
+                )
                 continue
             diffs = [f"{f.name}: got `{f.got}` want `{f.expected}`" for f in r.fields if not f.ok]
             detail = "; ".join(diffs) if diffs else (r.error or "unknown")
@@ -200,8 +205,16 @@ def write_raw(meta: dict, per_model: dict[str, list[CaseResult]]) -> None:
     payload = {
         "meta": meta,
         "models": {
-            m: [{"case_id": r.case_id, "status": r.status_code, "latency": r.latency,
-                 "error": r.error, "intent": r.raw_intent} for r in res]
+            m: [
+                {
+                    "case_id": r.case_id,
+                    "status": r.status_code,
+                    "latency": r.latency,
+                    "error": r.error,
+                    "intent": r.raw_intent,
+                }
+                for r in res
+            ]
             for m, res in per_model.items()
         },
     }
@@ -212,18 +225,20 @@ def score_from_raw(cases: list[dict]) -> tuple[dict, dict[str, list[CaseResult]]
     """Re-score cached raw responses against the current golden set (no SUT)."""
     data = json.loads(RAW_PATH.read_text(encoding="utf-8"))
     meta = data.get("meta", {})
-    today = date.fromisoformat(meta["today"])      # score against the capture date
+    today = date.fromisoformat(meta["today"])  # score against the capture date
     by_id = {c["id"]: c for c in cases}
     per_model: dict[str, list[CaseResult]] = {}
     for model, records in data["models"].items():
         per_model[model] = [
             score_case(by_id[r["case_id"]], r["status"], r["intent"], r["latency"], today, r["error"])
-            for r in records if r["case_id"] in by_id
+            for r in records
+            if r["case_id"] in by_id
         ]
     return meta, per_model
 
 
 # ── CLI ────────────────────────────────────────────────────────────────────
+
 
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="AI evaluation harness for the booking assistant.")
@@ -231,11 +246,15 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--models", help="comma-separated models to compare (orchestrates the SUT)")
     parser.add_argument("--model-label", help="label for a single run against the already-running SUT")
     parser.add_argument("--sut-dir", type=Path, default=DEFAULT_SUT_DIR)
-    parser.add_argument("--restore-model", default="qwen3:8b-fp16",
-                        help="model to leave the SUT on after a compare run")
+    parser.add_argument(
+        "--restore-model", default="qwen3:8b-fp16", help="model to leave the SUT on after a compare run"
+    )
     parser.add_argument("--no-warmup", action="store_true")
-    parser.add_argument("--score-only", action="store_true",
-                        help="re-score cached raw responses against the current golden set (no SUT)")
+    parser.add_argument(
+        "--score-only",
+        action="store_true",
+        help="re-score cached raw responses against the current golden set (no SUT)",
+    )
     args = parser.parse_args(argv)
 
     cases = load_cases()
@@ -256,14 +275,12 @@ def main(argv: list[str] | None = None) -> None:
             print(f"[eval] configuring SUT -> {model}")
             configure_sut(args.sut_dir, model, args.base_url)
             print(f"[eval] scoring {model} ...")
-            per_model[model] = evaluate_model(SUTClient(args.base_url), cases, today,
-                                              warmup=not args.no_warmup)
+            per_model[model] = evaluate_model(SUTClient(args.base_url), cases, today, warmup=not args.no_warmup)
         print(f"[eval] restoring SUT -> {args.restore_model}")
         configure_sut(args.sut_dir, args.restore_model, args.base_url)
     else:
         label = args.model_label or "current"
-        per_model[label] = evaluate_model(SUTClient(args.base_url), cases, today,
-                                          warmup=not args.no_warmup)
+        per_model[label] = evaluate_model(SUTClient(args.base_url), cases, today, warmup=not args.no_warmup)
 
     meta = {
         "run_at": datetime.now().isoformat(timespec="seconds"),
