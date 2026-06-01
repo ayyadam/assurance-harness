@@ -88,7 +88,9 @@ testing-system/
 │   ├── parser.py                   # pytest + step-failure extraction
 │   ├── cluster.py                  # heuristic group + LLM category + R-ID xref
 │   ├── render.py + run.py          # CLI + markdown
-│   └── reports/                    # committed evidence (report.md, report.json)
+│   ├── golden_set.yaml             # v1 v2: expected (category, R-ID) per cluster
+│   ├── eval.py                     # v1 v2: deterministic scorer
+│   └── reports/                    # committed evidence (report.md + eval-report.md)
 ├── tests/                          # tests OF the harness itself
 │   └── test_smoke.py
 └── .github/workflows/
@@ -154,6 +156,10 @@ uv run python -m risk_agent.eval --refresh        # re-run agent on each case fi
 uv run python -m triage_agent.run                                  # default: this repo, last 30 days
 uv run python -m triage_agent.run --since-days 7                   # narrower window
 uv run python -m triage_agent.run --no-llm                         # heuristic clusters only
+
+# Triage agent — eval against the golden set
+uv run python -m triage_agent.eval                                 # score against cached report
+uv run python -m triage_agent.eval --refresh                       # re-run the triage agent first
 ```
 
 See [`ai_evaluation/README.md`](ai_evaluation/README.md) and [`risk_agent/README.md`](risk_agent/README.md) for the full design notes and committed evidence.

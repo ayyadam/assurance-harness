@@ -1,0 +1,114 @@
+{
+  "totals": {
+    "cases": 5,
+    "found_in_report": 5,
+    "category_correct": 5,
+    "risk_id_correct": 5,
+    "both_correct": 5,
+    "category_accuracy": 1.0,
+    "risk_id_accuracy": 1.0,
+    "combined_accuracy": 1.0
+  },
+  "cases": [
+    {
+      "case_id": "r-018-timeout-booking-assistant",
+      "signature": [
+        "functional/test_booking_assistant.py",
+        "test_assistant_interprets_request_and_books_a_slot",
+        "playwright._impl._errors.TimeoutError"
+      ],
+      "expected": {
+        "category": "flake",
+        "risk_id": "R-018"
+      },
+      "actual": {
+        "category": "flake",
+        "risk_id": "R-018"
+      },
+      "found_in_report": true,
+      "category_match": true,
+      "risk_id_match": true,
+      "both_match": true
+    },
+    {
+      "case_id": "ruff-format-step",
+      "signature": [
+        "<step>",
+        "Lint (ruff)::ruff format check",
+        "<step-failure>"
+      ],
+      "expected": {
+        "category": "defect",
+        "risk_id": null
+      },
+      "actual": {
+        "category": "defect",
+        "risk_id": null
+      },
+      "found_in_report": true,
+      "category_match": true,
+      "risk_id_match": true,
+      "both_match": true
+    },
+    {
+      "case_id": "r-018-assertion-member-journey",
+      "signature": [
+        "functional/test_member_journey.py",
+        "test_member_books_a_tee_time",
+        "AssertionError"
+      ],
+      "expected": {
+        "category": "flake",
+        "risk_id": "R-018"
+      },
+      "actual": {
+        "category": "flake",
+        "risk_id": "R-018"
+      },
+      "found_in_report": true,
+      "category_match": true,
+      "risk_id_match": true,
+      "both_match": true
+    },
+    {
+      "case_id": "k6-teetimes-threshold-breach",
+      "signature": [
+        "<step>",
+        "Performance (k6)::Run k6 load test",
+        "<step-failure>"
+      ],
+      "expected": {
+        "category": "defect",
+        "risk_id": "R-007"
+      },
+      "actual": {
+        "category": "defect",
+        "risk_id": "R-007"
+      },
+      "found_in_report": true,
+      "category_match": true,
+      "risk_id_match": true,
+      "both_match": true
+    },
+    {
+      "case_id": "schemathesis-contract-mismatch",
+      "signature": [
+        "<step>",
+        "Contract Tests (Schemathesis)::Run contract tests",
+        "<step-failure>"
+      ],
+      "expected": {
+        "category": "defect",
+        "risk_id": "R-006"
+      },
+      "actual": {
+        "category": "defect",
+        "risk_id": "R-006"
+      },
+      "found_in_report": true,
+      "category_match": true,
+      "risk_id_match": true,
+      "both_match": true
+    }
+  ]
+}
