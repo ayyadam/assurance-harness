@@ -48,7 +48,8 @@ def render_markdown(result: AgentResult, diff: DiffBundle, today: date | None = 
         lines.append("")
     for i, r in enumerate(result.ranked_risks, start=1):
         gap = " — **COVERAGE GAP**" if r.get("is_gap") else ""
-        lines.append(f"### {i}. {r['id']}{gap}")
+        rel = {3: "direct", 2: "plausible"}.get(r.get("relevance", 0), str(r.get("relevance")))
+        lines.append(f"### {i}. {r['id']} — _{rel}_{gap}")
         lines.append("")
         lines.append(f"**Why:** {r['rationale']}")
         lines.append("")

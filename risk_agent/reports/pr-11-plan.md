@@ -7,7 +7,7 @@ _Repo: ayyadam/golf-web-app_
 
 ## Summary
 
-This PR changes the booking assistant service to return all matching tee-time slots instead of a capped subset.
+This PR changes the `find_candidate_slots` function in `app/services/booking_assistant.py` to return all matching tee-time slots without a hard limit, and adds corresponding unit tests.
 
 ## Changed files
 
@@ -16,60 +16,36 @@ This PR changes the booking assistant service to return all matching tee-time sl
 
 ## Ranked risks
 
-### 1. R-011
+### 1. R-011 — _direct_
 
-**Why:** The change in `find_candidate_slots` could affect how AI-generated booking intents are processed, potentially leading to incorrect slot proposals if the intent is not properly handled with an uncapped number of slots.
+**Why:** The diff modifies the booking assistant's slot-finding logic, which directly affects how AI-generated intents are translated into bookable slots. This change could introduce new errors in slot selection.
 
 **Covered by:** ai_evaluation/
 
-**Action:** Run the golden-set cases for the booking assistant to ensure correct behavior with uncapped slots.
+**Action:** Add a golden-set case for F-007 to ensure all matching slots are returned correctly.
 
-### 2. R-002 — **COVERAGE GAP**
+### 2. R-012 — _direct_
 
-**Why:** The change in `find_candidate_slots` could introduce concurrency issues if multiple users are trying to book tee times simultaneously, leading to overbooking or constraint violations.
+**Why:** The diff modifies the booking assistant's logic, which could potentially affect how AI-generated inputs are handled. This change might introduce new vulnerabilities if not properly constrained.
 
-**Covered by:** none
+**Covered by:** ai_evaluation/
 
-**Action:** Add explicit concurrency tests for the booking assistant endpoint.
+**Action:** Re-run the contract suite to ensure that structured-output boundary holds and no unauthorised actions can be injected.
 
-### 3. R-012 — **COVERAGE GAP**
+### 3. R-018 — _plausible_
 
-**Why:** The change in `find_candidate_slots` could introduce new vulnerabilities if AI-generated inputs are not properly sanitized, potentially allowing unauthorized actions through prompt injection.
+**Why:** The diff changes how slots are returned, which could affect functional tests if they rely on a specific number of slots being returned. This might cause flakiness in CI.
 
-**Covered by:** none
+**Covered by:** Playwright functional suite
 
-**Action:** Run additional adversarial tests on the booking assistant to ensure it handles structured outputs correctly with uncapped slots.
-
-### 4. R-008
-
-**Why:** The change in `find_candidate_slots` could affect accessibility if the UI displaying all matching slots does not meet WCAG standards, especially with a potentially larger number of results.
-
-**Covered by:** axe-core sweep
-
-**Action:** Run axe-core over the booking assistant page to ensure it meets WCAG 2.1 A/AA standards.
-
-### 5. R-007
-
-**Why:** The change in `find_candidate_slots` could impact performance if returning all matching slots introduces latency or throughput issues, especially under load.
-
-**Covered by:** k6 thresholds-as-code
-
-**Action:** Re-run the k6 performance tests to ensure the booking assistant endpoint meets the p95 < 500ms and error rate < 1% budget.
-
-### 6. R-004
-
-**Why:** The change in `find_candidate_slots` could affect authorization if non-admin users are able to access or manipulate booking slots in ways they should not.
-
-**Covered by:** tests/unit/test_admin_routes.py, functional/test_access_control.py
-
-**Action:** Re-run the unit and functional tests for admin routes to ensure proper access control is maintained.
+**Action:** Manually probe the booking assistant's slot-finding logic to ensure it behaves as expected with different limits and no limit.
 
 ## Exploratory probes
 
-- Manually test booking a tee time with multiple users simultaneously to check for overbooking issues.
-- Use curl to simulate an AI-generated intent with a large number of slots and verify the response.
-- Check the UI displaying all matching slots in different browsers to ensure accessibility compliance.
-- Test the booking assistant endpoint under load using a tool like `ab` or `wrk` to measure performance.
+- Use curl to request tee-time slots for a specific date and verify that all matching slots are returned without truncation.
+- Check if the booking assistant returns the correct number of slots when an explicit limit is provided.
+- Manually test the booking assistant's slot-finding logic in a browser with different input scenarios (e.g., no member, member already booked on some slots).
+- Verify that the functional tests still pass after this change by running them locally.
 
 ---
 

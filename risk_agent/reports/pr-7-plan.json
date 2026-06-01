@@ -1,54 +1,28 @@
 {
-  "summary": "This PR changes CSS and JavaScript to improve WCAG 2.1 AA accessibility on the dark theme.",
+  "summary": "This PR changes CSS and JavaScript to fix WCAG 2.1 AA accessibility violations on the dark theme.",
   "ranked_risks": [
     {
       "id": "R-008",
-      "rationale": "The diff modifies styles and adds aria-label attributes to address WCAG violations, directly addressing this risk.",
+      "relevance": 3,
+      "rationale": "The diff directly addresses WCAG 2.1 AA colour contrast issues in the dark theme by modifying CSS styles and adding aria-label attributes to ensure accessibility compliance.",
+      "action": "Re-run the axe-core WCAG 2.1 A/AA sweep over six key pages to verify that no new violations have been introduced.",
       "covered_by": "axe-core sweep",
-      "action": "Re-run the axe-core WCAG 2.1 A/AA sweep on key pages to ensure no new accessibility issues are introduced.",
       "is_gap": false
     },
     {
-      "id": "R-004",
-      "rationale": "The diff modifies styles and JavaScript, which could potentially affect access control if there are conditional styles or scripts that depend on user roles. However, the mitigation is only partially in place.",
-      "covered_by": "unit tests and functional test",
-      "action": "Manually probe admin routes to ensure authorization controls still function correctly.",
-      "is_gap": false
-    },
-    {
-      "id": "R-013",
-      "rationale": "The diff modifies front-end code, which could introduce new observability issues if there are any logging or monitoring changes. However, this risk is currently open with no mitigation in place.",
-      "covered_by": "none",
-      "action": "Manually check for any new logging or monitoring statements that might need to be added.",
-      "is_gap": true
-    },
-    {
-      "id": "R-015",
-      "rationale": "The diff modifies front-end code, which could potentially introduce PII if there are any hardcoded strings or data. However, the mitigation is in place.",
-      "covered_by": "synthetic fixture data",
-      "action": "Manually review the changes to ensure no real PII is introduced.",
-      "is_gap": false
-    },
-    {
-      "id": "R-012",
-      "rationale": "The diff modifies front-end code that could potentially affect user inputs, which might indirectly impact prompt injection risks. However, this risk is partially mitigated.",
-      "covered_by": "structured-output boundary",
-      "action": "Manually probe the input fields to ensure they do not allow unauthorised actions.",
-      "is_gap": false
-    },
-    {
-      "id": "R-014",
-      "rationale": "The diff modifies front-end code, which could potentially affect CI runner behavior if there are any changes that impact build or test scripts. However, this risk is mitigated.",
-      "covered_by": "hosted runners with deployability smoke check",
-      "action": "Manually verify the CI pipeline to ensure it runs correctly on hosted runners.",
+      "id": "R-018",
+      "relevance": 2,
+      "rationale": "The diff modifies JavaScript and CSS files which could potentially affect functional test assertions related to navigation and click events.",
+      "action": "Manually probe the booking confirmation flow in a browser to ensure that there are no flaky tests due to changes in the dark theme accessibility.",
+      "covered_by": "Playwright functional suite",
       "is_gap": false
     }
   ],
   "exploratory_probes": [
-    "Check if the dark theme has proper contrast for all text and buttons using a color contrast checker tool.",
-    "Verify that the alt input fields have the correct aria-label attributes by inspecting the elements in the browser developer tools.",
-    "Manually test admin routes to ensure they are still properly restricted to authorized users.",
-    "Use a screen reader to verify that the dark theme is fully accessible for visually impaired users."
+    "Check if the contrast ratio for success and danger buttons meets WCAG 2.1 AA standards on both light and dark themes.",
+    "Verify that the aria-label attributes are correctly applied to all date input fields by inspecting the elements in a browser developer tools.",
+    "Test the booking confirmation flow manually in a browser with the dark theme enabled to ensure no new accessibility issues have been introduced.",
+    "Run the axe-core WCAG 2.1 A/AA sweep locally on key pages to catch any potential violations not caught by automated tests."
   ],
   "model": "qwen2.5:32b-instruct-q4_K_M"
 }

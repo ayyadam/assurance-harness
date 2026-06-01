@@ -23,48 +23,55 @@ _SYSTEM = (
     "You are a Digital Assurance Engineer helping a reviewer prioritise testing for a pull "
     "request against a documented risk register. The register is the source of truth for "
     "what could go wrong with this system. Your job: read the diff and the register, and "
-    "rank the risks by how plausibly THIS DIFF could trigger them.\n\n"
+    "score each register risk by how plausibly THIS DIFF could trigger it.\n\n"
+    "Relevance scale — emit ONLY risks scoring 2 or 3. Skip 0 and 1 entirely:\n"
+    "  3 — direct: the diff plainly touches code, schema, or surface that this risk "
+    "      worries about.\n"
+    "  2 — plausible: the diff touches adjacent code, contract, template, or input path; "
+    "      a reasonable reviewer would check this risk on this PR.\n"
+    "  1 — speculative: you can see a connection but it requires several inferential steps. "
+    "      DO NOT EMIT.\n"
+    "  0 — not raised by this diff. DO NOT EMIT.\n\n"
     "Output rules:\n"
     "  - Only reference risk IDs that appear in the register. Do not invent IDs.\n"
-    "  - Rank at most the top 6 risks raised by the diff. A risk that the diff plainly does "
-    "    not touch should not appear in the ranking.\n"
-    "  - For each ranked risk: explain WHY this diff raises it in one or two sentences, "
-    "    grounding the reasoning in specific changed files where possible.\n"
-    "  - covered_by + is_gap depend on the STATUS column, NOT on whether you think the "
-    "    coverage is sufficient. Rules:\n"
-    "      * status 'mitigated' or 'partially mitigated' => is_gap=false. Set covered_by "
-    "        to the layer named in the mitigation column (e.g. 'Schemathesis contract "
-    "        suite', 'ai_evaluation/', 'k6 thresholds-as-code', 'axe-core sweep').\n"
-    "      * status 'open' with no planned/existing layer => is_gap=true, covered_by='none'.\n"
-    "      * status 'accepted' => is_gap=false, covered_by='accepted (out of scope)'.\n"
-    "  - 'action' is the concrete next step a reviewer should take: 're-run the contract "
-    "    suite', 'add a golden-set case for X', 'manual probe of Y', etc. Be specific.\n"
+    "  - Each ranked risk needs: id, relevance (2 or 3), rationale (1-2 sentences "
+    "    anchored in specific changed files or function names), action (the concrete next "
+    "    step a reviewer should take — 're-run the contract suite', 'add a golden-set case "
+    "    for X', 'manual probe of Y').\n"
+    "  - Note: covered_by and is_gap are NOT model outputs in this version — they are "
+    "    derived deterministically from the register row's status and mitigation column. "
+    "    Focus your judgement on relevance, rationale, and action.\n"
     "  - Suggest up to 4 exploratory probes — short, concrete things a human reviewer could "
     "    try in a browser or with curl that the automated layers won't have run. Probes "
     "    should target THIS diff, not generic advice.\n"
-    "  - Begin with a one-sentence 'summary' of what this PR changes from an assurance "
-    "    perspective. Stay factual; do not editorialise about code quality.\n"
+    "  - Begin with a one-sentence factual summary of what this PR changes from an "
+    "    assurance perspective.\n"
 )
 
 
 def _schema(risk_ids: list[str]) -> dict:
+    """JSON schema for the agent's structured output.
+
+    v2 v1: drops ``covered_by`` and ``is_gap`` (now derived deterministically from
+    the register), adds ``relevance`` constrained to 2 or 3 (so the model self-
+    filters speculative tail entries rather than padding the ranking).
+    """
     return {
         "type": "object",
         "properties": {
             "summary": {"type": "string"},
             "ranked_risks": {
                 "type": "array",
-                "maxItems": 6,
+                "maxItems": 8,  # generous upper bound; relevance filter keeps it tight
                 "items": {
                     "type": "object",
                     "properties": {
                         "id": {"type": "string", "enum": risk_ids},
+                        "relevance": {"type": "integer", "enum": [2, 3]},
                         "rationale": {"type": "string"},
-                        "covered_by": {"type": "string"},
                         "action": {"type": "string"},
-                        "is_gap": {"type": "boolean"},
                     },
-                    "required": ["id", "rationale", "covered_by", "action", "is_gap"],
+                    "required": ["id", "relevance", "rationale", "action"],
                 },
             },
             "exploratory_probes": {
@@ -119,7 +126,13 @@ def prioritise(
     model: str = DEFAULT_MODEL,
     host: str | None = None,
 ) -> AgentResult:
-    """Call the agent and return the structured ranking."""
+    """Call the agent and return the structured ranking.
+
+    v2 v1 post-processing: ``covered_by`` and ``is_gap`` are looked up from the
+    parsed register (the source of truth), not the model. Ranking is sorted by
+    descending relevance so the reviewer reads top-down without re-checking
+    score order. The model still drives summary, rationale, action, probes.
+    """
     client = ollama.Client(host=host) if host else ollama
     schema = _schema([r.id for r in risks])
     kwargs: dict[str, Any] = {
@@ -136,9 +149,28 @@ def prioritise(
     except ollama.ResponseError:
         response = client.chat(**kwargs)
     parsed = json.loads(response["message"]["content"])
+
+    by_id = {r.id: r for r in risks}
+    enriched: list[dict] = []
+    for rr in parsed["ranked_risks"]:
+        risk = by_id.get(rr["id"])
+        if risk is None:  # schema enum makes this unreachable, but be safe
+            continue
+        enriched.append(
+            {
+                "id": rr["id"],
+                "relevance": rr["relevance"],
+                "rationale": rr["rationale"],
+                "action": rr["action"],
+                "covered_by": risk.covered_by_canonical,
+                "is_gap": risk.is_gap_deterministic,
+            }
+        )
+    enriched.sort(key=lambda r: (-r["relevance"], r["id"]))
+
     return AgentResult(
         summary=parsed["summary"],
-        ranked_risks=parsed["ranked_risks"],
+        ranked_risks=enriched,
         exploratory_probes=parsed["exploratory_probes"],
         model=model,
     )
