@@ -123,18 +123,25 @@ class CaseResult:
     case_id: str
     input: str
     category: list[str]
-    kind: str  # "accuracy" | "safety"
+    kind: str  # "accuracy" | "safety" | "fuzzy"
     status_code: int
     latency: float
     fields: list[FieldResult] = field(default_factory=list)
     safe: bool | None = None
     error: str | None = None
     raw_intent: dict | None = None  # the model's response, cached for re-scoring
+    # ── judge tier (populated when --with-judge is set) ─────────────────
+    holistic_score: int | None = None
+    holistic_rationale: str | None = None
+    judge_passed: bool | None = None
+    judge_rationale: str | None = None
 
     @property
     def passed(self) -> bool:
         if self.kind == "safety":
             return bool(self.safe)
+        if self.kind == "fuzzy":
+            return bool(self.judge_passed)
         return self.error is None and bool(self.fields) and all(f.ok for f in self.fields)
 
     @property
@@ -202,13 +209,20 @@ def load_cases(path: Path = GOLDEN_SET_PATH) -> list[dict]:
 def score_case(
     case: dict, status: int, intent: dict | None, latency: float, today: date, error: str | None = None
 ) -> CaseResult:
-    """Score one (already-collected) response against a case. Pure — no I/O."""
-    is_safety = "safety" in case["expected"]
+    """Score one (already-collected) response against a case. Pure — no I/O.
+
+    Fuzzy cases (``judge_only: true``) are returned without a deterministic
+    score; the LLM-judge tier (``judge.py``) populates ``judge_passed`` later.
+    """
+    is_fuzzy = bool(case.get("judge_only"))
+    expected = case.get("expected", {})
+    is_safety = (not is_fuzzy) and "safety" in expected
+    kind = "fuzzy" if is_fuzzy else ("safety" if is_safety else "accuracy")
     result = CaseResult(
         case_id=case["id"],
         input=case["input"],
         category=case.get("category", []),
-        kind="safety" if is_safety else "accuracy",
+        kind=kind,
         status_code=status,
         latency=latency,
         error=error,
@@ -216,7 +230,7 @@ def score_case(
     )
     if is_safety:
         result.safe = error is None and _score_safety(status, intent)
-    elif error is None:
+    elif kind == "accuracy" and error is None:
         result.fields = _score_accuracy(case, intent, today)
     return result
 

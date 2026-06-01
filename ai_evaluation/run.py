@@ -25,9 +25,11 @@ from pathlib import Path
 import requests
 
 from .evaluator import DEFAULT_BASE_URL, CaseResult, SUTClient, evaluate_model, load_cases, score_case
+from .judge import DEFAULT_JUDGE_MODEL, judge_fuzzy, judge_holistic
 
 REPORTS_DIR = Path(__file__).resolve().parent / "reports"
 RAW_PATH = REPORTS_DIR / "raw_responses.json"
+JUDGE_CACHE_PATH = REPORTS_DIR / "judge_cache.json"
 DEFAULT_SUT_DIR = Path(__file__).resolve().parents[2] / "golf-web-app"
 
 OVERRIDE_TEMPLATE = """\
@@ -111,6 +113,90 @@ def _pct(correct: int, total: int) -> str:
     return f"{correct / total * 100:.0f}%" if total else "—"
 
 
+# ── judge tier ─────────────────────────────────────────────────────────────
+
+
+def apply_judge(per_model: dict[str, list[CaseResult]], cases: list[dict], model: str, host: str | None = None) -> None:
+    """Run the LLM-judge over every captured case, populating in place.
+
+    - Holistic 0..10 score on every case with a captured intent.
+    - Fuzzy pass/fail for every case marked ``judge_only: true`` (graded against
+      the case's rubric).
+    """
+    by_id = {c["id"]: c for c in cases}
+    for sut_model, results in per_model.items():
+        for r in results:
+            case = by_id.get(r.case_id)
+            if case is None:
+                continue
+            if r.raw_intent is not None:
+                try:
+                    h = judge_holistic(r.input, r.raw_intent, model=model, host=host)
+                    r.holistic_score = int(h["score"])
+                    r.holistic_rationale = str(h["rationale"])
+                except (KeyError, ValueError, OSError) as exc:
+                    r.holistic_rationale = f"judge-error: {exc}"
+            if r.kind == "fuzzy":
+                rubric = str(case.get("rubric", "")).strip()
+                try:
+                    f_res = judge_fuzzy(r.input, rubric, r.raw_intent, model=model, host=host)
+                    r.judge_passed = bool(f_res["passed"])
+                    r.judge_rationale = str(f_res["rationale"])
+                except (KeyError, ValueError, OSError) as exc:
+                    r.judge_passed = False
+                    r.judge_rationale = f"judge-error: {exc}"
+        print(f"[eval] judge done for {sut_model}")
+
+
+def save_judge_cache(per_model: dict[str, list[CaseResult]], judge_model: str) -> None:
+    REPORTS_DIR.mkdir(exist_ok=True)
+    payload = {
+        "judge_model": judge_model,
+        "models": {
+            m: {
+                r.case_id: {
+                    "holistic_score": r.holistic_score,
+                    "holistic_rationale": r.holistic_rationale,
+                    "judge_passed": r.judge_passed,
+                    "judge_rationale": r.judge_rationale,
+                }
+                for r in res
+            }
+            for m, res in per_model.items()
+        },
+    }
+    JUDGE_CACHE_PATH.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
+
+
+def load_judge_cache(per_model: dict[str, list[CaseResult]]) -> str | None:
+    """Hydrate previously-cached judge results onto a fresh per_model. No-op
+    if the cache is missing."""
+    if not JUDGE_CACHE_PATH.exists():
+        return None
+    data = json.loads(JUDGE_CACHE_PATH.read_text(encoding="utf-8"))
+    for m, results in per_model.items():
+        by_id = data.get("models", {}).get(m, {})
+        for r in results:
+            entry = by_id.get(r.case_id)
+            if not entry:
+                continue
+            r.holistic_score = entry.get("holistic_score")
+            r.holistic_rationale = entry.get("holistic_rationale")
+            r.judge_passed = entry.get("judge_passed")
+            r.judge_rationale = entry.get("judge_rationale")
+    return data.get("judge_model")
+
+
+def holistic_mean(results: list[CaseResult]) -> float | None:
+    scores = [r.holistic_score for r in results if r.holistic_score is not None]
+    return statistics.fmean(scores) if scores else None
+
+
+def fuzzy_passed(results: list[CaseResult]) -> tuple[int, int]:
+    fuzzy = [r for r in results if r.kind == "fuzzy"]
+    return sum(bool(r.judge_passed) for r in fuzzy), len(fuzzy)
+
+
 # ── reporting ──────────────────────────────────────────────────────────────
 
 
@@ -144,6 +230,27 @@ def render_markdown(meta: dict, per_model: dict[str, list[CaseResult]]) -> str:
         )
     lines.append("")
 
+    # Judge summary — only if any judge data is present.
+    if any(holistic_mean(per_model[m]) is not None for m in models):
+        lines.append("## Judge summary")
+        lines.append("")
+        lines.append(
+            f"_LLM-judge: `{meta.get('judge_model', '—')}`. Holistic = 0-10 reasonableness "
+            "across every captured case. Fuzzy = pass-rate on cases where deterministic field "
+            "equality is too strict (graded against a per-case rubric)._"
+        )
+        lines.append("")
+        lines.append("| Model | Holistic mean (0-10) | Fuzzy passed |")
+        lines.append("|---|---|---|")
+        for m in models:
+            res = per_model[m]
+            hm = holistic_mean(res)
+            fp, ft = fuzzy_passed(res)
+            hm_cell = f"{hm:.1f}" if hm is not None else "—"
+            fp_cell = f"{fp}/{ft}" if ft else "—"
+            lines.append(f"| `{m}` | {hm_cell} | {fp_cell} |")
+        lines.append("")
+
     cats = sorted({c for res in per_model.values() for r in _accuracy_cases(res) for c in r.category})
     lines.append("## Field accuracy by category")
     lines.append("")
@@ -174,6 +281,9 @@ def render_markdown(meta: dict, per_model: dict[str, list[CaseResult]]) -> str:
                     f"- **{r.case_id}** (safety) — status {r.status_code}, "
                     f"{'error: ' + r.error if r.error else 'not deemed safe'}"
                 )
+                continue
+            if r.kind == "fuzzy":
+                lines.append(f"- **{r.case_id}** (fuzzy) — judge: {r.judge_rationale or 'no rationale'}")
                 continue
             diffs = [f"{f.name}: got `{f.got}` want `{f.expected}`" for f in r.fields if not f.ok]
             detail = "; ".join(diffs) if diffs else (r.error or "unknown")
@@ -255,6 +365,17 @@ def main(argv: list[str] | None = None) -> None:
         action="store_true",
         help="re-score cached raw responses against the current golden set (no SUT)",
     )
+    parser.add_argument(
+        "--with-judge", action="store_true", help="run the LLM-judge tier (holistic + fuzzy) after scoring"
+    )
+    parser.add_argument(
+        "--judge-model",
+        default=DEFAULT_JUDGE_MODEL,
+        help=f"Ollama model to act as the judge (default: {DEFAULT_JUDGE_MODEL})",
+    )
+    parser.add_argument(
+        "--judge-host", default=None, help="Ollama host for the judge (default: client default, localhost:11434)"
+    )
     args = parser.parse_args(argv)
 
     cases = load_cases()
@@ -265,11 +386,7 @@ def main(argv: list[str] | None = None) -> None:
         meta, per_model = score_from_raw(cases)
         meta["rescored_at"] = datetime.now().isoformat(timespec="seconds")
         meta["cases"] = len(cases)
-        md_path, json_path = write_reports(meta, per_model)
-        print(f"[eval] re-scored from cache -> {md_path}")
-        return
-
-    if args.models:
+    elif args.models:
         models = [m.strip() for m in args.models.split(",") if m.strip()]
         for model in models:
             print(f"[eval] configuring SUT -> {model}")
@@ -278,17 +395,36 @@ def main(argv: list[str] | None = None) -> None:
             per_model[model] = evaluate_model(SUTClient(args.base_url), cases, today, warmup=not args.no_warmup)
         print(f"[eval] restoring SUT -> {args.restore_model}")
         configure_sut(args.sut_dir, args.restore_model, args.base_url)
+        meta = {
+            "run_at": datetime.now().isoformat(timespec="seconds"),
+            "today": today.isoformat(),
+            "base_url": args.base_url,
+            "cases": len(cases),
+        }
     else:
         label = args.model_label or "current"
         per_model[label] = evaluate_model(SUTClient(args.base_url), cases, today, warmup=not args.no_warmup)
+        meta = {
+            "run_at": datetime.now().isoformat(timespec="seconds"),
+            "today": today.isoformat(),
+            "base_url": args.base_url,
+            "cases": len(cases),
+        }
 
-    meta = {
-        "run_at": datetime.now().isoformat(timespec="seconds"),
-        "today": today.isoformat(),
-        "base_url": args.base_url,
-        "cases": len(cases),
-    }
-    write_raw(meta, per_model)
+    # Judge tier — apply or hydrate from cache.
+    if args.with_judge:
+        print(f"[eval] running judge ({args.judge_model}) ...")
+        apply_judge(per_model, cases, args.judge_model, args.judge_host)
+        save_judge_cache(per_model, args.judge_model)
+        meta["judge_model"] = args.judge_model
+    else:
+        cached_judge = load_judge_cache(per_model)
+        if cached_judge:
+            meta["judge_model"] = cached_judge
+
+    # Persist + render.
+    if not args.score_only:
+        write_raw(meta, per_model)
     md_path, json_path = write_reports(meta, per_model)
     print(f"[eval] wrote {md_path}")
     print(f"[eval] wrote {json_path}")
