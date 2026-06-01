@@ -9,7 +9,7 @@ Strategy and risk register are the source of truth — [`docs/test-strategy.md`]
 Currently in place across the two repos:
 
 - **Per-PR CI gates (`testing-system/.github/workflows/assurance.yml`):** lint (ruff), harness pytest, contract (Schemathesis), functional (Playwright), accessibility (axe-core), performance (k6), data quality (pandera) — every gate runs against an ephemeral SUT brought up from `golf-web-app`'s source.
-- **Local on-demand layers:** AI evaluation harness ([`ai_evaluation/`](ai_evaluation/README.md), phase 8) and risk-prioritisation agent ([`risk_agent/`](risk_agent/README.md), phase 9). Both use a local Ollama runtime so the per-PR path stays fast and reproducible; their evidence artefacts are committed under each module's `reports/` dir.
+- **Local on-demand layers:** AI evaluation harness ([`ai_evaluation/`](ai_evaluation/README.md), phase 8), risk-prioritisation agent ([`risk_agent/`](risk_agent/README.md), phase 9), and triage agent ([`triage_agent/`](triage_agent/README.md), phase 10). All three use a local Ollama runtime so the per-PR path stays fast and reproducible; their evidence artefacts are committed under each module's `reports/` dir.
 - **Documented findings:** F-001 through F-009 captured in the strategy with diagnosis, fix, and generalisation.
 
 ## Stack
@@ -83,6 +83,12 @@ testing-system/
 │   ├── golden_set.yaml             # v2 v2: expected ranks per historic PR
 │   ├── eval.py                     # v2 v2: deterministic scorer (precision/recall/F1)
 │   └── reports/                    # committed evidence (per-PR + eval-report)
+├── triage_agent/                   # phase 10: cluster failed CI runs by root cause
+│   ├── fetcher.py                  # gh CLI wrappers (cached log dumps)
+│   ├── parser.py                   # pytest + step-failure extraction
+│   ├── cluster.py                  # heuristic group + LLM category + R-ID xref
+│   ├── render.py + run.py          # CLI + markdown
+│   └── reports/                    # committed evidence (report.md, report.json)
 ├── tests/                          # tests OF the harness itself
 │   └── test_smoke.py
 └── .github/workflows/
@@ -143,6 +149,11 @@ uv run python -m risk_agent.run --pr 12 --repo ayyadam/golf-web-app
 # Risk-prioritisation agent — eval against the golden set
 uv run python -m risk_agent.eval                  # score against cached reports
 uv run python -m risk_agent.eval --refresh        # re-run agent on each case first
+
+# Triage agent — cluster failed CI runs over a time window
+uv run python -m triage_agent.run                                  # default: this repo, last 30 days
+uv run python -m triage_agent.run --since-days 7                   # narrower window
+uv run python -m triage_agent.run --no-llm                         # heuristic clusters only
 ```
 
 See [`ai_evaluation/README.md`](ai_evaluation/README.md) and [`risk_agent/README.md`](risk_agent/README.md) for the full design notes and committed evidence.
