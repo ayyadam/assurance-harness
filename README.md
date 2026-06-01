@@ -80,7 +80,9 @@ testing-system/
 │   ├── diff.py                     # gh pr diff / --diff file
 │   ├── agent.py                    # Ollama structured-output call
 │   ├── render.py + run.py          # CLI + markdown
-│   └── reports/                    # committed evidence (four historic PRs)
+│   ├── golden_set.yaml             # v2 v2: expected ranks per historic PR
+│   ├── eval.py                     # v2 v2: deterministic scorer (precision/recall/F1)
+│   └── reports/                    # committed evidence (per-PR + eval-report)
 ├── tests/                          # tests OF the harness itself
 │   └── test_smoke.py
 └── .github/workflows/
@@ -137,6 +139,10 @@ uv run python -m ai_evaluation.run --models "qwen3:8b-fp16,qwen3.6:27b-q4_K_M"
 
 # Risk-prioritisation agent — rank risks raised by a PR diff
 uv run python -m risk_agent.run --pr 12 --repo ayyadam/golf-web-app
+
+# Risk-prioritisation agent — eval against the golden set
+uv run python -m risk_agent.eval                  # score against cached reports
+uv run python -m risk_agent.eval --refresh        # re-run agent on each case first
 ```
 
 See [`ai_evaluation/README.md`](ai_evaluation/README.md) and [`risk_agent/README.md`](risk_agent/README.md) for the full design notes and committed evidence.

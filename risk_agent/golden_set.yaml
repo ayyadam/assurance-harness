@@ -1,0 +1,77 @@
+# Golden set — expected risk-prioritisation agent output per historic PR.
+#
+# Ground truth for the v2 v2 evaluation tier. Each case lists the register
+# risks a reviewer would plausibly raise on the PR, at the relevance the diff
+# warrants:
+#   3 — direct: the diff plainly touches code, schema, or surface this risk
+#       worries about.
+#   2 — plausible: the diff touches adjacent code/contract/template; a
+#       reasonable reviewer would check this risk.
+#
+# Risks not listed = should NOT be raised. The eval treats anything the agent
+# emits beyond the expected set as a false positive (over-pull), and anything
+# the agent misses as a false negative.
+#
+# Construction principle: the expected set is what an assurance reviewer
+# would call AFTER reading the diff and the register row, ignoring what the
+# agent happens to emit. Defensibility > convenience.
+
+cases:
+  # PR #7 — a11y contrast + flatpickr label
+  # Diff: CSS overrides on dark theme, a one-line flatpickr onReady hook to
+  # copy label text into aria-label. Pure accessibility surface.
+  # R-008 is direct (the PR exists to fix WCAG violations).
+  # R-018 not raised: the JS hook is a single aria-label assignment, no
+  # change to navigation or click handlers — flake risk unchanged.
+  - id: pr-7-a11y
+    pr: 7
+    repo: ayyadam/golf-web-app
+    title: "Fix WCAG 2.1 AA accessibility violations on dark theme"
+    expected_ranks:
+      - {id: R-008, relevance: 3}
+
+  # PR #8 — N+1 fix on TeeTime.bookings
+  # Diff: lazy='dynamic' → lazy='selectin'. One-line change in a model file.
+  # R-007 is direct (this IS a performance fix).
+  # Concurrency/contract/AI unaffected: the loading strategy doesn't change
+  # query semantics, just batching.
+  - id: pr-8-nplus1
+    pr: 8
+    repo: ayyadam/golf-web-app
+    title: "Fix N+1 query when listing tee times"
+    expected_ranks:
+      - {id: R-007, relevance: 3}
+
+  # PR #11 — F-007 slot truncation fix
+  # Diff: limit=6 → limit=None default in find_candidate_slots, plus a unit
+  # test for the uncapped return.
+  # R-011 is direct (this is the AI booking feature behaviour).
+  # R-012 not raised: the change is a default value, no new input surface.
+  # R-007 not raised: the slot list is bounded by available slots; no perf
+  # regression risk that wasn't already there.
+  - id: pr-11-f007
+    pr: 11
+    repo: ayyadam/golf-web-app
+    title: "Show all matching tee-time slots, not a silent 6 (F-007)"
+    expected_ranks:
+      - {id: R-011, relevance: 3}
+
+  # PR #12 — F-008 time-of-day window
+  # Diff: BookingIntent gains not_before/not_after; updates to JSON schema,
+  # prompt, matcher, API schema (BookingIntentOut), template banner, tests.
+  # R-011 direct: AI feature schema + prompt change.
+  # R-006 plausible: BookingIntentOut shape changed — contract gate should
+  # re-run (and did surface F-006 on the same endpoint previously).
+  # R-008 plausible: template banner reads new fields — a11y sweep should
+  # confirm no contrast/label regression.
+  # R-012 plausible: new input fields widen the parsing surface; adversarial
+  # set should exercise the new fields.
+  - id: pr-12-f008
+    pr: 12
+    repo: ayyadam/golf-web-app
+    title: "Add time-of-day constraints to the booking assistant (F-008)"
+    expected_ranks:
+      - {id: R-011, relevance: 3}
+      - {id: R-006, relevance: 2}
+      - {id: R-008, relevance: 2}
+      - {id: R-012, relevance: 2}
