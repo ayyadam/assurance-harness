@@ -1,0 +1,152 @@
+[
+  {
+    "signature": [
+      "functional/test_booking_assistant.py",
+      "test_assistant_interprets_request_and_books_a_slot",
+      "playwright._impl._errors.TimeoutError"
+    ],
+    "category": "flake",
+    "candidate_risk_id": "R-018",
+    "rationale": "The failure is a TimeoutError in the functional test `test_assistant_interprets_request_and_books_a_slot`, which matches the symptom described in R-018. The timeout error suggests that the test is flaking due to timing issues, likely related to the cold-container runner environment.",
+    "suggested_action": "Rerun the failed job to confirm if it passes on a subsequent attempt. If it continues to fail, investigate further by checking the container startup times and ensuring that the global expect timeout and page.wait_for_url settings are correctly applied.",
+    "members": [
+      {
+        "run_id": 26761531329,
+        "run_number": 31,
+        "run_url": "https://github.com/ayyadam/testing-system/actions/runs/26761531329",
+        "event": "push",
+        "branch": "dev",
+        "sha": "eb50ba19d592caf28d755843c764f85c75e9e247",
+        "title": "R-018 \u2014 fix functional flake; relocate nonfunctional reports/ (#13)",
+        "created_at": "2026-06-01T14:33:28+00:00",
+        "test_path": "functional/test_booking_assistant.py",
+        "test_name": "test_assistant_interprets_request_and_books_a_slot",
+        "test_params": "[chromium]",
+        "error_class": "playwright._impl._errors.TimeoutError",
+        "error_message": "Timeout 30000ms exceeded.",
+        "kind": "pytest",
+        "job_name": "Functional Tests (Playwright)"
+      }
+    ]
+  },
+  {
+    "signature": [
+      "<step>",
+      "Lint (ruff)::ruff format check",
+      "<step-failure>"
+    ],
+    "category": "defect",
+    "candidate_risk_id": null,
+    "rationale": "The error message indicates that there are files that would be reformatted by `ruff`, which suggests a code formatting issue rather than an infrastructure or environment problem. This is likely due to unformatted code being pushed, causing the lint check to fail.",
+    "suggested_action": "Run `uv run ruff format` locally before pushing the next commit to ensure all files are properly formatted and pass the lint check.",
+    "members": [
+      {
+        "run_id": 26752809643,
+        "run_number": 23,
+        "run_url": "https://github.com/ayyadam/testing-system/actions/runs/26752809643",
+        "event": "pull_request",
+        "branch": "feature/phase-8-deterministic-eval",
+        "sha": "aaf81e9129920bf7edea08f8d2fa2a5abaeca917",
+        "title": "Phase 8 deterministic v1 \u2014 AI evaluation harness for the booking assistant",
+        "created_at": "2026-06-01T11:43:57+00:00",
+        "test_path": "",
+        "test_name": "Lint (ruff)::ruff format check",
+        "test_params": "",
+        "error_class": "<step-failure>",
+        "error_message": "2 files would be reformatted, 13 files already formatted",
+        "kind": "step",
+        "job_name": "Lint (ruff)"
+      }
+    ]
+  },
+  {
+    "signature": [
+      "functional/test_member_journey.py",
+      "test_member_books_a_tee_time",
+      "AssertionError"
+    ],
+    "category": "flake",
+    "candidate_risk_id": "R-018",
+    "rationale": "The failure is an AssertionError in the functional test `test_member_books_a_tee_time`, indicating that the expected URL after a navigation action did not match. This matches the symptoms described in R-018, where functional tests flake due to timing issues on cold-container runners.",
+    "suggested_action": "Rerun the failed job to see if it passes on retry, as this is likely a timing issue.",
+    "members": [
+      {
+        "run_id": 26601157673,
+        "run_number": 18,
+        "run_url": "https://github.com/ayyadam/testing-system/actions/runs/26601157673",
+        "event": "push",
+        "branch": "dev",
+        "sha": "73eea6e72a888b2cd6736ec2ff1c46fdbf11285d",
+        "title": "Phase 6: data-quality checks (pandera) + CI gate (#7)",
+        "created_at": "2026-05-28T20:44:36+00:00",
+        "test_path": "functional/test_member_journey.py",
+        "test_name": "test_member_books_a_tee_time",
+        "test_params": "[chromium]",
+        "error_class": "AssertionError",
+        "error_message": "Page URL expected to be 're.compile('/member/dashboard')'",
+        "kind": "pytest",
+        "job_name": "Functional Tests (Playwright)"
+      }
+    ]
+  },
+  {
+    "signature": [
+      "<step>",
+      "Performance (k6)::Run k6 load test",
+      "<step-failure>"
+    ],
+    "category": "defect",
+    "candidate_risk_id": "R-007",
+    "rationale": "The error message indicates that the thresholds for 'http_req_duration' and 'http_req_duration{endpoint:tee-times}' have been crossed, which aligns with R-007. This risk is related to performance baselines and regressions in latency or throughput.",
+    "suggested_action": "Investigate recent changes that might affect the performance of the tee-times endpoint and verify if there are any code changes causing this regression.",
+    "members": [
+      {
+        "run_id": 26584591354,
+        "run_number": 14,
+        "run_url": "https://github.com/ayyadam/testing-system/actions/runs/26584591354",
+        "event": "pull_request",
+        "branch": "feature/perf-k6",
+        "sha": "605752df346963db157fd6085c66fd6e98c8c2c8",
+        "title": "Phase 5b: performance budgets (k6) + CI gate",
+        "created_at": "2026-05-28T15:30:41+00:00",
+        "test_path": "",
+        "test_name": "Performance (k6)::Run k6 load test",
+        "test_params": "",
+        "error_class": "<step-failure>",
+        "error_message": "time=\"2026-05-28T15:32:14Z\" level=error msg=\"thresholds on metrics 'http_req_duration, http_req_duration{endpoint:tee-times}' have been crossed\"",
+        "kind": "step",
+        "job_name": "Performance (k6)"
+      }
+    ]
+  },
+  {
+    "signature": [
+      "<step>",
+      "Contract Tests (Schemathesis)::Run contract tests",
+      "<step-failure>"
+    ],
+    "category": "defect",
+    "candidate_risk_id": "R-006",
+    "rationale": "The error message indicates that one of the contract tests failed, which aligns with R-006's risk of no service-boundary contract verification for the JSON API. This suggests a real bug in the SUT or harness where there is a mismatch between the schema and actual behavior.",
+    "suggested_action": "Investigate the specific failing test case within the contract tests to identify any discrepancies between the expected schema and the actual API response.",
+    "members": [
+      {
+        "run_id": 26576683927,
+        "run_number": 7,
+        "run_url": "https://github.com/ayyadam/testing-system/actions/runs/26576683927",
+        "event": "pull_request",
+        "branch": "feature/contract-tests",
+        "sha": "b83ff61f2112db585bdd71f1e794f237cfea2d15",
+        "title": "Phase 4: Schemathesis API contract tests",
+        "created_at": "2026-05-28T13:09:28+00:00",
+        "test_path": "",
+        "test_name": "Contract Tests (Schemathesis)::Run contract tests",
+        "test_params": "",
+        "error_class": "<step-failure>",
+        "error_message": "=============== 1 failed, 1 passed, 5 subtests passed in 12.37s ================",
+        "kind": "step",
+        "job_name": "Contract Tests (Schemathesis)"
+      }
+    ]
+  }
+]
