@@ -22,9 +22,17 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 import pytest
-from playwright.sync_api import Page
+from playwright.sync_api import Page, expect
 
 SUT_BASE_URL = os.getenv("SUT_BASE_URL", "http://localhost:5000")
+
+# Playwright's default expect() assertion timeout is 5s, which is comfortable on
+# a developer machine but tight on a cold-container CI runner — the booking-
+# confirm POST → DB commit → 302 → GET dashboard chain can spike past 5s under
+# load (see F-009 / R-018). 15s gives the cold-runner case headroom without
+# masking real regressions; navigation that takes longer than that is a defect,
+# not a timing variance.
+expect.set_options(timeout=15_000)
 
 
 @dataclass(frozen=True)

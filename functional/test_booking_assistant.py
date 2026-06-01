@@ -38,5 +38,6 @@ def test_assistant_interprets_request_and_books_a_slot(member_page: Page) -> Non
     confirm.click()
 
     # The booking completes through the existing deterministic flow.
-    expect(page).to_have_url(re.compile(r"/member/dashboard"))
+    # wait_for_url (30s default) rather than expect.to_have_url — see R-018.
+    page.wait_for_url(re.compile(r"/member/dashboard"))
     expect(page.locator(".alert")).to_contain_text("Tee time booked successfully")

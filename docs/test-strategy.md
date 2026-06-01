@@ -2,7 +2,7 @@
 
 **Status:** living document — updated as the assurance harness matures.
 **Owner:** Adam (acting as Digital Assurance Engineer)
-**Last updated:** 2026-06-01
+**Last updated:** 2026-06-01 *(post phase-9; F-009 added)*
 
 ---
 
@@ -275,6 +275,31 @@ Fixed in golf-web-app (`feature/assistant-time-window`, PR #12): added `not_befo
 
 **Generalisation**
 Distinguish a *model* error from a *system* error: the model was not hallucinating; the system could not express the request and, worse, dropped it silently rather than telling the member. The fix was deterministic (schema + matcher), not prompt-tuning. A representable-but-unmet constraint should degrade *transparently* — the UI shows the interpretation so the member can see and correct it. The genuine model errors found alongside this (bare weekdays resolving to the wrong date) are deferred to the phase-8 evaluation harness and recorded in `ai_evaluation/golden_set.yaml`. Maps to R-011.
+
+### F-009 — Functional test flake on the booking-confirm redirect: default Playwright timeout too tight for cold-runner
+
+**Date:** 2026-06-01
+**Surfaced by:** Two flake recurrences across consecutive testing-system PRs (#11 and #12), each in the booking-confirm flow
+**Severity:** Moderate (no defect; gate eroded by intermittent false-fail)
+
+The functional gate failed once on testing-system PR #11 (`test_member_books_a_tee_time` URL assertion after confirm-click) and once on testing-system PR #12 (`test_assistant_interprets_request_and_books_a_slot` URL assertion after confirm-click). Both passed on rerun without any code change to the SUT or the harness. A single flake is noise; the second recurrence on the same shape — *URL assertion immediately after a navigating click* — made it a signal worth root-causing rather than tolerating.
+
+**Diagnosis**
+
+The SUT booking-confirm flow is a standard Flask form POST → `db.session.commit()` → `flash(...)` → 302 → GET `/member/dashboard` chain. No async, no special timing. Locally the entire chain resolves in well under a second; the SUT is not the variable. The harness side was running Playwright with default options, which set `expect()` assertion timeouts to 5 seconds. `page.click()` does not auto-wait for navigation, so the test's next assertion — `expect(page).to_have_url(re.compile(r"/member/dashboard"))` — fires immediately and polls for at most 5s. On the GitHub-hosted runner, with a cold compose stack and shared CPU/IO, the click → POST → commit → redirect → dashboard-render → URL-change chain can occasionally exceed 5s end-to-end. That is the variance the default timeout has no margin for.
+
+**Resolution**
+
+Two changes in [`fix/r-018-functional-flake`](https://github.com/ayyadam/testing-system/tree/fix/r-018-functional-flake):
+
+1. `functional/conftest.py` calls `expect.set_options(timeout=15_000)` at module load — 15 seconds gives the cold-runner case headroom without masking a genuine regression (a navigation that takes >15s is a defect, not variance).
+2. The two known-flaky URL assertions converted from `expect(page).to_have_url(...)` to `page.wait_for_url(...)` (30s default). `wait_for_url` is the Playwright-recommended pattern after a click that triggers navigation — it signals "I am waiting for the next URL" semantically rather than "I am asserting a state I expect to already hold." The remaining `expect.to_have_url` calls in the suite benefit from the 15s timeout via change (1).
+
+**Generalisation**
+
+Two lessons. First, *default tool timeouts are tuned for fast local environments, not slow CI runners*. The same lesson held in F-005 (k6 performance budget — passed locally, failed on the slower CI runner) and F-001 (SQLite vs Postgres permissiveness). A standing assurance habit is now to ask "would this gate's defaults still hold on the slowest environment we run it in?" before shipping it. Second, *a flake is data, not noise*. The single-occurrence flake on PR #11 was easy to wave through with a rerun; the second occurrence on PR #12 made the pattern legible and root-causable. Capturing both was what made the diagnosis possible — had #11's been silently re-run-and-forgotten, the second one would have looked equally isolated.
+
+Maps to R-018 (now mitigated).
 
 ## 12. Roadmap
 
