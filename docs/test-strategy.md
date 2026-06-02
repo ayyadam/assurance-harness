@@ -2,7 +2,7 @@
 
 **Status:** living document — updated as the assurance harness matures.
 **Owner:** Adam (acting as Digital Assurance Engineer)
-**Last updated:** 2026-06-02 *(F-012 — R-018 root-cause fix)*
+**Last updated:** 2026-06-02 *(F-013 — risk_agent subject-mechanism sharpening lifts F1 0.526 → 0.588)*
 
 ---
 
@@ -65,11 +65,11 @@ Layers planned across the project. Each layer has an explicit "why this exists" 
 | Performance | **Done** | k6 (thresholds-as-code) | `testing-system/nonfunctional/performance/` | Latency/error budgets on the read-path API; fail the PR on regression beyond budget |
 | Data quality | **Done** | pandera (schemas + invariants) | `testing-system/data_quality/` | Validate the live database against column contracts and business-rule invariants (e.g. 18 holes with a 1..18 stroke-index permutation) |
 | AI evaluation | **Done (phase 8 v1)** | Black-box golden-set scoring (deterministic + LLM-judge) | [`testing-system/ai_evaluation/`](../ai_evaluation/README.md) | Quantifies model accuracy, safety, latency across a model list. Two grading tiers — deterministic field equality + an LLM-judge (holistic 0-10 + per-rubric fuzzy pass/fail). Current 5-model report: [`ai_evaluation/reports/report.md`](../ai_evaluation/reports/report.md) |
-| Risk-prioritisation (advisory) | **Done (phase 9 v2 v2)** | Local Ollama agent + deterministic post-processing + golden-set eval | [`testing-system/risk_agent/`](../risk_agent/README.md) | Given a PR diff + the live risk register, produces a ranked test plan with `covered_by` per risk, coverage-gap flags, relevance label (`direct` / `plausible`), and exploratory probes. Advisory only, not a CI gate. v2 v1 made `covered_by` and `is_gap` deterministic; v2 v2 added a golden-set evaluation tier ([`risk_agent.eval`](../risk_agent/eval.py)) that scores the agent against expected ranks per historic PR (precision, recall, F1 — deterministic, no LLM in scoring). Current baseline: F1 0.526 (precision 0.417 / recall 0.714) across 4 cases. The baseline is the deliverable — future changes are now scored against measurable numbers. See [`risk_agent/reports/eval-report.md`](../risk_agent/reports/eval-report.md) |
+| Risk-prioritisation (advisory) | **Done (phase 9 v3)** | Local Ollama agent + deterministic post-processing + golden-set eval | [`testing-system/risk_agent/`](../risk_agent/README.md) | Given a PR diff + the live risk register, produces a ranked test plan with `covered_by` per risk, coverage-gap flags, relevance label (`direct` / `plausible`), and exploratory probes. Advisory only, not a CI gate. v2 v1 made `covered_by` and `is_gap` deterministic; v2 v2 added a golden-set evaluation tier ([`risk_agent.eval`](../risk_agent/eval.py)) that scores the agent against expected ranks per historic PR (precision, recall, F1 — deterministic, no LLM in scoring); v3 added a subject-vs-adjacent discrimination rule to the system prompt and sharpened R-002 / R-018 / R-019 register rows to name their subject mechanisms explicitly (transaction boundary, post-click client-side timing, runner memory ceiling). **F1: 0.526 → 0.588** (precision 0.417 → 0.500, relevance accuracy preserved at 0.800); two false positives eliminated. See [F-013](#f-013--risk_agent-subject-vs-adjacent-rule--sharpened-rows-lift-f1-0526--0588) and [`risk_agent/reports/eval-report.md`](../risk_agent/reports/eval-report.md) |
 | Triage (advisory) | **Done (phase 10 v1 v2)** | Local Ollama agent over `gh` log dumps + golden-set eval | [`testing-system/triage_agent/`](../triage_agent/README.md) | Clusters failed CI runs by signature `(test path, test name, error class)`, then asks the LLM for a category (flake / defect / infra / env) and a candidate register R-ID per cluster. Closed-vocabulary enum on the R-ID — the model cannot invent risks. v1 v2 added a golden-set evaluation tier ([`triage_agent.eval`](../triage_agent/eval.py)) scoring the agent against expected (category, R-ID) per known cluster — deterministic, no LLM in scoring. Current baseline: 5/5 on category, R-ID, and combined. Historical insight from v1 v1: R-018 was actually present at run #18 (2026-05-28), three weeks before it was logged. See [`triage_agent/reports/report.md`](../triage_agent/reports/report.md) and [`triage_agent/reports/eval-report.md`](../triage_agent/reports/eval-report.md) |
 | Production observability | **Done (phase 11 v1)** | Prometheus + Grafana (metrics only; Loki + Alertmanager v2 candidates) | [`testing-system/observability/`](../observability/README.md) | Local stack scraping the SUT's `/metrics` (provisioned by `prometheus-flask-exporter`), provisioned dashboard with request rate / error rate / p95 latency / per-path breakdowns. SLO thresholds on the dashboard match the k6 perf gate's pre-merge budget — same SLOs, two enforcement points. Closes R-013. See [`observability/README.md`](../observability/README.md) and [`observability/evidence/grafana-sut-overview.png`](../observability/evidence/grafana-sut-overview.png) |
 | Exploratory (advisory) | **Done (phase 12 v2 v1)** | Local Ollama agent — API surface via OpenAPI, UI surface via Playwright, deterministic eval tier | [`testing-system/explore_agent/`](../explore_agent/README.md) | Two surfaces share the same package and the same closed-enum + LLM-jury pattern. **API** (`explore_agent.run`, v1 v1): every v1 endpoint probed with three LLM-generated payload variants (happy / edge / abusive, including prompt-injection on AI endpoints), responses classified into `expected` / `unexpected_5xx` / `schema_drift` / `business_rule_concern`. **UI** (`explore_agent.ui_run`, v1 v2): three predefined tours, each with an LLM-planned step sequence executed in Playwright, per-step state captured and LLM-judged into `expected` / `unexpected_5xx` / `js_error` / `dead_end` / `business_rule_concern`. **Eval** (`explore_agent.eval`, v2 v1): golden-set evaluation tier mirroring [`risk_agent.eval`](../risk_agent/eval.py) and [`triage_agent.eval`](../triage_agent/eval.py) — deterministic scoring against expected category per (endpoint, variant), no LLM in the scoring path. **Baseline: 50.0% accuracy (9/18 cases)** — every case's expected category is `expected` (no defects in the seeded surface) and the agent over-flags 9 of them (7 as `business_rule_concern`, 2 as `unexpected_5xx`). This quantifies the documented v1 v1 over-flagging behaviour and gives a measurable target for any future judge-prompt tightening or model swap. v1 v2's UI agent also surfaced the *plan-once-from-starting-page* limitation cleanly (LLM hallucinated `.candidate-slot` when the actual class was `.booking-slot`); the architectural fix (adaptive single-step) is tracked in the [phase-12 sub-roadmap](#phase-12-sub-roadmap), with the eval baseline as its decision input. Both probing surfaces remain local-only (cost-prohibitive for CI); the eval is also local-only. See [`explore_agent/reports/report.md`](../explore_agent/reports/report.md) (API), [`explore_agent/reports/ui/report.md`](../explore_agent/reports/ui/report.md) (UI), [`explore_agent/reports/eval-report.md`](../explore_agent/reports/eval-report.md) (eval). |
-| Tests of the harness itself | **In progress (phase 12 v2 v2)** | pytest (LLM-gated via `RUN_AGENT_REGRESSION=1`) | [`testing-system/tests/agents/`](../tests/agents/README.md) | Adversarial regression suite for `risk_agent` and `triage_agent`: each agent invoked N=3 times against cached fixtures, with hard invariants (schema validity, closed-vocabulary on every emitted R-ID, relevance in {2, 3}), soft invariants (top-result stability ≥ 0.66 across runs), and a **stable-divergent warning** (test still passes, but emits a `StableDivergentWarning` and flags the case in the rendered report when the agent's stable answer disagrees with the golden set's expected top-1). The eval tiers measure *accuracy*; this measures *stability under LLM jitter* and surfaces stable-but-wrong cases that single-run eval averages can hide. Baseline run (all 4 cases): 12/12 schema-valid, 12/12 closed-vocab, 100% stability — and one stable-divergent warning on `risk_agent` PR #12. The warning case ([details](../tests/agents/README.md#notable-findings-from-the-baseline-run)) traces to a model error confirmed by a model-swap experiment (qwen2.5:32b and 14b both over-pull R-002 with near-identical rationale), so the fix lives in prompt or register framing — tracked as a [phase 9 v3 follow-up](#phase-12-sub-roadmap). Local-only — LLM calls would flake CI. See [`tests/agents/reports/regression-report.md`](../tests/agents/reports/regression-report.md) |
+| Tests of the harness itself | **Done (phase 12 v2 v2)** | pytest (LLM-gated via `RUN_AGENT_REGRESSION=1`) | [`testing-system/tests/agents/`](../tests/agents/README.md) | Adversarial regression suite for `risk_agent` and `triage_agent`: each agent invoked N=3 times against cached fixtures, with hard invariants (schema validity, closed-vocabulary on every emitted R-ID, relevance in {2, 3}), soft invariants (top-result stability ≥ 0.66 across runs), and a **stable-divergent warning** (test still passes, but emits a `StableDivergentWarning` and flags the case in the rendered report when the agent's stable answer disagrees with the golden set's expected top-1). The eval tiers measure *accuracy*; this measures *stability under LLM jitter* and surfaces stable-but-wrong cases that single-run eval averages can hide. v2 v2's baseline run surfaced one stable-divergent case (`risk_agent` PR #12 — R-002 stably top, golden expected R-011); phase 9 v3 fixed it via subject-vs-adjacent prompt + sharpened register rows (see [F-013](#f-013--risk_agent-subject-vs-adjacent-rule--sharpened-rows-lift-f1-0526--0588)). Current run: 12/12 schema-valid, 12/12 closed-vocab, 100% top-result stability across all 4 cases, **no stable-divergent warnings**. Local-only — LLM calls would flake CI. See [`tests/agents/reports/regression-report.md`](../tests/agents/reports/regression-report.md) |
 
 A traditional test pyramid does not map cleanly onto this project because the SUT is one of several concerns alongside data quality, AI evaluation, and observability. The above is a *responsibility map*, not a pyramid.
 
@@ -404,6 +404,57 @@ Two-step deepening of R-018 across three PRs makes the methodological point: *re
 
 R-018 status moves from *mitigated* (pre-F-012) to **closed** (post-F-012) in the register if this fix holds for the next 5–10 functional CI runs. Until then it stays *mitigated* with F-012 linked.
 
+### F-013 — `risk_agent` subject-vs-adjacent rule + sharpened rows lift F1 0.526 → 0.588
+
+**Date:** 2026-06-02
+**Surfaced by:** Phase 12 v2 v2's stable-divergent warning on PR #12 — `risk_agent` ranked R-002 (concurrent bookings) top across all 3 runs, but the golden set expected R-011 (AI booking correctness). A model-swap experiment (qwen2.5:32b → qwen2.5:14b) reproduced the over-pull with near-identical R-002 rationale, ruling out model capability and pointing at prompt or register framing.
+**Severity:** Moderate (regression-suite divergent signal; eval false-positive contributor)
+
+**Diagnosis**
+
+The v1 / v2 v1 system prompt's relevance scale gave the agent only one principle for "is this risk raised by this diff?" — keyword and surface proximity. PR #12 changed natural-language time-of-day parsing in the booking assistant. R-002's row mentioned "tee slot", "booking", "overbooking"; the agent matched on shared terminology and emitted R-002 at relevance 3 alongside the (correct) R-011. The eval treated R-002 as a false positive; the v2 v2 regression flagged the case as stable-divergent.
+
+The same pattern was visible across other cases:
+
+- PR #7 (a11y CSS): R-018 ("functional tests flake on navigation-after-click") emitted at 2 — adjacent surface (test layer), not subject.
+- PR #11 (F-007 slot listing): R-012 ("prompt injection in AI booking inputs") emitted at 3 — adjacent feature, not subject.
+
+**Fix** (this PR)
+
+Two complementary changes:
+
+1. **System prompt** — added an explicit "subject vs adjacent" rule after the relevance scale:
+
+   > A risk is raised by a diff when the diff modifies the SUBJECT MECHANISM the risk row names, not merely shared terminology or surface. […] Worked example: a diff improving how the booking assistant interprets time-of-day constraints raises R-011 (AI feature correctness — the assistant IS the subject mechanism) but does NOT raise R-002 (concurrent overbooking — the transaction boundary at POST /book is untouched).
+
+2. **Risk-register rows** — sharpened R-002, R-018, and R-019 to name their subject mechanisms explicitly, not just keyword surfaces:
+
+   - **R-002:** scoped to "the booking-creation request's race against the uniqueness check at the POST /book transaction boundary — not slot listing, availability filtering, AI intent parsing, or other booking-adjacent surface".
+   - **R-018:** scoped to "the Playwright/functional layer's interaction with post-click client-side behaviour — not unrelated application code, server-side endpoints, CSS-only changes, or AI-intent parsing".
+   - **R-019:** scoped to "the hosted-runner memory boundary — raised by changes that add browser contexts, parallelise page navigations, or expand axe-core sweep scope. Application-code changes that don't materially increase test-side memory pressure do NOT raise this risk".
+
+The system-prompt rule alone is necessary but not sufficient — it teaches the agent *how to read* a row, but the row itself has to *contain* a subject mechanism. The first refresh (prompt change + R-002 only) kept F1 at 0.526: R-002 dropped from PR #12, but R-018 and R-019 over-pulls increased to replace it. Sharpening R-018 and R-019 closed the loop.
+
+**Measurement**
+
+| Metric | Before v3 | After v3 prompt + R-002 only | After v3 (full) |
+|---|---|---|---|
+| F1 | 0.526 | 0.526 | **0.588** |
+| Precision | 0.417 | 0.417 | **0.500** |
+| Recall | 0.714 | 0.714 | 0.714 |
+| Relevance accuracy | 0.800 | 0.600 | **0.800** |
+| FP count | 7 | 7 | **5** |
+| PR #12 top R-ID (stable across 3 runs) | R-002 ✗ | R-011 ✓ | R-011 ✓ |
+| v2 v2 stable-divergent warnings | 1 | 0 | 0 |
+
+The named target (PR #12's stable-divergent case) was hit by the prompt + R-002 change alone; the F1 lift required also sharpening R-018 and R-019 because the prompt change exposed those as the next layer of keyword-broad rows.
+
+**Generalisation**
+
+The result names a pattern worth keeping: **a system-prompt rule and the artifact it operates on are co-designed**. Asking the agent to "match subject mechanisms" only works if the register rows *contain* subject mechanisms. The first half of the fix (prompt only) reshuffled the error rather than reducing it — that's the diagnostic signal that the artifact also needs work. The same pattern likely applies to triage_agent (categories/clusters), the explore_agent (probe judge prompts vs endpoint specs), and to LLM-as-judge tiers in general.
+
+R-002 stays *open* (the underlying overbooking risk is still un-mitigated by an automated check); the register-row change is about *how the risk is described*, not whether it exists. The mitigation column still names the planned Schemathesis concurrency probe.
+
 ## 12. Roadmap
 
 The full phased plan lives in conversational notes; the abbreviated public form:
@@ -420,7 +471,7 @@ The full phased plan lives in conversational notes; the abbreviated public form:
 | 6 | Data quality (pandera) on the live database | **Done** |
 | 7 | golf-web-app AI feature (natural-language booking, local Ollama) | **Done** |
 | 8 | AI evaluation harness | **Done (v1)** — deterministic + LLM-judge (holistic + fuzzy) |
-| 9 | Risk-prioritisation agent (PR diff → ranked test plan) | **Done (v2 v2)** — v2 v1 added deterministic `covered_by` + `is_gap` and a relevance scale; v2 v2 added a golden-set evaluation tier with deterministic scoring (precision/recall/F1). Baseline F1 0.526 across 4 cases — measurable now. PR-comment Action deferred (needs hosted-LLM commitment) |
+| 9 | Risk-prioritisation agent (PR diff → ranked test plan) | **Done (v3)** — v2 v1 added deterministic `covered_by` + `is_gap` and a relevance scale; v2 v2 added a golden-set evaluation tier with deterministic scoring; v3 added a subject-vs-adjacent prompt rule and sharpened R-002 / R-018 / R-019 register rows to name subject mechanisms. F1 0.526 → 0.588 (precision 0.417 → 0.500). PR-comment Action deferred (needs hosted-LLM commitment) |
 | 10 | Triage agent (CI failure clustering) | **Done (v1 v2)** — v1 v1: heuristic clustering + LLM category + R-ID xref. v1 v2: golden-set eval tier with deterministic scorer. 5/5 baseline on five real failures from last 30 days |
 | 11 | Prometheus + Grafana observability stack | **Done (v1)** — local stack scraping the SUT, provisioned dashboard with SLOs aligned to the k6 gate; closes R-013. Loki + Alertmanager deferred to v2 |
 | 12 | Exploratory testing agent + tests of agents | **Done (v1 v1, v1 v2, v2 v1, v2 v2)** — see sub-roadmap below for deferred-but-tracked work |
@@ -436,9 +487,9 @@ The exploratory testing arc has its own sub-roadmap because the agentic surface 
 | v2 v1 | **Golden-set eval tier** for the explore agent — mirrors [`risk_agent.eval`](../risk_agent/eval.py) and [`triage_agent.eval`](../triage_agent/eval.py) (deterministic scorer, no LLM in scoring) | **Done** — baseline 50.0% accuracy (9/18); [`explore_agent/reports/eval-report.md`](../explore_agent/reports/eval-report.md) |
 | v2 v2 | **Adversarial regression tests on existing agents** — run `risk_agent` / `triage_agent` N times against fixed inputs, assert invariants hold across LLM jitter | **Done** — 12/12 schema-valid, 12/12 closed-vocab, 100% top-result stability; [`tests/agents/reports/regression-report.md`](../tests/agents/reports/regression-report.md) |
 
-Phase 9 v3 (queued — fix surfaced by phase 12 v2 v2):
+Phase 9 v3 (delivered — fix to the issue surfaced by phase 12 v2 v2):
 
-- **Phase 9 v3 — `risk_agent` prompt + register-framing fix**. The v2 v2 regression run surfaced a stable-divergent case on PR #12: the agent emits R-002 (concurrent bookings) at relevance 3 on a read-side PR that doesn't touch the booking write path. A model-swap experiment confirmed it's not capability-bound (qwen2.5:32b and qwen2.5:14b produce near-identical R-002 rationales). The fix lives in two places: (a) tighten the system prompt with a subject-vs-adjacent discrimination rule, and (b) sharpen R-002's register row from "concurrent bookings of the same tee slot...cause overbooking" to scope it explicitly to the booking *creation* endpoint. Phase 9 v3 lands those changes, re-baselines the v2 v1 eval (F1 should move from 0.526), and re-runs v2 v2 to confirm the warning quiets.
+- **Phase 9 v3 — `risk_agent` subject-vs-adjacent rule + sharpened risk rows.** **Done.** Added a subject-vs-adjacent discrimination rule to the system prompt and sharpened R-002, R-018, and R-019 register rows to name their subject mechanisms (transaction boundary at POST /book, Playwright/functional layer's interaction with post-click client-side behaviour, hosted-runner memory ceiling) rather than just listing keyword surfaces. F1 0.526 → 0.588 across the same 4 cases (precision 0.417 → 0.500; recall unchanged at 0.714; relevance accuracy preserved at 0.800). v2 v2 regression: PR #12's stable-divergent warning quieted — R-011 now stably top across all 3 runs. See [F-013](#f-013--risk_agent-subject-vs-adjacent-rule--sharpened-rows-lift-f1-0526--0588) for the full diagnostic + lesson.
 
 Beyond v2, deferred-but-tracked work:
 

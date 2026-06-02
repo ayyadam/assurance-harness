@@ -2,11 +2,11 @@
   "totals": {
     "cases": 4,
     "true_positives": 5,
-    "false_positives": 7,
+    "false_positives": 5,
     "false_negatives": 2,
-    "precision": 0.417,
+    "precision": 0.5,
     "recall": 0.714,
-    "f1": 0.526,
+    "f1": 0.588,
     "relevance_correct": 4,
     "relevance_accuracy": 0.8
   },
@@ -44,20 +44,18 @@
       },
       "actual": {
         "R-007": 3,
-        "R-005": 2,
-        "R-018": 2
+        "R-017": 2
       },
       "true_positives": [
         "R-007"
       ],
       "false_positives": [
-        "R-005",
-        "R-018"
+        "R-017"
       ],
       "false_negatives": [],
-      "precision": 0.333,
+      "precision": 0.5,
       "recall": 1.0,
-      "f1": 0.5,
+      "f1": 0.667,
       "relevance_correct": 1,
       "relevance_accuracy": 1.0
     },
@@ -70,20 +68,18 @@
       },
       "actual": {
         "R-011": 3,
-        "R-012": 3,
-        "R-018": 2
+        "R-012": 3
       },
       "true_positives": [
         "R-011"
       ],
       "false_positives": [
-        "R-012",
-        "R-018"
+        "R-012"
       ],
       "false_negatives": [],
-      "precision": 0.333,
+      "precision": 0.5,
       "recall": 1.0,
-      "f1": 0.5,
+      "f1": 0.667,
       "relevance_correct": 1,
       "relevance_accuracy": 1.0
     },
@@ -98,18 +94,18 @@
         "R-012": 2
       },
       "actual": {
-        "R-002": 3,
         "R-011": 3,
         "R-012": 3,
-        "R-018": 2
+        "R-018": 2,
+        "R-019": 2
       },
       "true_positives": [
         "R-011",
         "R-012"
       ],
       "false_positives": [
-        "R-002",
-        "R-018"
+        "R-018",
+        "R-019"
       ],
       "false_negatives": [
         "R-006",

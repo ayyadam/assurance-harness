@@ -19,20 +19,9 @@ uv run python tests/agents/render_report.py
 | Agent | Case | Runs | Schema | Vocab | Top-result stability | Top-match vs golden | Status |
 |---|---|---|---|---|---|---|---|
 | `risk_agent` | `pr-7-a11y` | 3 | ✓ | ✓ | `R-008` × 100% | 100% | ✓ |
-| `risk_agent` | `pr-12-f008` | 3 | ✓ | ✓ | `R-002` × 100% | **0%** | ⚠ stable-divergent |
+| `risk_agent` | `pr-12-f008` | 3 | ✓ | ✓ | `R-011` × 100% | 100% | ✓ |
 | `triage_agent` | `r-018-timeout-flake` | 3 | ✓ | ✓ | cat=`flake` × 100%; rid=`R-018` × 100% | cat 100%; rid 100% | ✓ |
 | `triage_agent` | `k6-threshold-defect` | 3 | ✓ | ✓ | cat=`defect` × 100%; rid=`R-007` × 100% | cat 100%; rid 100% | ✓ |
-
-## ⚠ Stable-divergent cases
-
-Cases where the agent's answer was *internally stable* across runs (no LLM-jitter explanation) but *disagreed with the golden truth* on the top-1 result. Hard invariants (schema, closed-vocab) still held, so the test passed. These are documented prompt or golden-set divergences worth investigating — not regression failures.
-
-### `risk_agent` / `pr-12-f008`
-
-- Agent's stable top-1: `R-002` (stability 100%)
-- Top-match vs golden: **0%**
-- Expected-top presence (anywhere in ranking): 100%
-
 
 ## `risk_agent` — detail
 
@@ -41,26 +30,26 @@ Top-value stability = how often the highest-ranked R-ID was the same across runs
 ### `pr-7-a11y`
 
 - **Runs:** 3 / 3 successful
-- **Elapsed (total):** 59.8 s
+- **Elapsed (total):** 60.4 s
 - **Metrics:** `top_value_mode=R-008` • `top_value_stability=1.000` • `expected_top_presence_rate=1.000` • `expected_top_match_rate=1.000` • `stable_divergent=False`
 
 | Run | Elapsed (s) | Result |
 |---|---|---|
-| 1 | 26.9 | `R-008`(3), `R-019`(2) |
-| 2 | 16.5 | `R-008`(3), `R-019`(2) |
-| 3 | 16.4 | `R-008`(3), `R-019`(2) |
+| 1 | 25.5 | `R-008`(3), `R-018`(2), `R-019`(2) |
+| 2 | 17.2 | `R-008`(3), `R-018`(2), `R-019`(2) |
+| 3 | 17.6 | `R-008`(3), `R-018`(2), `R-019`(2) |
 
 ### `pr-12-f008`
 
 - **Runs:** 3 / 3 successful
-- **Elapsed (total):** 73.9 s
-- **Metrics:** `top_value_mode=R-002` • `top_value_stability=1.000` • `expected_top_presence_rate=1.000` • `expected_top_match_rate=0.000` • `stable_divergent=True`
+- **Elapsed (total):** 93.3 s
+- **Metrics:** `top_value_mode=R-011` • `top_value_stability=1.000` • `expected_top_presence_rate=1.000` • `expected_top_match_rate=1.000` • `stable_divergent=False`
 
 | Run | Elapsed (s) | Result |
 |---|---|---|
-| 1 | 28.9 | `R-002`(3), `R-011`(3), `R-012`(3), `R-018`(2) |
-| 2 | 22.5 | `R-002`(3), `R-011`(3), `R-012`(3), `R-018`(2) |
-| 3 | 22.5 | `R-002`(3), `R-011`(3), `R-012`(3), `R-018`(2) |
+| 1 | 32.5 | `R-011`(3), `R-012`(3), `R-006`(2), `R-008`(2) |
+| 2 | 30.5 | `R-011`(3), `R-012`(3), `R-018`(2), `R-019`(2) |
+| 3 | 30.3 | `R-011`(3), `R-012`(3), `R-018`(2), `R-019`(2) |
 
 ## `triage_agent` — detail
 
@@ -69,26 +58,26 @@ Stability of the emitted category and candidate R-ID across runs. Triage outputs
 ### `r-018-timeout-flake`
 
 - **Runs:** 3 / 3 successful
-- **Elapsed (total):** 18.1 s
+- **Elapsed (total):** 27.0 s
 - **Metrics:** `category_mode=flake` • `category_stability=1.000` • `category_match_rate=1.000` • `rid_mode=R-018` • `rid_stability=1.000` • `rid_match_rate=1.000` • `expected_category_match=True` • `expected_rid_match=True` • `stable_divergent=False`
 
 | Run | Elapsed (s) | Result |
 |---|---|---|
-| 1 | 7.7 | cat=`flake` rid=`R-018` |
-| 2 | 5.2 | cat=`flake` rid=`R-018` |
-| 3 | 5.2 | cat=`flake` rid=`R-018` |
+| 1 | 9.1 | cat=`flake` rid=`R-018` |
+| 2 | 5.3 | cat=`flake` rid=`R-018` |
+| 3 | 12.5 | cat=`flake` rid=`R-018` |
 
 ### `k6-threshold-defect`
 
 - **Runs:** 3 / 3 successful
-- **Elapsed (total):** 27.7 s
+- **Elapsed (total):** 21.0 s
 - **Metrics:** `category_mode=defect` • `category_stability=1.000` • `category_match_rate=1.000` • `rid_mode=R-007` • `rid_stability=1.000` • `rid_match_rate=1.000` • `expected_category_match=True` • `expected_rid_match=True` • `stable_divergent=False`
 
 | Run | Elapsed (s) | Result |
 |---|---|---|
-| 1 | 10.5 | cat=`defect` rid=`R-007` |
-| 2 | 6.9 | cat=`defect` rid=`R-007` |
-| 3 | 10.3 | cat=`defect` rid=`R-007` |
+| 1 | 9.7 | cat=`defect` rid=`R-007` |
+| 2 | 5.7 | cat=`defect` rid=`R-007` |
+| 3 | 5.6 | cat=`defect` rid=`R-007` |
 
 ---
 

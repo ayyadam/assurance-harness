@@ -2,12 +2,12 @@
 
 **Fix N+1 query when listing tee times**
 
-_Run: 2026-06-01 • model: `qwen2.5:32b-instruct-q4_K_M`_  
+_Run: 2026-06-02 • model: `qwen2.5:32b-instruct-q4_K_M`_  
 _Repo: ayyadam/golf-web-app_
 
 ## Summary
 
-This PR changes the relationship loading strategy in `app/models/booking.py` to address an N+1 query issue when listing tee times.
+This PR changes the relationship loading strategy in `app/models/booking.py` to avoid N+1 queries when listing tee times.
 
 ## Changed files
 
@@ -17,34 +17,26 @@ This PR changes the relationship loading strategy in `app/models/booking.py` to 
 
 ### 1. R-007 — _direct_
 
-**Why:** The diff addresses an N+1 query issue which directly impacts performance. The risk of undetected performance regressions is highly relevant.
+**Why:** The diff addresses an N+1 query issue which directly impacts performance and latency. The change aims to improve the read-path API's efficiency by batch-loading bookings for tee times.
 
 **Covered by:** k6 performance gate
 
-**Action:** Re-run the k6 performance tests to ensure that the PR does not introduce any new latency or throughput issues.
+**Action:** Re-run the k6 load test in CI (nonfunctional/performance/api_load.js) to ensure that the p95 latency remains below 500ms.
 
-### 2. R-005 — _plausible_
+### 2. R-017 — _plausible_
 
-**Why:** The diff modifies database relationship loading which could indirectly affect code quality. Ensuring linting is enforced helps catch potential issues.
+**Why:** Although the diff is focused on improving query performance, it indirectly affects the overall system behavior. The risk of deprecated Node.js actions breaking CI could impact the reliability of automated tests that verify this change.
 
 **Covered by:** CI workflow configuration
 
-**Action:** Verify that the CI lint gate is triggered and passes for this PR.
-
-### 3. R-018 — _plausible_
-
-**Why:** The diff changes how bookings are loaded which could affect functional test stability if there are timing issues. Ensuring tests do not flake due to these changes is important.
-
-**Covered by:** Playwright functional suite
-
-**Action:** Run the functional tests multiple times in CI to ensure they pass consistently.
+**Action:** Ensure all relevant CI jobs are running smoothly and consider bumping any remaining deprecated action versions.
 
 ## Exploratory probes
 
-- Manually list tee times via the API and measure response time before and after applying this PR.
-- Check if there are any new linting issues introduced by the changes in `app/models/booking.py`.
-- Run a cold-container functional test suite to ensure that timing-related flakiness does not occur due to these changes.
-- Verify that the performance baseline metrics (latency, throughput) do not regress after applying this PR.
+- Manually test the listing endpoint for tee times to observe if the N+1 query issue has been resolved.
+- Check the database logs to ensure that the batch-loading strategy is being executed as expected.
+- Run a local load test using k6 against the read-path API to verify latency improvements.
+- Verify that the change does not introduce any new issues by manually probing other related endpoints.
 
 ---
 

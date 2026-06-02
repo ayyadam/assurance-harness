@@ -2,7 +2,7 @@
 
 **Fix WCAG 2.1 AA accessibility violations on dark theme**
 
-_Run: 2026-06-01 • model: `qwen2.5:32b-instruct-q4_K_M`_  
+_Run: 2026-06-02 • model: `qwen2.5:32b-instruct-q4_K_M`_  
 _Repo: ayyadam/golf-web-app_
 
 ## Summary
@@ -22,22 +22,22 @@ This PR changes CSS and JavaScript to fix WCAG 2.1 AA accessibility violations o
 
 **Covered by:** axe-core sweep
 
-**Action:** Re-run the axe-core WCAG 2.1 A/AA sweep over six key pages to verify that no new violations have been introduced.
+**Action:** Re-run the axe-core WCAG 2.1 A/AA sweep over six key pages in CI to verify that all serious + critical violations are resolved.
 
 ### 2. R-018 — _plausible_
 
-**Why:** The diff modifies JavaScript and CSS files which could potentially affect functional test assertions related to navigation and click events.
+**Why:** The diff modifies JavaScript and CSS files which could potentially affect the client-side behavior of form submissions and navigation. Although not directly related to functional tests, changes in these areas might indirectly impact Playwright's interaction with the application.
 
 **Covered by:** Playwright functional suite
 
-**Action:** Manually probe the booking confirmation flow in a browser to ensure that there are no flaky tests due to changes in the dark theme accessibility.
+**Action:** Manually test the affected pages using a browser to ensure that there are no new flakiness issues introduced by this PR.
 
 ## Exploratory probes
 
-- Check if the contrast ratio for success and danger buttons meets WCAG 2.1 AA standards on both light and dark themes.
-- Verify that the aria-label attributes are correctly applied to all date input fields by inspecting the elements in a browser developer tools.
-- Test the booking confirmation flow manually in a browser with the dark theme enabled to ensure no new accessibility issues have been introduced.
-- Run the axe-core WCAG 2.1 A/AA sweep locally on key pages to catch any potential violations not caught by automated tests.
+- Manually verify the contrast ratios on dark theme buttons and text elements in different browsers (Chrome, Firefox).
+- Check if the aria-label attributes are correctly applied to all date input fields using browser developer tools.
+- Test form submissions and navigation interactions on the affected pages to ensure they work as expected with accessibility features enabled.
+- Use a screen reader to navigate through the dark theme interface and verify that all elements are properly labeled and accessible.
 
 ---
 
