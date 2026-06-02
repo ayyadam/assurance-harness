@@ -371,7 +371,26 @@ The full phased plan lives in conversational notes; the abbreviated public form:
 | 9 | Risk-prioritisation agent (PR diff → ranked test plan) | **Done (v2 v2)** — v2 v1 added deterministic `covered_by` + `is_gap` and a relevance scale; v2 v2 added a golden-set evaluation tier with deterministic scoring (precision/recall/F1). Baseline F1 0.526 across 4 cases — measurable now. PR-comment Action deferred (needs hosted-LLM commitment) |
 | 10 | Triage agent (CI failure clustering) | **Done (v1 v2)** — v1 v1: heuristic clustering + LLM category + R-ID xref. v1 v2: golden-set eval tier with deterministic scorer. 5/5 baseline on five real failures from last 30 days |
 | 11 | Prometheus + Grafana observability stack | **Done (v1)** — local stack scraping the SUT, provisioned dashboard with SLOs aligned to the k6 gate; closes R-013. Loki + Alertmanager deferred to v2 |
-| 12 | Exploratory testing agent + tests of agents | Planned |
+| 12 | Exploratory testing agent + tests of agents | **In progress** — v1 v1 + v1 v2 done; v2 v1 + v2 v2 + deferred items in the sub-roadmap below |
+
+### Phase 12 sub-roadmap
+
+The exploratory testing arc has its own sub-roadmap because the agentic surface has more dimensions than the deterministic spine. Tracked here so deferred items don't drift across PR descriptions and READMEs.
+
+| Sub-phase | Goal | Status |
+|---|---|---|
+| v1 v1 | Exploratory agent — **API surface**: OpenAPI-driven, LLM payload variants per endpoint, LLM-judged responses | **Done** ([`explore_agent/reports/report.md`](../explore_agent/reports/report.md)) |
+| v1 v2 | Exploratory agent — **UI surface**: Playwright tours, LLM plan + LLM judgement per step | **Done** ([`explore_agent/reports/ui/report.md`](../explore_agent/reports/ui/report.md)) |
+| v2 v1 | **Golden-set eval tier** for the explore agent — mirrors [`risk_agent.eval`](../risk_agent/eval.py) and [`triage_agent.eval`](../triage_agent/eval.py) (deterministic scorer, no LLM in scoring) | Planned — next |
+| v2 v2 | **Adversarial regression tests on existing agents** — run `risk_agent` / `triage_agent` N times against fixed inputs, assert invariants hold across LLM jitter | Planned |
+
+Beyond v2, deferred-but-tracked work:
+
+- **Adaptive single-step exploration mode** *(architectural fix to plan-once-from-starting-page)*. The current UI agent commits to a multi-step plan based only on the starting page's interactive elements; selectors on pages the planner hasn't seen yet are hallucinated. The booking-assistant tour's first run made this visible — the planner waited for `.candidate-slot` (invented) while the actual class is `.booking-slot`. The architectural fix is to drop the upfront plan and have the LLM decide one next action per step from the current page state — the difference between a *plan* and a *policy*. **Decision pattern:** the v2 v1 eval will quantify how often hallucination produces a dead-end versus a real finding; the eval result determines whether this jumps the queue or stays here. Same evidence-led pattern as R-011's deployed-model decision becoming numbers-led after phase 8.
+- **Free-form UI exploration mode** — the LLM picks goals from a surface map of the SUT instead of running fixed tours.
+- **State-mutating tours** — booking confirmation, admin flows, visitor registration. Held out of v1 because the SUT state would drift across runs and the report would not be reproducible.
+- **Cross-tour memory** — each tour currently starts fresh. A finding from one tour could in principle inform the next tour's plan or goal selection.
+- **Auth-bypass probing on the API surface** — probes without credentials, with wrong credentials, or with another member's token to verify the auth boundary holds. Surfaced in v1 v1's scope notes; deferred because in-scope probing already exercises every endpoint with a valid token.
 
 ## Appendix A: Glossary
 
