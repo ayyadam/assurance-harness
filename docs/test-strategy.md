@@ -2,7 +2,7 @@
 
 **Status:** living document — updated as the assurance harness matures.
 **Owner:** Adam (acting as Digital Assurance Engineer)
-**Last updated:** 2026-06-02 *(post phase-10 v1 v2)*
+**Last updated:** 2026-06-02 *(post phase-11 v1)*
 
 ---
 
@@ -67,7 +67,7 @@ Layers planned across the project. Each layer has an explicit "why this exists" 
 | AI evaluation | **Done (phase 8 v1)** | Black-box golden-set scoring (deterministic + LLM-judge) | [`testing-system/ai_evaluation/`](../ai_evaluation/README.md) | Quantifies model accuracy, safety, latency across a model list. Two grading tiers — deterministic field equality + an LLM-judge (holistic 0-10 + per-rubric fuzzy pass/fail). Current 5-model report: [`ai_evaluation/reports/report.md`](../ai_evaluation/reports/report.md) |
 | Risk-prioritisation (advisory) | **Done (phase 9 v2 v2)** | Local Ollama agent + deterministic post-processing + golden-set eval | [`testing-system/risk_agent/`](../risk_agent/README.md) | Given a PR diff + the live risk register, produces a ranked test plan with `covered_by` per risk, coverage-gap flags, relevance label (`direct` / `plausible`), and exploratory probes. Advisory only, not a CI gate. v2 v1 made `covered_by` and `is_gap` deterministic; v2 v2 added a golden-set evaluation tier ([`risk_agent.eval`](../risk_agent/eval.py)) that scores the agent against expected ranks per historic PR (precision, recall, F1 — deterministic, no LLM in scoring). Current baseline: F1 0.526 (precision 0.417 / recall 0.714) across 4 cases. The baseline is the deliverable — future changes are now scored against measurable numbers. See [`risk_agent/reports/eval-report.md`](../risk_agent/reports/eval-report.md) |
 | Triage (advisory) | **Done (phase 10 v1 v2)** | Local Ollama agent over `gh` log dumps + golden-set eval | [`testing-system/triage_agent/`](../triage_agent/README.md) | Clusters failed CI runs by signature `(test path, test name, error class)`, then asks the LLM for a category (flake / defect / infra / env) and a candidate register R-ID per cluster. Closed-vocabulary enum on the R-ID — the model cannot invent risks. v1 v2 added a golden-set evaluation tier ([`triage_agent.eval`](../triage_agent/eval.py)) scoring the agent against expected (category, R-ID) per known cluster — deterministic, no LLM in scoring. Current baseline: 5/5 on category, R-ID, and combined. Historical insight from v1 v1: R-018 was actually present at run #18 (2026-05-28), three weeks before it was logged. See [`triage_agent/reports/report.md`](../triage_agent/reports/report.md) and [`triage_agent/reports/eval-report.md`](../triage_agent/reports/eval-report.md) |
-| Production observability | **Planned (phase 11)** | Prometheus + Grafana + Loki | `testing-system/observability/` | Assess running systems and capture assurance evidence from production-style telemetry |
+| Production observability | **Done (phase 11 v1)** | Prometheus + Grafana (metrics only; Loki + Alertmanager v2 candidates) | [`testing-system/observability/`](../observability/README.md) | Local stack scraping the SUT's `/metrics` (provisioned by `prometheus-flask-exporter`), provisioned dashboard with request rate / error rate / p95 latency / per-path breakdowns. SLO thresholds on the dashboard match the k6 perf gate's pre-merge budget — same SLOs, two enforcement points. Closes R-013. See [`observability/README.md`](../observability/README.md) and [`observability/evidence/grafana-sut-overview.png`](../observability/evidence/grafana-sut-overview.png) |
 | Tests of the harness itself | **Stub (phase 0)** | pytest | `testing-system/tests/` | The harness is software too. Agents and judges get tested like any other component |
 
 A traditional test pyramid does not map cleanly onto this project because the SUT is one of several concerns alongside data quality, AI evaluation, and observability. The above is a *responsibility map*, not a pyramid.
@@ -89,7 +89,7 @@ A traditional test pyramid does not map cleanly onto this project because the SU
 | pandera | Data quality (schemas + business invariants) | Yes |
 | GitHub Actions | CI/CD on both repos | Yes |
 | GHCR | Container artifact storage | Yes |
-| Prometheus + Grafana | Production-style observability | Pending phase 11 |
+| Prometheus + Grafana | Production-style observability | Yes (phase 11 v1) |
 
 ## 7. CI/CD integration
 
@@ -302,6 +302,24 @@ Two lessons. First, *default tool timeouts are tuned for fast local environments
 
 Maps to R-018 (now mitigated).
 
+### F-010 — Operational endpoint silently leaked into the v1 API contract
+
+**Date:** 2026-06-02
+**Surfaced by:** Schemathesis contract gate on testing-system PR #19 (phase 11 observability stack), the same week the regression shipped
+**Severity:** Minor (no behavioural defect; the published spec was inaccurate)
+
+Phase 11 added `prometheus-flask-exporter` to the SUT to expose `/metrics` for the observability stack to scrape (golf-web-app PR #13). The exporter registered `/metrics` directly on the Flask app rather than on a blueprint. APIFlask discovers all app-level routes when generating the OpenAPI spec; it added `/metrics` with the default `application/json` content type while the endpoint actually serves `text/plain` (Prometheus exposition format). The first CI run on the matching testing-system phase-11 PR failed at the Schemathesis contract gate — `Received: text/plain; Documented: application/json`.
+
+**Resolution**
+
+Fixed in [golf-web-app PR #14](https://github.com/ayyadam/golf-web-app/pull/14): an APIFlask `spec_processor` in `create_app()` strips `/metrics` from the served spec before publication. The endpoint still exists at runtime (the observability stack scrapes it normally); it just isn't advertised in the v1 JSON API contract. A unit test (`test_metrics_endpoint_not_in_openapi_spec`) fetches `/api/v1/openapi.json` and asserts `/metrics` is absent from `spec['paths']` — any future regression now fails in SUT unit CI before the contract gate has to.
+
+**Generalisation**
+
+Same lesson as F-003: *an auto-generated OpenAPI spec documents the routes the framework discovers, which is not always the set of routes the author considers part of the contract*. F-003 was about the spec under-describing real behaviour (missing 5xx); F-010 is about it over-describing (advertising an operational endpoint as part of the API). Both are the same class of failure — a spec that drifts from author intent because the framework doesn't know what the author meant.
+
+The bigger story is that the standing contract gate caught a regression I introduced in the same PR cycle as the feature that introduced it. The harness did its job: F-003's lesson informed the gate, and the gate then caught the next instance of the same lesson playing out. Maps to R-006.
+
 ## 12. Roadmap
 
 The full phased plan lives in conversational notes; the abbreviated public form:
@@ -320,7 +338,7 @@ The full phased plan lives in conversational notes; the abbreviated public form:
 | 8 | AI evaluation harness | **Done (v1)** — deterministic + LLM-judge (holistic + fuzzy) |
 | 9 | Risk-prioritisation agent (PR diff → ranked test plan) | **Done (v2 v2)** — v2 v1 added deterministic `covered_by` + `is_gap` and a relevance scale; v2 v2 added a golden-set evaluation tier with deterministic scoring (precision/recall/F1). Baseline F1 0.526 across 4 cases — measurable now. PR-comment Action deferred (needs hosted-LLM commitment) |
 | 10 | Triage agent (CI failure clustering) | **Done (v1 v2)** — v1 v1: heuristic clustering + LLM category + R-ID xref. v1 v2: golden-set eval tier with deterministic scorer. 5/5 baseline on five real failures from last 30 days |
-| 11 | Prometheus + Grafana observability stack | Planned |
+| 11 | Prometheus + Grafana observability stack | **Done (v1)** — local stack scraping the SUT, provisioned dashboard with SLOs aligned to the k6 gate; closes R-013. Loki + Alertmanager deferred to v2 |
 | 12 | Exploratory testing agent + tests of agents | Planned |
 
 ## Appendix A: Glossary

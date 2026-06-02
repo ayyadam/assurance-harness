@@ -1,0 +1,35 @@
+# Prometheus scrape config — assurance harness observability stack.
+#
+# Two targets:
+#   1. golf-web-app SUT at host.docker.internal:5000 (the host gateway).
+#      Exposes /metrics via prometheus-flask-exporter; see golf-web-app PR #13.
+#   2. Prometheus itself, for stack-health visibility.
+#
+# Retention is 7 days (set on the prometheus container command in
+# docker-compose.yml) — long enough to support a few PR cycles, short enough
+# that the local volume doesn't grow indefinitely for a demo stack.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    environment: local-demo
+    repo: ayyadam/golf-web-app
+
+scrape_configs:
+  - job_name: golf-web-app
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - host.docker.internal:5000
+        labels:
+          service: sut
+          component: golf-web-app
+
+  - job_name: prometheus-self
+    static_configs:
+      - targets:
+          - localhost:9090
+        labels:
+          service: observability
+          component: prometheus

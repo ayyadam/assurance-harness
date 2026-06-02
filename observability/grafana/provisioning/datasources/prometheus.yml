@@ -1,0 +1,17 @@
+# Grafana datasource provisioning — Prometheus, scraped via the compose
+# network's service name. Provisioned at container start so the stack comes
+# up with the datasource already wired in.
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      timeInterval: 15s
+      httpMethod: POST
