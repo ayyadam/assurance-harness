@@ -229,5 +229,7 @@ reports/
 !triage_agent/reports/**
 !explore_agent/reports/
 !explore_agent/reports/**
+!tests/agents/reports/
+!tests/agents/reports/**
 # ...but the raw fetched logs cached under triage_agent/reports/raw/ are not committed.
 triage_agent/reports/raw/
