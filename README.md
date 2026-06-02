@@ -10,6 +10,7 @@ Currently in place across the two repos:
 
 - **Per-PR CI gates (`testing-system/.github/workflows/assurance.yml`):** lint (ruff), harness pytest, contract (Schemathesis), functional (Playwright), accessibility (axe-core), performance (k6), data quality (pandera) — every gate runs against an ephemeral SUT brought up from `golf-web-app`'s source.
 - **Local on-demand layers:** AI evaluation harness ([`ai_evaluation/`](ai_evaluation/README.md), phase 8), risk-prioritisation agent ([`risk_agent/`](risk_agent/README.md), phase 9), and triage agent ([`triage_agent/`](triage_agent/README.md), phase 10). All three use a local Ollama runtime so the per-PR path stays fast and reproducible; their evidence artefacts are committed under each module's `reports/` dir.
+- **Production-style observability:** Prometheus + Grafana stack ([`observability/`](observability/README.md), phase 11) scraping the SUT's `/metrics`; SLO thresholds on the dashboard match the k6 perf gate's pre-merge budget. Closes R-013.
 - **Documented findings:** F-001 through F-009 captured in the strategy with diagnosis, fix, and generalisation.
 
 ## Stack
@@ -91,6 +92,11 @@ testing-system/
 │   ├── golden_set.yaml             # v1 v2: expected (category, R-ID) per cluster
 │   ├── eval.py                     # v1 v2: deterministic scorer
 │   └── reports/                    # committed evidence (report.md + eval-report.md)
+├── observability/                  # phase 11: Prometheus + Grafana stack
+│   ├── docker-compose.yml          # stack (Prometheus + Grafana)
+│   ├── prometheus/prometheus.yml   # scrape config (host.docker.internal:5000)
+│   ├── grafana/                    # provisioned datasource + dashboard
+│   └── evidence/                   # committed screenshots
 ├── tests/                          # tests OF the harness itself
 │   └── test_smoke.py
 └── .github/workflows/
@@ -160,6 +166,17 @@ uv run python -m triage_agent.run --no-llm                         # heuristic c
 # Triage agent — eval against the golden set
 uv run python -m triage_agent.eval                                 # score against cached report
 uv run python -m triage_agent.eval --refresh                       # re-run the triage agent first
+```
+
+### Observability stack
+
+Local Prometheus + Grafana scraping the SUT's `/metrics` — see [`observability/README.md`](observability/README.md). Bring up the SUT first, then:
+
+```bash
+cd observability && docker compose up -d
+# Grafana:    http://localhost:3000   (anonymous viewer enabled)
+# Dashboard:  http://localhost:3000/d/sut-overview
+# Prometheus: http://localhost:9090
 ```
 
 See [`ai_evaluation/README.md`](ai_evaluation/README.md) and [`risk_agent/README.md`](risk_agent/README.md) for the full design notes and committed evidence.

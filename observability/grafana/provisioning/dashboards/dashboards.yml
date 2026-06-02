@@ -1,0 +1,16 @@
+# Grafana dashboard provisioning — load every JSON file under
+# /var/lib/grafana/dashboards (mounted from ./grafana/dashboards) at start.
+
+apiVersion: 1
+
+providers:
+  - name: 'Assurance dashboards'
+    orgId: 1
+    folder: 'SUT'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false
