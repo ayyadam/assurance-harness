@@ -52,6 +52,32 @@ def base_url() -> str:
     return SUT_BASE_URL
 
 
+# CSS smooth-scroll is *non-deterministic in tests*. The booking page's
+# slot-selection JS triggers a 50ms-delayed ``scrollIntoView({behavior: 'smooth'})``
+# after every slot click. On a fast local machine, that smooth scroll completes
+# before the next test action; on a cold CI runner, Playwright's confirm-button
+# stability check can race against the smooth scroll and dispatch a click whose
+# form-submission side-effect is silently lost in the viewport animation. The
+# Playwright trace from PR #25's R-018 hit shows the exact sequence:
+# ``performing click action → click action done → navigations have finished``
+# (no nav scheduled — the form never POSTed).
+#
+# Forcing ``scroll-behavior: auto`` on every page returns deterministic scroll.
+# Tests still exercise the real submit button, the real form, the real handler —
+# only the cosmetic transition is bypassed.
+@pytest.fixture
+def page(page: Page) -> Page:
+    """Override pytest-playwright's page fixture to disable CSS smooth scroll.
+
+    See R-018 / F-009 / F-012 for the full diagnostic trail. The init script
+    runs on every navigation in this page's context, so any test that uses
+    the `page` fixture (directly or via `member_page`) gets deterministic
+    scroll behaviour automatically.
+    """
+    page.add_init_script("document.documentElement.style.scrollBehavior = 'auto';")
+    return page
+
+
 @pytest.fixture(scope="session")
 def member() -> Credentials:
     """A seeded non-admin member (see golf-web-app/seed.py)."""
