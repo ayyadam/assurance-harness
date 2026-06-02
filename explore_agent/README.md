@@ -125,22 +125,19 @@ report rather than as silent skips — that visibility is part of the value.
   login page" as a goal-divergence and tag it `dead_end`. Read per-step
   judgement with the tour goal in mind.
 
-## Scope and out-of-scope
+## Scope (v1)
 
-In scope (v1):
-- API: every v1 endpoint, three payload variants each, authenticated as
-  the seeded `john.smith` account.
-- UI: three predefined tours (public pages, member login + dashboard,
-  booking assistant interaction).
+- **API**: every v1 endpoint probed with three payload variants,
+  authenticated as the seeded `john.smith` account.
+- **UI**: three predefined tours (public pages, member login + dashboard,
+  booking-assistant interaction).
 
-Deferred (v2 candidates):
-- **v2 v1** — golden-set eval for the explore agent itself, mirroring the
-  eval tiers built for [`risk_agent`](../risk_agent/eval.py) and
-  [`triage_agent`](../triage_agent/eval.py).
-- **v2 v2** — adversarial / robustness regression tests on the existing
-  `risk_agent` and `triage_agent` (LLM run N times, check invariants hold).
-- Free-form UI exploration (LLM picks the goal).
-- Re-planning mid-tour (so the plan can adapt as new pages reveal new
-  selectors).
-- Auth-bypass probing (no-cred / wrong-cred / other-user-cred probes on
-  the API surface).
+## Roadmap and deferred work
+
+This README intentionally does not maintain its own backlog — the single
+source of truth is the **Phase 12 sub-roadmap** in
+[`docs/test-strategy.md` §12](../docs/test-strategy.md#phase-12-sub-roadmap).
+That section tracks v2 v1 / v2 v2 plus the deferred items beyond
+(including the *adaptive single-step* architectural fix, free-form
+exploration, state-mutating tours, cross-tour memory, and auth-bypass
+probing). Read there for what's next and why.
