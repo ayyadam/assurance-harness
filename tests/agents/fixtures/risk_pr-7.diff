@@ -1,0 +1,60 @@
+diff --git a/app/static/css/style.css b/app/static/css/style.css
+index 9117dd2..c59fd92 100644
+--- a/app/static/css/style.css
++++ b/app/static/css/style.css
+@@ -831,4 +831,30 @@ span.flatpickr-weekday {
+     color: rgba(139, 148, 158, 0.4) !important;
+     background: transparent !important;
+     border-color: transparent !important;
++}
++
++/* ── Accessibility: WCAG 2.1 AA colour contrast on the dark theme ─────────
++   Bootstrap's default success (#198754) and danger (#dc3545) fall just short
++   of the 4.5:1 minimum as text/outline colour on our near-black background
++   (measured 3.86–4.17:1 by axe-core). Lift the resting foreground to brighter
++   shades that clear 4.5:1; keep hover fills dark enough for white text.
++   Verified by the axe-core WCAG 2.1 A/AA sweep in the testing-system harness. */
++.text-success {
++    color: var(--agc-green-light) !important;
++}
++
++.btn-outline-success {
++    --bs-btn-color: var(--agc-green-light);
++    --bs-btn-border-color: var(--agc-green-light);
++    --bs-btn-hover-color: #fff;
++    --bs-btn-hover-bg: var(--agc-green-dark);
++    --bs-btn-hover-border-color: var(--agc-green-dark);
++}
++
++.btn-outline-danger {
++    --bs-btn-color: #e57373;
++    --bs-btn-border-color: #e57373;
++    --bs-btn-hover-color: #fff;
++    --bs-btn-hover-bg: #c0392b;
++    --bs-btn-hover-border-color: #c0392b;
+ }
+\ No newline at end of file
+diff --git a/app/static/js/main.js b/app/static/js/main.js
+index f0664e1..db62f91 100644
+--- a/app/static/js/main.js
++++ b/app/static/js/main.js
+@@ -208,6 +208,19 @@ document.addEventListener('DOMContentLoaded', () => {
+                 minDate: input.getAttribute('min') || null,
+                 maxDate: input.getAttribute('max') || null,
+                 onReady: function (selectedDates, dateStr, instance) {
++                    // Give the generated alt input an accessible name (WCAG 4.1.2 / 1.3.1).
++                    // Flatpickr's altInput has no id, so the page's <label for="..."> does
++                    // not associate with it; copy that label's text into aria-label.
++                    if (instance.altInput) {
++                        const labelEl = instance.input.id
++                            ? document.querySelector(`label[for="${instance.input.id}"]`)
++                            : null;
++                        instance.altInput.setAttribute(
++                            "aria-label",
++                            (labelEl && labelEl.textContent.trim()) || "Select date"
++                        );
++                    }
++
+                     const btnWrapper = document.createElement("div");
+                     btnWrapper.style.padding = "10px";
+                     btnWrapper.style.borderTop = "1px solid var(--agc-dark-border)";

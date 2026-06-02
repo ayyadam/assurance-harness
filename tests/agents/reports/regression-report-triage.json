@@ -1,0 +1,109 @@
+{
+  "generated_at": "2026-06-02T18:41:13.828409+00:00",
+  "cases": [
+    {
+      "case_id": "r-018-timeout-flake",
+      "agent": "triage_agent",
+      "n_runs": 3,
+      "successful": 3,
+      "runs": [
+        {
+          "n": 1,
+          "elapsed_s": 7.66,
+          "error": null,
+          "output": {
+            "category": "flake",
+            "candidate_risk_id": "R-018",
+            "rationale": "The error is a TimeoutError from Playwright, specifically waiting for navigation to '/member/dashboard' after a click action. This matches the symptoms described in R-018, where functional tests flake on CI due to timing issues with cold-container runners.",
+            "suggested_action": "Rerun the failed job to confirm if it passes on retry."
+          }
+        },
+        {
+          "n": 2,
+          "elapsed_s": 5.25,
+          "error": null,
+          "output": {
+            "category": "flake",
+            "candidate_risk_id": "R-018",
+            "rationale": "The error is a TimeoutError from Playwright, specifically waiting for navigation to '/member/dashboard' after a click action. This matches the symptom described in R-018 where functional tests flake on CI due to timing issues with cold-container runners.",
+            "suggested_action": "Rerun the failed job to confirm if it passes on retry."
+          }
+        },
+        {
+          "n": 3,
+          "elapsed_s": 5.21,
+          "error": null,
+          "output": {
+            "category": "flake",
+            "candidate_risk_id": "R-018",
+            "rationale": "The error is a TimeoutError from Playwright, specifically waiting for navigation to '/member/dashboard' after a click action. This matches the symptom described in R-018 where functional tests flake on CI due to timing issues with cold-container runners.",
+            "suggested_action": "Rerun the failed job to confirm if it passes on retry.",
+            "_metrics": {
+              "category_mode": "flake",
+              "category_stability": 1.0,
+              "category_match_rate": 1.0,
+              "rid_mode": "R-018",
+              "rid_stability": 1.0,
+              "rid_match_rate": 1.0,
+              "expected_category_match": true,
+              "expected_rid_match": true,
+              "stable_divergent": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "k6-threshold-defect",
+      "agent": "triage_agent",
+      "n_runs": 3,
+      "successful": 3,
+      "runs": [
+        {
+          "n": 1,
+          "elapsed_s": 10.48,
+          "error": null,
+          "output": {
+            "category": "defect",
+            "candidate_risk_id": "R-007",
+            "rationale": "The error message indicates a threshold breach on `http_req_duration p95` in the k6 load test, which aligns with R-007. This risk is about having no performance baseline and regressions landing undetected. The failure suggests that there has been a regression beyond the defined budget (p95 < 500ms), indicating a real issue with the system under test.",
+            "suggested_action": "Investigate the performance of the tee-times list endpoint to identify any potential bottlenecks or regressions causing the p95 latency threshold breach. Consider profiling the endpoint and reviewing recent changes that might have impacted its performance."
+          }
+        },
+        {
+          "n": 2,
+          "elapsed_s": 6.87,
+          "error": null,
+          "output": {
+            "category": "defect",
+            "candidate_risk_id": "R-007",
+            "rationale": "The error message indicates a threshold breach on `http_req_duration p95` in the k6 load test, which aligns with R-007. This risk is about having no performance baseline and catching regressions in latency or throughput. The failure suggests that there's an actual regression in the performance of the tee-times endpoint.",
+            "suggested_action": "Investigate the performance degradation on the tee-times list endpoint by reviewing recent code changes and analyzing the load test results to identify potential bottlenecks."
+          }
+        },
+        {
+          "n": 3,
+          "elapsed_s": 10.32,
+          "error": null,
+          "output": {
+            "category": "defect",
+            "candidate_risk_id": "R-007",
+            "rationale": "The error message indicates a threshold breach on `http_req_duration p95` in the k6 load test, which aligns with R-007. This risk is about having no performance baseline and regressions landing undetected. The failure suggests that there has been a regression beyond the defined budget (p95 < 500ms), indicating a real issue with the current code.",
+            "suggested_action": "Investigate the performance of the tee-times list endpoint to identify any potential bottlenecks or regressions causing the p95 latency threshold breach. Consider profiling the endpoint and reviewing recent changes that might have impacted its performance.",
+            "_metrics": {
+              "category_mode": "defect",
+              "category_stability": 1.0,
+              "category_match_rate": 1.0,
+              "rid_mode": "R-007",
+              "rid_stability": 1.0,
+              "rid_match_rate": 1.0,
+              "expected_category_match": true,
+              "expected_rid_match": true,
+              "stable_divergent": false
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

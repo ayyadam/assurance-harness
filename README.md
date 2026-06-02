@@ -104,7 +104,14 @@ testing-system/
 │   ├── ui_judge.py + ui_run.py
 │   └── reports/                    # committed evidence (report.md + ui/report.md + screenshots)
 ├── tests/                          # tests OF the harness itself
-│   └── test_smoke.py
+│   ├── test_smoke.py
+│   └── agents/                     # phase 12 v2 v2: agent regression
+│       ├── fixtures/               # cached PR diffs + synthetic clusters
+│       ├── _runner.py              # run-N-times harness + jitter metrics
+│       ├── test_risk_agent_invariants.py
+│       ├── test_triage_agent_invariants.py
+│       ├── render_report.py        # combined markdown from JSON dumps
+│       └── reports/                # committed evidence
 └── .github/workflows/
     └── assurance.yml               # the per-PR gates above
 ```
@@ -186,6 +193,12 @@ uv run python -m explore_agent.ui_run --headed                     # show the br
 # Exploratory agent — eval against the golden set (API surface)
 uv run python -m explore_agent.eval                                # score against cached report
 uv run python -m explore_agent.eval --refresh                      # re-run the agent first
+
+# Agent regression suite (phase 12 v2 v2) — runs risk_agent + triage_agent
+# N times against cached fixtures; asserts schema/vocab invariants and
+# measures top-result stability under LLM jitter. ~3 min local.
+RUN_AGENT_REGRESSION=1 uv run pytest tests/agents/ -v
+uv run python tests/agents/render_report.py                        # refresh the markdown report
 ```
 
 ### Observability stack

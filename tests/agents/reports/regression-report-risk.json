@@ -1,0 +1,281 @@
+{
+  "generated_at": "2026-06-02T18:41:13.829418+00:00",
+  "cases": [
+    {
+      "case_id": "pr-7-a11y",
+      "agent": "risk_agent",
+      "n_runs": 3,
+      "successful": 3,
+      "runs": [
+        {
+          "n": 1,
+          "elapsed_s": 26.93,
+          "error": null,
+          "output": {
+            "summary": "This PR changes CSS and JavaScript to improve WCAG 2.1 AA accessibility violations on the dark theme.",
+            "ranked_risks": [
+              {
+                "id": "R-008",
+                "relevance": 3,
+                "rationale": "The diff directly addresses WCAG 2.1 AA colour contrast issues in `app/static/css/style.css` and adds accessible names to date inputs in `app/static/js/main.js`. This PR is explicitly aimed at mitigating this risk.",
+                "action": "Re-run the axe-core WCAG 2.1 A/AA sweep over six key pages to ensure no new violations have been introduced.",
+                "covered_by": "axe-core sweep",
+                "is_gap": false
+              },
+              {
+                "id": "R-019",
+                "relevance": 2,
+                "rationale": "The diff modifies JavaScript and CSS files that could potentially affect the performance of accessibility tests on GitHub-hosted runners. Although not directly related, a reviewer should check if these changes might impact runner memory usage.",
+                "action": "Monitor CI runs for any OOM-kills or flakiness in the Playwright/accessibility job.",
+                "covered_by": "Playwright functional suite",
+                "is_gap": false
+              }
+            ],
+            "exploratory_probes": [
+              "Manually test the dark theme on different browsers to ensure all WCAG 2.1 AA violations are fixed.",
+              "Use a color contrast checker tool to verify that the new colors meet the required contrast ratios.",
+              "Test the date picker functionality in `main.js` with screen readers to ensure accessibility improvements are effective.",
+              "Check if any new elements introduced or modified in this PR have proper ARIA labels and roles."
+            ],
+            "model": "qwen2.5:32b-instruct-q4_K_M"
+          }
+        },
+        {
+          "n": 2,
+          "elapsed_s": 16.49,
+          "error": null,
+          "output": {
+            "summary": "This PR changes CSS and JavaScript to improve WCAG 2.1 AA accessibility violations on the dark theme.",
+            "ranked_risks": [
+              {
+                "id": "R-008",
+                "relevance": 3,
+                "rationale": "The diff directly addresses WCAG 2.1 AA colour contrast issues in `app/static/css/style.css` and adds accessible names to date inputs in `app/static/js/main.js`. These changes are aimed at mitigating accessibility violations.",
+                "action": "Re-run the axe-core WCAG 2.1 A/AA sweep over key pages to ensure no new regressions have been introduced.",
+                "covered_by": "axe-core sweep",
+                "is_gap": false
+              },
+              {
+                "id": "R-019",
+                "relevance": 2,
+                "rationale": "The diff modifies CSS and JavaScript files that could potentially affect the performance of accessibility tests run on GitHub-hosted runners. Although not directly related, changes in these files might impact test stability.",
+                "action": "Monitor CI runs for any OOM-kills or flakes specifically during the Playwright/accessibility job.",
+                "covered_by": "Playwright functional suite",
+                "is_gap": false
+              }
+            ],
+            "exploratory_probes": [
+              "Manually verify that the dark theme's button colors meet WCAG 2.1 AA contrast requirements using a color contrast checker tool.",
+              "Test the date picker input in both light and dark themes to ensure it has an accessible name (aria-label) when rendered.",
+              "Check if any new accessibility issues are introduced by manually testing key pages with screen readers.",
+              "Verify that the changes do not introduce any layout shifts or visual regressions that could affect user experience."
+            ],
+            "model": "qwen2.5:32b-instruct-q4_K_M"
+          }
+        },
+        {
+          "n": 3,
+          "elapsed_s": 16.42,
+          "error": null,
+          "output": {
+            "summary": "This PR changes CSS and JavaScript to improve WCAG 2.1 AA accessibility violations on the dark theme.",
+            "ranked_risks": [
+              {
+                "id": "R-008",
+                "relevance": 3,
+                "rationale": "The diff directly addresses WCAG 2.1 AA colour contrast issues in `app/static/css/style.css` and adds accessible names to date inputs in `app/static/js/main.js`. These changes are aimed at mitigating accessibility violations.",
+                "action": "Re-run the axe-core WCAG 2.1 A/AA sweep over key pages to ensure no new regressions have been introduced.",
+                "covered_by": "axe-core sweep",
+                "is_gap": false
+              },
+              {
+                "id": "R-019",
+                "relevance": 2,
+                "rationale": "The diff modifies CSS and JavaScript files that could potentially affect the performance of accessibility tests run on GitHub-hosted runners. Although not directly related, changes in these files might impact test stability.",
+                "action": "Monitor CI runs for any OOM-kills or flakes specifically during the Playwright/accessibility job.",
+                "covered_by": "Playwright functional suite",
+                "is_gap": false
+              }
+            ],
+            "exploratory_probes": [
+              "Manually verify that the dark theme's button colors meet WCAG 2.1 AA contrast requirements using a color contrast checker tool.",
+              "Test the date picker input in both light and dark themes to ensure it has an accessible name (aria-label) when rendered.",
+              "Check if any new accessibility issues are introduced by manually testing key pages with screen readers.",
+              "Verify that the changes do not introduce any layout shifts or visual regressions that could affect user experience."
+            ],
+            "model": "qwen2.5:32b-instruct-q4_K_M",
+            "_metrics": {
+              "top_value_mode": "R-008",
+              "top_value_stability": 1.0,
+              "expected_top_presence_rate": 1.0,
+              "expected_top_match_rate": 1.0,
+              "stable_divergent": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "pr-12-f008",
+      "agent": "risk_agent",
+      "n_runs": 3,
+      "successful": 3,
+      "runs": [
+        {
+          "n": 1,
+          "elapsed_s": 28.87,
+          "error": null,
+          "output": {
+            "summary": "This PR changes the booking assistant to include time-of-day constraints for tee-time bookings.",
+            "ranked_risks": [
+              {
+                "id": "R-002",
+                "relevance": 3,
+                "rationale": "The diff introduces new logic in `app/services/booking_assistant.py` that filters tee times based on explicit time bounds (`not_before`, `not_after`). This could lead to concurrent bookings if the filtering logic is not robust.",
+                "action": "Add concurrency tests for booking endpoints with time-of-day constraints.",
+                "covered_by": "none (open, no layer)",
+                "is_gap": true
+              },
+              {
+                "id": "R-011",
+                "relevance": 3,
+                "rationale": "The diff modifies the booking assistant's intent parsing and slot-finding logic to include new time bounds (`not_before`, `not_after`). This could introduce errors if the AI model hallucinates or misinterprets these constraints.",
+                "action": "Add golden-set cases for time-of-day constraints in the AI evaluation.",
+                "covered_by": "ai_evaluation/",
+                "is_gap": false
+              },
+              {
+                "id": "R-012",
+                "relevance": 3,
+                "rationale": "The diff modifies the booking assistant's intent parsing logic to include new time bounds (`not_before`, `not_after`). This could introduce prompt injection vulnerabilities if the model is not constrained properly.",
+                "action": "Verify that the structured-output boundary holds for new time-of-day constraints.",
+                "covered_by": "ai_evaluation/",
+                "is_gap": false
+              },
+              {
+                "id": "R-018",
+                "relevance": 2,
+                "rationale": "The diff modifies the booking assistant's logic in `app/services/booking_assistant.py`, which could affect functional tests. The risk of flaky tests due to cold-container runners remains relevant.",
+                "action": "Re-run functional tests with time-of-day constraints to ensure stability.",
+                "covered_by": "Playwright functional suite",
+                "is_gap": false
+              }
+            ],
+            "exploratory_probes": [
+              "Manually test the booking assistant by providing various time-of-day constraints and verifying that the correct tee times are proposed.",
+              "Use `curl` to send requests to the booking API with different time bounds (`not_before`, `not_after`) and verify the responses.",
+              "Check if concurrent bookings can be made within the same time window using multiple browser sessions.",
+              "Test edge cases such as overlapping time windows or invalid time inputs to ensure proper handling."
+            ],
+            "model": "qwen2.5:32b-instruct-q4_K_M"
+          }
+        },
+        {
+          "n": 2,
+          "elapsed_s": 22.52,
+          "error": null,
+          "output": {
+            "summary": "This PR changes the booking assistant to include time-of-day constraints for tee-time bookings.",
+            "ranked_risks": [
+              {
+                "id": "R-002",
+                "relevance": 3,
+                "rationale": "The diff introduces new logic and schema fields (`not_before` and `not_after`) that directly affect the booking process. This could lead to concurrent bookings if not properly synchronized.",
+                "action": "Add concurrency tests for the booking endpoints.",
+                "covered_by": "none (open, no layer)",
+                "is_gap": true
+              },
+              {
+                "id": "R-011",
+                "relevance": 3,
+                "rationale": "The diff modifies the BookingIntent schema and parsing logic, which directly impacts how the AI booking feature interprets user requests. This could lead to incorrect slot proposals.",
+                "action": "Update the golden set cases for the AI booking feature to include time-of-day constraints.",
+                "covered_by": "ai_evaluation/",
+                "is_gap": false
+              },
+              {
+                "id": "R-012",
+                "relevance": 3,
+                "rationale": "The diff modifies the BookingIntent schema and parsing logic, which directly impacts how user inputs are interpreted. This could introduce new vectors for prompt injection attacks.",
+                "action": "Update the adversarial test set to include time-of-day constraints in the input validation.",
+                "covered_by": "ai_evaluation/",
+                "is_gap": false
+              },
+              {
+                "id": "R-018",
+                "relevance": 2,
+                "rationale": "The diff modifies the booking assistant logic and schema, which could affect functional tests that rely on timing assertions. This might cause flakiness if not properly addressed.",
+                "action": "Review and update functional test timeouts to account for new time-of-day constraints.",
+                "covered_by": "Playwright functional suite",
+                "is_gap": false
+              }
+            ],
+            "exploratory_probes": [
+              "Manually test the booking assistant with various time-of-day constraints in different scenarios (e.g., morning, afternoon) to ensure correct slot proposals.",
+              "Use `curl` to send requests with malformed or missing time-of-day constraints and verify that the system handles them gracefully.",
+              "Check if concurrent bookings can be made within the same time window by simulating multiple simultaneous booking attempts.",
+              "Test edge cases where the time-of-day constraints are at the boundary of morning/afternoon periods."
+            ],
+            "model": "qwen2.5:32b-instruct-q4_K_M"
+          }
+        },
+        {
+          "n": 3,
+          "elapsed_s": 22.53,
+          "error": null,
+          "output": {
+            "summary": "This PR changes the booking assistant to include time-of-day constraints for tee-time bookings.",
+            "ranked_risks": [
+              {
+                "id": "R-002",
+                "relevance": 3,
+                "rationale": "The diff introduces new logic and schema fields (`not_before` and `not_after`) that directly affect the booking process. This could lead to concurrent bookings if not properly synchronized.",
+                "action": "Add concurrency tests for the booking endpoints.",
+                "covered_by": "none (open, no layer)",
+                "is_gap": true
+              },
+              {
+                "id": "R-011",
+                "relevance": 3,
+                "rationale": "The diff modifies the BookingIntent schema and parsing logic, which directly impacts how the AI booking feature interprets user requests. This could lead to incorrect slot proposals.",
+                "action": "Update the golden set cases for the AI booking feature to include time-of-day constraints.",
+                "covered_by": "ai_evaluation/",
+                "is_gap": false
+              },
+              {
+                "id": "R-012",
+                "relevance": 3,
+                "rationale": "The diff modifies the BookingIntent schema and parsing logic, which directly impacts how user inputs are interpreted. This could introduce new vectors for prompt injection attacks.",
+                "action": "Update the adversarial test set to include time-of-day constraints in the input validation.",
+                "covered_by": "ai_evaluation/",
+                "is_gap": false
+              },
+              {
+                "id": "R-018",
+                "relevance": 2,
+                "rationale": "The diff modifies the booking assistant logic and schema, which could affect functional tests that rely on timing assertions. This might cause flakiness if not properly addressed.",
+                "action": "Review and update functional test timeouts to account for new time-of-day constraints.",
+                "covered_by": "Playwright functional suite",
+                "is_gap": false
+              }
+            ],
+            "exploratory_probes": [
+              "Manually test the booking assistant with various time-of-day constraints in different scenarios (e.g., morning, afternoon) to ensure correct slot proposals.",
+              "Use `curl` to send requests with malformed or missing time-of-day constraints and verify that the system handles them gracefully.",
+              "Check if concurrent bookings can be made within the same time window by simulating multiple simultaneous booking attempts.",
+              "Test edge cases where the time-of-day constraints are at the boundary of morning/afternoon periods."
+            ],
+            "model": "qwen2.5:32b-instruct-q4_K_M",
+            "_metrics": {
+              "top_value_mode": "R-002",
+              "top_value_stability": 1.0,
+              "expected_top_presence_rate": 1.0,
+              "expected_top_match_rate": 0.0,
+              "stable_divergent": true
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

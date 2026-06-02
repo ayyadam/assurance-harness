@@ -1,0 +1,298 @@
+diff --git a/app/api/schemas.py b/app/api/schemas.py
+index 05d60f6..afb1e5c 100644
+--- a/app/api/schemas.py
++++ b/app/api/schemas.py
+@@ -132,6 +132,14 @@ class BookingIntentOut(Schema):
+     period = String(metadata={'description': "'morning', 'afternoon', or 'any'"})
+     group_size = Integer()
+     players = List(String())
++    not_before = Time(
++        format='%H:%M', allow_none=True,
++        metadata={'description': 'earliest acceptable tee time (HH:MM), or null'},
++    )
++    not_after = Time(
++        format='%H:%M', allow_none=True,
++        metadata={'description': 'latest acceptable tee time (HH:MM), or null'},
++    )
+ 
+ 
+ class BookingAssistantResponse(Schema):
+diff --git a/app/services/booking_assistant.py b/app/services/booking_assistant.py
+index 0c09a40..2acef4e 100644
+--- a/app/services/booking_assistant.py
++++ b/app/services/booking_assistant.py
+@@ -35,12 +35,31 @@ class BookingIntent:
+     period: str = "any"          # 'morning' | 'afternoon' | 'any'
+     group_size: int = 1
+     players: list[str] = field(default_factory=list)
++    not_before: Optional[time] = None   # earliest acceptable tee time ("from 9am")
++    not_after: Optional[time] = None    # latest acceptable tee time ("by 11am")
+ 
+ 
+ class IntentParseError(ValueError):
+     """Raised when free text cannot be turned into a valid BookingIntent."""
+ 
+ 
++def _coerce_clock(value) -> Optional[time]:
++    """Parse a provider's "HH:MM" time string into a time, or None.
++
++    A bad or missing value drops the constraint (returns None) rather than
++    failing the whole intent — a malformed time bound should not stop us
++    proposing slots.
++    """
++    if value is None or value == "":
++        return None
++    if isinstance(value, time):
++        return value
++    try:
++        return datetime.strptime(str(value).strip(), "%H:%M").time()
++    except ValueError:
++        return None
++
++
+ def _coerce_intent(raw: dict) -> BookingIntent:
+     """Validate a raw provider dict into a BookingIntent, or raise.
+ 
+@@ -66,7 +85,14 @@ def _coerce_intent(raw: dict) -> BookingIntent:
+     players_raw = raw.get("players") or []
+     players = [p.strip() for p in players_raw if isinstance(p, str) and p.strip()]
+ 
+-    return BookingIntent(date=parsed_date, period=period, group_size=group_size, players=players)
++    return BookingIntent(
++        date=parsed_date,
++        period=period,
++        group_size=group_size,
++        players=players,
++        not_before=_coerce_clock(raw.get("not_before")),
++        not_after=_coerce_clock(raw.get("not_after")),
++    )
+ 
+ 
+ # ── Extractor interface + implementations ─────────────────────────────────
+@@ -83,6 +109,30 @@ def extract(self, text: str) -> BookingIntent: ...
+ }
+ _NUMBER_WORDS = {"one": 1, "two": 2, "three": 3, "four": 4, "single": 1}
+ 
++# A spoken clock token: "9", "9:30", "2pm", "11 am", "noon".
++_TIME_PAT = r"(\d{1,2}(?::\d{2})?\s*(?:am|pm)?|noon|midday|midnight)"
++_CLOCK_RE = re.compile(r"^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$")
++
++
++def _parse_clock_token(tok: str) -> Optional[time]:
++    """Best-effort parse of a spoken clock token into a time, or None."""
++    tok = tok.strip().lower()
++    if tok in ("noon", "midday"):
++        return time(12, 0)
++    if tok == "midnight":
++        return time(0, 0)
++    m = _CLOCK_RE.match(tok)
++    if not m:
++        return None
++    hour, mins, ap = int(m.group(1)), int(m.group(2) or 0), m.group(3)
++    if mins > 59:
++        return None
++    if ap == "pm" and hour != 12:
++        hour += 12
++    elif ap == "am" and hour == 12:
++        hour = 0
++    return time(hour, mins) if hour <= 23 else None
++
+ 
+ class StubIntentExtractor:
+     """Deterministic, rule-based fake — no model. Used in CI so the gates stay
+@@ -119,7 +169,27 @@ def extract(self, text: str, today: Optional[date] = None) -> BookingIntent:
+                     when = today + timedelta(days=ahead)
+                     break
+ 
+-        return _coerce_intent({"date": when, "period": period, "group_size": group_size})
++        not_before = not_after = None
++        between = re.search(rf"\bbetween\s+{_TIME_PAT}\s+and\s+{_TIME_PAT}", t)
++        if between:
++            not_before = _parse_clock_token(between.group(1))
++            not_after = _parse_clock_token(between.group(2))
++        else:
++            after = re.search(rf"\b(?:from|after|no earlier than)\s+{_TIME_PAT}", t)
++            if after:
++                not_before = _parse_clock_token(after.group(1))
++            before = re.search(rf"\b(?:before|by|no later than|until)\s+{_TIME_PAT}", t)
++            if before:
++                not_after = _parse_clock_token(before.group(1))
++            if not_before is None and not_after is None:
++                at = re.search(rf"\bat\s+{_TIME_PAT}", t)
++                if at:
++                    not_before = not_after = _parse_clock_token(at.group(1))
++
++        return _coerce_intent({
++            "date": when, "period": period, "group_size": group_size,
++            "not_before": not_before, "not_after": not_after,
++        })
+ 
+ 
+ _INTENT_JSON_SCHEMA = {
+@@ -129,6 +199,14 @@ def extract(self, text: str, today: Optional[date] = None) -> BookingIntent:
+         "period": {"type": "string", "enum": list(VALID_PERIODS)},
+         "group_size": {"type": "integer", "minimum": MIN_GROUP, "maximum": MAX_GROUP},
+         "players": {"type": "array", "items": {"type": "string"}},
++        "not_before": {
++            "type": ["string", "null"],
++            "description": "earliest acceptable tee time as HH:MM 24-hour, or null",
++        },
++        "not_after": {
++            "type": ["string", "null"],
++            "description": "latest acceptable tee time as HH:MM 24-hour, or null",
++        },
+     },
+     "required": ["date", "period", "group_size"],
+ }
+@@ -166,7 +244,17 @@ def _system_prompt(today: date) -> str:
+             "matches exactly. Copy that row's date verbatim.\n"
+             "period is 'morning' (before 12:00), 'afternoon' (12:00 or later), or 'any'. "
+             "group_size is the number of players from 1 to 4. "
+-            "players is the list of named playing partners mentioned, excluding the member. "
++            "players is the list of named playing partners mentioned, excluding the member.\n"
++            "Set not_before and/or not_after ONLY when the member states an explicit "
++            "clock time; otherwise leave BOTH null. Never derive them from the words "
++            "'morning' or 'afternoon' — those set period only.\n"
++            "  'from 9am' / 'after 9' / 'no earlier than 9' -> not_before '09:00'\n"
++            "  'before noon' / 'by 11am' / 'no later than 3pm' -> not_after '12:00' / '11:00' / '15:00'\n"
++            "  'between 9 and 11' -> not_before '09:00', not_after '11:00'\n"
++            "  'at 10am' -> not_before '10:00' and not_after '10:00'\n"
++            "  'saturday morning' (no clock time) -> not_before null, not_after null\n"
++            "Convert 12-hour times to 24-hour. period is the half-day and may be "
++            "combined with these bounds.\n"
+             "Respond with only the JSON object."
+         )
+ 
+@@ -232,6 +320,15 @@ def _matches_period(slot_time: time, period: str) -> bool:
+     return True
+ 
+ 
++def _matches_time_window(slot_time: time, intent: BookingIntent) -> bool:
++    """Apply the member's explicit time bounds (inclusive), if any."""
++    if intent.not_before is not None and slot_time < intent.not_before:
++        return False
++    if intent.not_after is not None and slot_time > intent.not_after:
++        return False
++    return True
++
++
+ def find_candidate_slots(intent: BookingIntent, member=None, limit: Optional[int] = None):
+     """Return bookable tee-time slots matching the intent, earliest first.
+ 
+@@ -247,7 +344,9 @@ def find_candidate_slots(intent: BookingIntent, member=None, limit: Optional[int
+     slots = _filter_available_tee_times(intent.date)
+     matching = [
+         s for s in slots
+-        if _matches_period(s.time, intent.period) and s.slots_remaining >= intent.group_size
++        if _matches_period(s.time, intent.period)
++        and _matches_time_window(s.time, intent)
++        and s.slots_remaining >= intent.group_size
+     ]
+ 
+     if member is not None:
+diff --git a/app/templates/member/book_tee_time.html b/app/templates/member/book_tee_time.html
+index 8d2069a..714e83a 100644
+--- a/app/templates/member/book_tee_time.html
++++ b/app/templates/member/book_tee_time.html
+@@ -31,7 +31,10 @@ <h2 id="book-a-tee-time"><i class="bi bi-calendar-plus me-2 text-success"></i>Bo
+             <div id="assistant-interpretation" class="mt-3 small text-muted">
+                 <i class="bi bi-info-circle me-1"></i>I understood:
+                 <strong>{{ assistant.intent.group_size }}</strong> player{{ 's' if assistant.intent.group_size != 1 }},
+-                <strong>{{ assistant.intent.period }}</strong> on
++                <strong>{{ assistant.intent.period }}</strong>
++                {%- if assistant.intent.not_before %} from <strong>{{ assistant.intent.not_before.strftime('%H:%M') }}</strong>{% endif %}
++                {%- if assistant.intent.not_after %} until <strong>{{ assistant.intent.not_after.strftime('%H:%M') }}</strong>{% endif %}
++                on
+                 <strong>{{ assistant.intent.date.strftime('%A %d %B %Y') }}</strong>
+                 — <strong>{{ assistant.count }}</strong> matching slot{{ 's' if assistant.count != 1 }}.
+             </div>
+diff --git a/tests/unit/test_booking_assistant.py b/tests/unit/test_booking_assistant.py
+index a192903..45c5b13 100644
+--- a/tests/unit/test_booking_assistant.py
++++ b/tests/unit/test_booking_assistant.py
+@@ -52,6 +52,52 @@ def test_never_crashes_and_stays_in_range(self, junk):
+         assert 1 <= intent.group_size <= 4
+         assert intent.period in ("morning", "afternoon", "any")
+ 
++    def test_parses_not_before_from(self):
++        intent = StubIntentExtractor().extract("a round from 9am", today=date(2026, 6, 1))
++        assert intent.not_before == time(9, 0)
++        assert intent.not_after is None
++
++    def test_parses_not_after_by(self):
++        intent = StubIntentExtractor().extract("morning by 11am", today=date(2026, 6, 1))
++        assert intent.period == "morning"
++        assert intent.not_after == time(11, 0)
++        assert intent.not_before is None
++
++    def test_parses_before_noon(self):
++        intent = StubIntentExtractor().extract("a game before noon", today=date(2026, 6, 1))
++        assert intent.not_after == time(12, 0)
++
++    def test_parses_between_range(self):
++        intent = StubIntentExtractor().extract("something between 9 and 11", today=date(2026, 6, 1))
++        assert intent.not_before == time(9, 0)
++        assert intent.not_after == time(11, 0)
++
++    def test_parses_at_exact_time_as_degenerate_window(self):
++        intent = StubIntentExtractor().extract("tee off at 10am", today=date(2026, 6, 1))
++        assert intent.not_before == time(10, 0)
++        assert intent.not_after == time(10, 0)
++
++    def test_parses_pm_alongside_period(self):
++        intent = StubIntentExtractor().extract("afternoon from 2pm", today=date(2026, 6, 1))
++        assert intent.period == "afternoon"
++        assert intent.not_before == time(14, 0)
++
++    def test_no_time_phrase_leaves_bounds_unset(self):
++        intent = StubIntentExtractor().extract("a 4-ball saturday morning", today=date(2026, 6, 1))
++        assert intent.not_before is None
++        assert intent.not_after is None
++
++
++# ---------- intent coercion (LLM string path) ----------
++
++class TestCoerceIntent:
++    def test_parses_hhmm_strings_and_drops_bad_time(self):
++        from app.services.booking_assistant import _coerce_intent
++
++        intent = _coerce_intent({"date": "2026-06-02", "not_before": "09:00", "not_after": "garbage"})
++        assert intent.not_before == time(9, 0)
++        assert intent.not_after is None   # malformed bound dropped, not fatal
++
+ 
+ # ---------- provider registry ----------
+ 
+@@ -129,6 +175,32 @@ def test_returns_all_matching_slots_uncapped(self, db):
+             BookingIntent(date=d, period="any", group_size=2), limit=5,
+         )) == 5
+ 
++    def test_applies_not_before_bound(self, db):
++        d = date.today() + timedelta(days=3)
++        _db.session.add_all([
++            TeeTime(date=d, time=time(8, 0), max_players=4, is_available=True),
++            TeeTime(date=d, time=time(9, 0), max_players=4, is_available=True),
++            TeeTime(date=d, time=time(10, 0), max_players=4, is_available=True),
++        ])
++        _db.session.commit()
++        slots = find_candidate_slots(
++            BookingIntent(date=d, period="morning", group_size=1, not_before=time(9, 0)),
++        )
++        assert [s.time for s in slots] == [time(9, 0), time(10, 0)]  # 08:00 excluded
++
++    def test_applies_not_after_bound_inclusive(self, db):
++        d = date.today() + timedelta(days=3)
++        _db.session.add_all([
++            TeeTime(date=d, time=time(9, 0), max_players=4, is_available=True),
++            TeeTime(date=d, time=time(11, 0), max_players=4, is_available=True),
++            TeeTime(date=d, time=time(13, 0), max_players=4, is_available=True),
++        ])
++        _db.session.commit()
++        slots = find_candidate_slots(
++            BookingIntent(date=d, period="any", group_size=1, not_after=time(11, 0)),
++        )
++        assert [s.time for s in slots] == [time(9, 0), time(11, 0)]  # 13:00 out, 11:00 kept
++
+ 
+ # ---------- API endpoint (wired to the stub) ----------
+ 
