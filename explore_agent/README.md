@@ -125,12 +125,53 @@ report rather than as silent skips — that visibility is part of the value.
   login page" as a goal-divergence and tag it `dead_end`. Read per-step
   judgement with the tour goal in mind.
 
+## Eval surface — `explore_agent.eval`
+
+Golden-set evaluation tier (v2 v1) mirroring [`risk_agent.eval`](../risk_agent/eval.py)
+and [`triage_agent.eval`](../triage_agent/eval.py). Reads the cached
+API-surface report and scores each (endpoint, variant) probe's category
+against the expected category in [`golden_set.yaml`](golden_set.yaml).
+Deterministic — no LLM in the scoring path.
+
+### Eval quick start
+
+```bash
+# score the cached report
+uv run python -m explore_agent.eval
+
+# re-run the API agent first, then score
+uv run python -m explore_agent.eval --refresh
+```
+
+### What this eval measures
+
+With no defects in the seeded surface, every golden-set case's expected
+category is `expected`. The eval quantifies one specific failure mode:
+**how often the agent over-flags benign responses** (the documented v1 v1
+limitation). Future judge-prompt tightening, prompt-engineering tweaks,
+or a different judge model can all be scored against this baseline.
+
+Current baseline (post-7-day reseed):
+
+| Metric | Value |
+|---|---|
+| Cases | 18 |
+| Overall accuracy | **0.500** (9/18) |
+| Over-flagged as `business_rule_concern` | 7 |
+| Over-flagged as `unexpected_5xx` | 2 |
+
+If a real defect surfaces later, the affected case is updated to a
+non-`expected` category and the same scorer also measures whether the
+agent **catches real defects** — without changes to the eval code.
+
 ## Scope (v1)
 
 - **API**: every v1 endpoint probed with three payload variants,
   authenticated as the seeded `john.smith` account.
 - **UI**: three predefined tours (public pages, member login + dashboard,
   booking-assistant interaction).
+- **Eval**: 18 (endpoint, variant) cases scored deterministically against
+  the cached API report.
 
 ## Roadmap and deferred work
 
