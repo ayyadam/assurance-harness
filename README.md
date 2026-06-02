@@ -11,7 +11,7 @@ Currently in place across the two repos:
 - **Per-PR CI gates (`testing-system/.github/workflows/assurance.yml`):** lint (ruff), harness pytest, contract (Schemathesis), functional (Playwright), accessibility (axe-core), performance (k6), data quality (pandera) — every gate runs against an ephemeral SUT brought up from `golf-web-app`'s source.
 - **Local on-demand layers:** AI evaluation harness ([`ai_evaluation/`](ai_evaluation/README.md), phase 8), risk-prioritisation agent ([`risk_agent/`](risk_agent/README.md), phase 9), triage agent ([`triage_agent/`](triage_agent/README.md), phase 10), and exploratory agent ([`explore_agent/`](explore_agent/README.md), phase 12). All four use a local Ollama runtime so the per-PR path stays fast and reproducible; their evidence artefacts are committed under each module's `reports/` dir.
 - **Production-style observability:** Prometheus + Grafana stack ([`observability/`](observability/README.md), phase 11) scraping the SUT's `/metrics`; SLO thresholds on the dashboard match the k6 perf gate's pre-merge budget. Closes R-013.
-- **Documented findings:** F-001 through F-010 captured in the strategy with diagnosis, fix, and generalisation.
+- **Documented findings:** F-001 through F-011 captured in the strategy with diagnosis, fix, and generalisation.
 
 ## Stack
 
@@ -97,12 +97,12 @@ testing-system/
 │   ├── prometheus/prometheus.yml   # scrape config (host.docker.internal:5000)
 │   ├── grafana/                    # provisioned datasource + dashboard
 │   └── evidence/                   # committed screenshots
-├── explore_agent/                  # phase 12 v1 v1: LLM-driven API exploration
-│   ├── spec.py                     # fetch + parse live OpenAPI
-│   ├── probe.py                    # variant generation + HTTP probing
-│   ├── judge.py                    # response classifier (closed enum)
-│   ├── render.py + run.py          # CLI + markdown
-│   └── reports/                    # committed evidence
+├── explore_agent/                  # phase 12: LLM-driven exploration (API + UI)
+│   ├── spec.py + probe.py          # v1 v1: API surface — OpenAPI-driven
+│   ├── judge.py + render.py + run.py
+│   ├── tours.py + ui_probe.py      # v1 v2: UI surface — Playwright tours
+│   ├── ui_judge.py + ui_run.py
+│   └── reports/                    # committed evidence (report.md + ui/report.md + screenshots)
 ├── tests/                          # tests OF the harness itself
 │   └── test_smoke.py
 └── .github/workflows/
@@ -177,6 +177,11 @@ uv run python -m triage_agent.eval --refresh                       # re-run the 
 # (SUT must be up; see explore_agent/README.md)
 uv run python -m explore_agent.run                                 # default model, full LLM run
 uv run python -m explore_agent.run --no-llm                        # deterministic empty-body probes only
+
+# Exploratory agent — UI tours via Playwright (LLM plans, LLM judges per step)
+uv run python -m explore_agent.ui_run                              # all tours, headless
+uv run python -m explore_agent.ui_run --tour booking-assistant     # single tour
+uv run python -m explore_agent.ui_run --headed                     # show the browser
 ```
 
 ### Observability stack

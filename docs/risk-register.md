@@ -2,7 +2,7 @@
 
 **Status:** living document — updated as risks are surfaced, mitigated, or accepted.
 **Owner:** Adam
-**Last updated:** 2026-06-02
+**Last updated:** 2026-06-02 *(R-019 added)*
 
 This register drives test prioritisation. See [`test-strategy.md` §8](test-strategy.md#8-risk-based-prioritisation) for how it informs decisions.
 
@@ -38,6 +38,7 @@ A row in this register is **a risk to product quality**, not a defect. A defect 
 | R-016 | Long-running CI exceeds GitHub free-tier minutes on a private repo | L | L | 1 | **accepted** | Current pipeline is ~3 min/run; would require ~700 pushes/month to brush the 2,000 min/month free limit |
 | R-017 | Workflow uses deprecated Node.js 20 actions — will break when GitHub forces Node.js 24 default | M | L | 2 | **mitigated** | Action versions bumped: `actions/checkout@v5`, `actions/setup-python@v6`, `actions/upload-artifact@v5`, `astral-sh/setup-uv@v5` |
 | R-018 | Functional tests flake on CI when navigation-after-click assertions race a cold-container runner — eroding trust in the gate | M | M | 4 | **mitigated** | Two recurrences observed on the booking-confirm flow (PR #11 `test_member_books_a_tee_time`, PR #12 `test_assistant_interprets_request_and_books_a_slot`) — both passed on rerun. Root cause: Playwright's default 5s `expect()` assertion timeout has no margin for the cold-runner spike in the confirm POST → commit → 302 → dashboard GET chain. Mitigated in `fix/r-018-functional-flake`: global expect timeout bumped to 15s in `functional/conftest.py`, and the two known-flaky URL assertions converted to `page.wait_for_url(...)` (30s default) — the idiomatic Playwright pattern after a navigating click. See [Finding F-009](test-strategy.md#f-009--functional-test-flake-on-the-booking-confirm-redirect-default-playwright-timeout-too-tight-for-cold-runner) |
+| R-019 | GitHub-hosted runner OOM-kills the Playwright/accessibility job (exit 137) on cold runs — same job passes on rerun, eroding trust in the gate | M | M | 4 | **partially mitigated** | Three observed recurrences across two job types: PR #19 second CI on Accessibility (axe), and twice on Functional Tests (Playwright) — most recently post-merge dev run [`26822385733`](https://github.com/ayyadam/testing-system/actions/runs/26822385733) on 2026-06-02. Class of failure is distinct from R-018: this is the runner being OOM-killed during Playwright/Chromium startup, not a Playwright timeout. Each occurrence has passed cleanly on rerun. Current strategy: **rerun-on-hit, do not chase**. The cost of debugging a hosted-runner memory ceiling against a deeply-cached image build is high; the cost of one click on `gh run rerun --failed` is low. Re-evaluate if the rate climbs above ~1-in-10. See [Finding F-011](test-strategy.md#f-011--repeated-runner-oom-on-playwrighta11y-jobs) |
 
 ## Retired risks
 

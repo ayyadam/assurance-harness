@@ -2,7 +2,7 @@
 
 **Status:** living document — updated as the assurance harness matures.
 **Owner:** Adam (acting as Digital Assurance Engineer)
-**Last updated:** 2026-06-02 *(post phase-12 v1 v1)*
+**Last updated:** 2026-06-02 *(phase-12 v1 v2 + F-011)*
 
 ---
 
@@ -68,7 +68,7 @@ Layers planned across the project. Each layer has an explicit "why this exists" 
 | Risk-prioritisation (advisory) | **Done (phase 9 v2 v2)** | Local Ollama agent + deterministic post-processing + golden-set eval | [`testing-system/risk_agent/`](../risk_agent/README.md) | Given a PR diff + the live risk register, produces a ranked test plan with `covered_by` per risk, coverage-gap flags, relevance label (`direct` / `plausible`), and exploratory probes. Advisory only, not a CI gate. v2 v1 made `covered_by` and `is_gap` deterministic; v2 v2 added a golden-set evaluation tier ([`risk_agent.eval`](../risk_agent/eval.py)) that scores the agent against expected ranks per historic PR (precision, recall, F1 — deterministic, no LLM in scoring). Current baseline: F1 0.526 (precision 0.417 / recall 0.714) across 4 cases. The baseline is the deliverable — future changes are now scored against measurable numbers. See [`risk_agent/reports/eval-report.md`](../risk_agent/reports/eval-report.md) |
 | Triage (advisory) | **Done (phase 10 v1 v2)** | Local Ollama agent over `gh` log dumps + golden-set eval | [`testing-system/triage_agent/`](../triage_agent/README.md) | Clusters failed CI runs by signature `(test path, test name, error class)`, then asks the LLM for a category (flake / defect / infra / env) and a candidate register R-ID per cluster. Closed-vocabulary enum on the R-ID — the model cannot invent risks. v1 v2 added a golden-set evaluation tier ([`triage_agent.eval`](../triage_agent/eval.py)) scoring the agent against expected (category, R-ID) per known cluster — deterministic, no LLM in scoring. Current baseline: 5/5 on category, R-ID, and combined. Historical insight from v1 v1: R-018 was actually present at run #18 (2026-05-28), three weeks before it was logged. See [`triage_agent/reports/report.md`](../triage_agent/reports/report.md) and [`triage_agent/reports/eval-report.md`](../triage_agent/reports/eval-report.md) |
 | Production observability | **Done (phase 11 v1)** | Prometheus + Grafana (metrics only; Loki + Alertmanager v2 candidates) | [`testing-system/observability/`](../observability/README.md) | Local stack scraping the SUT's `/metrics` (provisioned by `prometheus-flask-exporter`), provisioned dashboard with request rate / error rate / p95 latency / per-path breakdowns. SLO thresholds on the dashboard match the k6 perf gate's pre-merge budget — same SLOs, two enforcement points. Closes R-013. See [`observability/README.md`](../observability/README.md) and [`observability/evidence/grafana-sut-overview.png`](../observability/evidence/grafana-sut-overview.png) |
-| Exploratory (advisory) | **Done (phase 12 v1 v1)** | Local Ollama agent driving from the live OpenAPI spec | [`testing-system/explore_agent/`](../explore_agent/README.md) | Probes every v1 API endpoint with three LLM-generated payload variants (happy / edge / abusive, including prompt-injection probes on AI endpoints), then asks the LLM to classify each response into a closed enum (`expected` / `unexpected_5xx` / `schema_drift` / `business_rule_concern`). Authenticated as a seeded member; path-params resolved against a real seed-context lookup. v1 v1 first run: 18 probes across 6 endpoints — no defects in the seeded surface, but surfaced one investigation-worthy lead (booking assistant returning empty candidates on interpretable intents) that **investigation confirmed as a false positive driven by seed-data scope** (Saturdays not in the 3-day seed window). Layered limitations also noted (agent misclassified some 2xx/4xx responses as `unexpected_5xx`; was unaware of today's date) — these are limits of LLM-jittered exploration, not of the harness. v1 v2 will add UI-level exploration; v2 v1 a golden-set eval tier mirroring [`risk_agent.eval`](../risk_agent/eval.py) and [`triage_agent.eval`](../triage_agent/eval.py). See [`explore_agent/reports/report.md`](../explore_agent/reports/report.md) |
+| Exploratory (advisory) | **Done (phase 12 v1 v2)** | Local Ollama agent — API surface via OpenAPI, UI surface via Playwright | [`testing-system/explore_agent/`](../explore_agent/README.md) | Two surfaces share the same package and the same closed-enum + LLM-jury pattern. **API** (`explore_agent.run`, v1 v1): every v1 endpoint probed with three LLM-generated payload variants (happy / edge / abusive, including prompt-injection on AI endpoints), responses classified into `expected` / `unexpected_5xx` / `schema_drift` / `business_rule_concern`. **UI** (`explore_agent.ui_run`, v1 v2): three predefined tours — public pages, member login → dashboard, booking-assistant interaction — each with an LLM-planned step sequence executed in Playwright, per-step state captured (URL, title, JS console errors, network 5xx, screenshot), then per-step LLM-judged into `expected` / `unexpected_5xx` / `js_error` / `dead_end` / `business_rule_concern`. v1 v1 first run found no API defects (one investigation-worthy lead manually confirmed as a false positive driven by seed-data scope). v1 v2 first run found no UI defects but surfaced a real limitation worth documenting: the planner is shown the starting page's interactive elements only, so when planning multi-page tours it invents plausible-but-non-existent selectors for downstream pages (e.g. `.candidate-slot` when the actual class is `.booking-slot`). This shows up cleanly in the report as `dead_end` steps with the LLM's invented selector visible — **the agent's blind spot is itself part of the evidence**. Both surfaces remain local-only (cost-prohibitive for CI). v2 v1 will add a golden-set eval tier mirroring [`risk_agent.eval`](../risk_agent/eval.py); v2 v2 adversarial regression tests on the existing agents. See [`explore_agent/reports/report.md`](../explore_agent/reports/report.md) (API) and [`explore_agent/reports/ui/report.md`](../explore_agent/reports/ui/report.md) (UI). |
 | Tests of the harness itself | **Stub (phase 0)** | pytest | `testing-system/tests/` | The harness is software too. Agents and judges get tested like any other component |
 
 A traditional test pyramid does not map cleanly onto this project because the SUT is one of several concerns alongside data quality, AI evaluation, and observability. The above is a *responsibility map*, not a pyramid.
@@ -320,6 +320,37 @@ Fixed in [golf-web-app PR #14](https://github.com/ayyadam/golf-web-app/pull/14):
 Same lesson as F-003: *an auto-generated OpenAPI spec documents the routes the framework discovers, which is not always the set of routes the author considers part of the contract*. F-003 was about the spec under-describing real behaviour (missing 5xx); F-010 is about it over-describing (advertising an operational endpoint as part of the API). Both are the same class of failure — a spec that drifts from author intent because the framework doesn't know what the author meant.
 
 The bigger story is that the standing contract gate caught a regression I introduced in the same PR cycle as the feature that introduced it. The harness did its job: F-003's lesson informed the gate, and the gate then caught the next instance of the same lesson playing out. Maps to R-006.
+
+### F-011 — Repeated runner OOM on Playwright/a11y jobs
+
+**Date:** 2026-06-02 *(third recurrence)*
+**Surfaced by:** Post-merge dev push run [`26822385733`](https://github.com/ayyadam/testing-system/actions/runs/26822385733) (Functional Tests, exit 137); also PR #19 second CI (Accessibility, exit 137); also one earlier Functional Tests recurrence.
+**Severity:** Minor (each occurrence has passed on rerun) — but recurring, hence promoted to a named finding rather than left as one-off "infra noise".
+
+**Symptom**
+
+Functional Tests (Playwright) or Accessibility (axe) job fails partway through with `Process completed with exit code 137`. Exit 137 = process received `SIGKILL`. No application error, no assertion failure, no test output — the process just disappears. On rerun the same job passes cleanly without any code change.
+
+**Root cause**
+
+The hosted runner is OOM-killing the test process. Playwright launches Chromium per worker, holds it open for the suite, and the cold-start build of the SUT container + Postgres service + Chromium + Python all together brushes the runner's 7 GB memory limit. The hit rate is variable — most runs pass — but it has now been three hits across two job types, which makes it a pattern rather than a one-off.
+
+**Distinction from R-018 / F-009**
+
+F-009 was a *Playwright assertion timeout* — the test was running, the page was navigating, but the assertion's 5s budget ran out before the dashboard URL settled. That's a tight-budget problem in the test code, fixable by `page.wait_for_url(...)`. F-011 is a *runner-level OOM* — the test process is killed by the OS before it can complete or fail. No test-code change would address it. The two findings are in the same neighbourhood (functional layer cold-runner flakiness) but the mechanism is different and so is the response.
+
+**Mitigation**
+
+For now, **rerun-on-hit, do not chase**. The cost calculus: debugging a hosted-runner memory ceiling against a cached image build is a deep rabbit hole; one `gh run rerun --failed` is ten seconds. Mitigation strategies if the rate climbs:
+- Reduce Playwright's footprint (single-worker, `--browser=chromium` only, smaller viewports)
+- Move to a larger runner class (paid)
+- Split the functional layer across multiple smaller jobs
+
+The finding is logged as R-019 and tracked. Re-evaluation trigger: more than ~1-in-10 runs hitting this, or any further job types affected.
+
+**Process gap surfaced alongside this**
+
+This recurrence was reported to me by the user via a GitHub notification, not by me checking. My cadence has been: PR pre-merge checks green → squash-merge → done. I do not currently watch the *post-merge push run* on dev — which executes the merged squash commit and can fail independently of the PR run. Adopting "after merge, also watch the push run on dev" closes the gap.
 
 ## 12. Roadmap
 
