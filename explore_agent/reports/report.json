@@ -16,13 +16,13 @@
       "method": "POST",
       "url": "http://localhost:5000/api/v1/booking-assistant",
       "status": 200,
-      "latency_ms": 9300.97,
-      "response_text_truncated": "{\"candidates\":[],\"intent\":{\"date\":\"2026-06-06\",\"group_size\":4,\"not_after\":null,\"not_before\":null,\"period\":\"morning\",\"players\":[]}}\n"
+      "latency_ms": 5015.15,
+      "response_text_truncated": "{\"candidates\":[{\"date\":\"2026-06-06\",\"id\":329,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:00:00\"},{\"date\":\"2026-06-06\",\"id\":330,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:10:00\"},{\"date\":\"2026-06-06\",\"id\":331,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:20:00\"},{\"date\":\"2026-06-06\",\"id\":332,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:30:00\"},{\"date\":\"2026-06-06\",\"id\":333,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:40:00\"},{\"date\":\"2026-06-06\",\"id\":334,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:50:00\"},{\"date\":\"2026-06-06\",\"id\":335,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"08:00:00\"},{\"date\":\"2026-06-06\",\"id\":336,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"08:10:00\"},{\"date\":\"2026-06-06\",\"id\":337,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"08:20:00\"},{\"date\":\"2026-06-06\",\"id\":338,\"is_availa"
     },
     "finding": {
-      "category": "business_rule_concern",
-      "severity": "med",
-      "rationale": "The response indicates a future date ('2026-06-06') without any candidate tee-times, which suggests the booking assistant is not effectively proposing available slots despite interpreting the request correctly. This could lead to user frustration if no actionable options are provided."
+      "category": "expected",
+      "severity": "low",
+      "rationale": "The response status is 200 and the body matches the documented schema for a successful response, providing a list of candidate tee-times that align with the request."
     }
   },
   {
@@ -42,7 +42,7 @@
       "method": "POST",
       "url": "http://localhost:5000/api/v1/booking-assistant",
       "status": 200,
-      "latency_ms": 5200.95,
+      "latency_ms": 5168.69,
       "response_text_truncated": "{\"candidates\":[],\"intent\":{\"date\":\"2024-01-01\",\"group_size\":1,\"not_after\":null,\"not_before\":\"09:00\",\"period\":\"morning\",\"players\":[]}}\n"
     },
     "finding": {
@@ -68,13 +68,13 @@
       "method": "POST",
       "url": "http://localhost:5000/api/v1/booking-assistant",
       "status": 200,
-      "latency_ms": 4952.71,
-      "response_text_truncated": "{\"candidates\":[],\"intent\":{\"date\":\"2026-06-06\",\"group_size\":1,\"not_after\":null,\"not_before\":null,\"period\":\"morning\",\"players\":[]}}\n"
+      "latency_ms": 4940.34,
+      "response_text_truncated": "{\"candidates\":[{\"date\":\"2026-06-06\",\"id\":329,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:00:00\"},{\"date\":\"2026-06-06\",\"id\":330,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:10:00\"},{\"date\":\"2026-06-06\",\"id\":331,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:20:00\"},{\"date\":\"2026-06-06\",\"id\":332,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:30:00\"},{\"date\":\"2026-06-06\",\"id\":333,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:40:00\"},{\"date\":\"2026-06-06\",\"id\":334,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:50:00\"},{\"date\":\"2026-06-06\",\"id\":335,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"08:00:00\"},{\"date\":\"2026-06-06\",\"id\":336,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"08:10:00\"},{\"date\":\"2026-06-06\",\"id\":337,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"08:20:00\"},{\"date\":\"2026-06-06\",\"id\":338,\"is_availa"
     },
     "finding": {
       "category": "business_rule_concern",
       "severity": "high",
-      "rationale": "The response indicates that the system did not reject or sanitize the potentially malicious input, instead interpreting it as a valid request for booking assistance with default values. This suggests a significant weakness in handling and validating user inputs."
+      "rationale": "The API responded with a 200 status and provided booking candidates despite receiving an abusive request containing SQL injection and XSS attack patterns. This indicates the system may be vulnerable to such attacks or is not properly sanitizing input, which poses a significant security risk."
     }
   },
   {
@@ -92,8 +92,8 @@
       "method": "GET",
       "url": "http://localhost:5000/api/v1/competitions",
       "status": 200,
-      "latency_ms": 17.38,
-      "response_text_truncated": "[{\"date\":\"2026-06-12\",\"format\":\"Stableford\",\"id\":1,\"is_active\":true,\"name\":\"Monthly Stableford\"}]\n"
+      "latency_ms": 15.02,
+      "response_text_truncated": "[{\"date\":\"2026-06-16\",\"format\":\"Stableford\",\"id\":1,\"is_active\":true,\"name\":\"Monthly Stableford\"}]\n"
     },
     "finding": {
       "category": "expected",
@@ -116,8 +116,8 @@
       "method": "GET",
       "url": "http://localhost:5000/api/v1/competitions",
       "status": 200,
-      "latency_ms": 5.24,
-      "response_text_truncated": "[{\"date\":\"2026-06-12\",\"format\":\"Stableford\",\"id\":1,\"is_active\":true,\"name\":\"Monthly Stableford\"}]\n"
+      "latency_ms": 22.01,
+      "response_text_truncated": "[{\"date\":\"2026-06-16\",\"format\":\"Stableford\",\"id\":1,\"is_active\":true,\"name\":\"Monthly Stableford\"}]\n"
     },
     "finding": {
       "category": "expected",
@@ -140,13 +140,13 @@
       "method": "GET",
       "url": "http://localhost:5000/api/v1/competitions",
       "status": 200,
-      "latency_ms": 26.42,
-      "response_text_truncated": "[{\"date\":\"2026-06-12\",\"format\":\"Stableford\",\"id\":1,\"is_active\":true,\"name\":\"Monthly Stableford\"}]\n"
+      "latency_ms": 22.3,
+      "response_text_truncated": "[{\"date\":\"2026-06-16\",\"format\":\"Stableford\",\"id\":1,\"is_active\":true,\"name\":\"Monthly Stableford\"}]\n"
     },
     "finding": {
       "category": "unexpected_5xx",
       "severity": "high",
-      "rationale": "The response status is 200 with a valid competition list, but an abusive input (sending a null body for a GET request) should have resulted in a client error like 400 Bad Request rather than successfully returning data."
+      "rationale": "The response status is 200, but the documented behaviour does not specify a successful response for an abusive input such as sending an empty body in a GET request. The system should have handled this case with a validation rejection (4xx) rather than returning a 200 OK."
     }
   },
   {
@@ -164,7 +164,7 @@
       "method": "GET",
       "url": "http://localhost:5000/api/v1/members/me",
       "status": 200,
-      "latency_ms": 5.11,
+      "latency_ms": 22.02,
       "response_text_truncated": "{\"email\":\"john.smith@example.com\",\"first_name\":\"John\",\"handicap\":12.3,\"id\":2,\"last_name\":\"Smith\",\"membership_type\":\"Full Year\",\"username\":\"john.smith\"}\n"
     },
     "finding": {
@@ -188,7 +188,7 @@
       "method": "GET",
       "url": "http://localhost:5000/api/v1/members/me",
       "status": 200,
-      "latency_ms": 13.11,
+      "latency_ms": 18.34,
       "response_text_truncated": "{\"email\":\"john.smith@example.com\",\"first_name\":\"John\",\"handicap\":12.3,\"id\":2,\"last_name\":\"Smith\",\"membership_type\":\"Full Year\",\"username\":\"john.smith\"}\n"
     },
     "finding": {
@@ -212,7 +212,7 @@
       "method": "GET",
       "url": "http://localhost:5000/api/v1/members/me",
       "status": 200,
-      "latency_ms": 22.63,
+      "latency_ms": 16.47,
       "response_text_truncated": "{\"email\":\"john.smith@example.com\",\"first_name\":\"John\",\"handicap\":12.3,\"id\":2,\"last_name\":\"Smith\",\"membership_type\":\"Full Year\",\"username\":\"john.smith\"}\n"
     },
     "finding": {
@@ -236,8 +236,8 @@
       "method": "GET",
       "url": "http://localhost:5000/api/v1/tee-times",
       "status": 200,
-      "latency_ms": 24.6,
-      "response_text_truncated": "[{\"date\":\"2026-06-02\",\"id\":364,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"12:50:00\"},{\"date\":\"2026-06-02\",\"id\":365,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:00:00\"},{\"date\":\"2026-06-02\",\"id\":366,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:10:00\"},{\"date\":\"2026-06-02\",\"id\":367,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:20:00\"},{\"date\":\"2026-06-02\",\"id\":368,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:30:00\"},{\"date\":\"2026-06-02\",\"id\":369,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:40:00\"},{\"date\":\"2026-06-02\",\"id\":370,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:50:00\"},{\"date\":\"2026-06-02\",\"id\":371,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:00:00\"},{\"date\":\"2026-06-02\",\"id\":372,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:10:00\"},{\"date\":\"2026-06-02\",\"id\":373,\"is_available\":true,\"max"
+      "latency_ms": 29.37,
+      "response_text_truncated": "[{\"date\":\"2026-06-02\",\"id\":38,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:10:00\"},{\"date\":\"2026-06-02\",\"id\":39,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:20:00\"},{\"date\":\"2026-06-02\",\"id\":40,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:30:00\"},{\"date\":\"2026-06-02\",\"id\":41,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:40:00\"},{\"date\":\"2026-06-02\",\"id\":42,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:50:00\"},{\"date\":\"2026-06-02\",\"id\":43,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:00:00\"},{\"date\":\"2026-06-02\",\"id\":44,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:10:00\"},{\"date\":\"2026-06-02\",\"id\":45,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:20:00\"},{\"date\":\"2026-06-02\",\"id\":46,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:30:00\"},{\"date\":\"2026-06-02\",\"id\":47,\"is_available\":true,\"max_players\":"
     },
     "finding": {
       "category": "expected",
@@ -260,13 +260,13 @@
       "method": "GET",
       "url": "http://localhost:5000/api/v1/tee-times",
       "status": 200,
-      "latency_ms": 18.4,
-      "response_text_truncated": "[{\"date\":\"2026-06-02\",\"id\":364,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"12:50:00\"},{\"date\":\"2026-06-02\",\"id\":365,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:00:00\"},{\"date\":\"2026-06-02\",\"id\":366,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:10:00\"},{\"date\":\"2026-06-02\",\"id\":367,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:20:00\"},{\"date\":\"2026-06-02\",\"id\":368,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:30:00\"},{\"date\":\"2026-06-02\",\"id\":369,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:40:00\"},{\"date\":\"2026-06-02\",\"id\":370,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:50:00\"},{\"date\":\"2026-06-02\",\"id\":371,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:00:00\"},{\"date\":\"2026-06-02\",\"id\":372,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:10:00\"},{\"date\":\"2026-06-02\",\"id\":373,\"is_available\":true,\"max"
+      "latency_ms": 29.96,
+      "response_text_truncated": "[{\"date\":\"2026-06-02\",\"id\":38,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:10:00\"},{\"date\":\"2026-06-02\",\"id\":39,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:20:00\"},{\"date\":\"2026-06-02\",\"id\":40,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:30:00\"},{\"date\":\"2026-06-02\",\"id\":41,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:40:00\"},{\"date\":\"2026-06-02\",\"id\":42,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:50:00\"},{\"date\":\"2026-06-02\",\"id\":43,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:00:00\"},{\"date\":\"2026-06-02\",\"id\":44,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:10:00\"},{\"date\":\"2026-06-02\",\"id\":45,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:20:00\"},{\"date\":\"2026-06-02\",\"id\":46,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:30:00\"},{\"date\":\"2026-06-02\",\"id\":47,\"is_available\":true,\"max_players\":"
     },
     "finding": {
       "category": "business_rule_concern",
       "severity": "med",
-      "rationale": "The response returns tee times for a future date (2026-06-02), which is technically valid per the schema, but it suggests a business-rule weakness as it allows booking or viewing tee times too far in advance. This could lead to issues with planning and availability management."
+      "rationale": "The response returns tee times for a future date (2026-06-02), which may indicate that the endpoint does not enforce any temporal constraints on the availability of tee times. This could lead to issues with booking or displaying tee times well into the future, suggesting a potential business rule weakness."
     }
   },
   {
@@ -284,13 +284,13 @@
       "method": "GET",
       "url": "http://localhost:5000/api/v1/tee-times",
       "status": 200,
-      "latency_ms": 16.3,
-      "response_text_truncated": "[{\"date\":\"2026-06-02\",\"id\":364,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"12:50:00\"},{\"date\":\"2026-06-02\",\"id\":365,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:00:00\"},{\"date\":\"2026-06-02\",\"id\":366,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:10:00\"},{\"date\":\"2026-06-02\",\"id\":367,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:20:00\"},{\"date\":\"2026-06-02\",\"id\":368,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:30:00\"},{\"date\":\"2026-06-02\",\"id\":369,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:40:00\"},{\"date\":\"2026-06-02\",\"id\":370,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:50:00\"},{\"date\":\"2026-06-02\",\"id\":371,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:00:00\"},{\"date\":\"2026-06-02\",\"id\":372,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:10:00\"},{\"date\":\"2026-06-02\",\"id\":373,\"is_available\":true,\"max"
+      "latency_ms": 24.86,
+      "response_text_truncated": "[{\"date\":\"2026-06-02\",\"id\":38,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:10:00\"},{\"date\":\"2026-06-02\",\"id\":39,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:20:00\"},{\"date\":\"2026-06-02\",\"id\":40,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:30:00\"},{\"date\":\"2026-06-02\",\"id\":41,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:40:00\"},{\"date\":\"2026-06-02\",\"id\":42,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:50:00\"},{\"date\":\"2026-06-02\",\"id\":43,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:00:00\"},{\"date\":\"2026-06-02\",\"id\":44,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:10:00\"},{\"date\":\"2026-06-02\",\"id\":45,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:20:00\"},{\"date\":\"2026-06-02\",\"id\":46,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:30:00\"},{\"date\":\"2026-06-02\",\"id\":47,\"is_available\":true,\"max_players\":"
     },
     "finding": {
       "category": "business_rule_concern",
       "severity": "med",
-      "rationale": "The response returns tee times for a future date (2026-06-02) without any filtering applied, even though the input was abusive. This suggests that the endpoint does not properly handle or reject malformed inputs and may expose data unnecessarily."
+      "rationale": "The response returns tee times for a future date (2026-06-02) when the endpoint was probed with abusive input, suggesting that the API does not properly handle or reject malformed inputs. This could indicate a weakness in filtering or validation logic."
     }
   },
   {
@@ -306,10 +306,10 @@
     },
     "http": {
       "method": "GET",
-      "url": "http://localhost:5000/api/v1/tee-times/364",
+      "url": "http://localhost:5000/api/v1/tee-times/38",
       "status": 200,
-      "latency_ms": 27.53,
-      "response_text_truncated": "{\"date\":\"2026-06-02\",\"id\":364,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"12:50:00\"}\n"
+      "latency_ms": 27.01,
+      "response_text_truncated": "{\"date\":\"2026-06-02\",\"id\":38,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:10:00\"}\n"
     },
     "finding": {
       "category": "expected",
@@ -330,15 +330,15 @@
     },
     "http": {
       "method": "GET",
-      "url": "http://localhost:5000/api/v1/tee-times/364",
+      "url": "http://localhost:5000/api/v1/tee-times/38",
       "status": 200,
-      "latency_ms": 28.28,
-      "response_text_truncated": "{\"date\":\"2026-06-02\",\"id\":364,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"12:50:00\"}\n"
+      "latency_ms": 14.89,
+      "response_text_truncated": "{\"date\":\"2026-06-02\",\"id\":38,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:10:00\"}\n"
     },
     "finding": {
       "category": "business_rule_concern",
       "severity": "med",
-      "rationale": "The response indicates that a tee time with an ID of 364 was returned, despite probing the edge case of using the minimum allowed tee time ID (expected to be 1). This suggests a potential issue in how IDs are managed or assigned."
+      "rationale": "The response indicates that a tee time with ID 38 is available, but the probe was intended to check the edge case of using the minimum allowed tee time ID (expected to be 1). This suggests a potential issue in how tee times are assigned or queried, possibly leading to confusion or mismanagement of bookings."
     }
   },
   {
@@ -354,15 +354,15 @@
     },
     "http": {
       "method": "GET",
-      "url": "http://localhost:5000/api/v1/tee-times/364",
+      "url": "http://localhost:5000/api/v1/tee-times/38",
       "status": 200,
-      "latency_ms": 15.73,
-      "response_text_truncated": "{\"date\":\"2026-06-02\",\"id\":364,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"12:50:00\"}\n"
+      "latency_ms": 21.5,
+      "response_text_truncated": "{\"date\":\"2026-06-02\",\"id\":38,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:10:00\"}\n"
     },
     "finding": {
       "category": "business_rule_concern",
       "severity": "med",
-      "rationale": "The response indicates a successful retrieval of a tee time with ID 364 despite the endpoint being probed with an abusive string input instead of an integer, suggesting that the API does not properly validate or sanitize inputs. This could lead to potential injection attacks or other security vulnerabilities."
+      "rationale": "The API returned a 200 status and a valid tee time even though the input was expected to be an integer ID but was likely a string, indicating that the input validation is weak. This could allow unintended access or behavior."
     }
   },
   {
@@ -398,10 +398,10 @@
     },
     "http": {
       "method": "POST",
-      "url": "http://localhost:5000/api/v1/tee-times/364/bookings",
+      "url": "http://localhost:5000/api/v1/tee-times/38/bookings",
       "status": 201,
-      "latency_ms": 40.51,
-      "response_text_truncated": "{\"booked_at\":\"2026-06-02T12:42:36.918016Z\",\"group_size\":4,\"id\":2,\"member_id\":2,\"tee_time_id\":364,\"visitor_id\":null}\n"
+      "latency_ms": 32.96,
+      "response_text_truncated": "{\"booked_at\":\"2026-06-02T13:08:52.432878Z\",\"group_size\":4,\"id\":1,\"member_id\":2,\"tee_time_id\":38,\"visitor_id\":null}\n"
     },
     "finding": {
       "category": "expected",
@@ -434,9 +434,9 @@
     },
     "http": {
       "method": "POST",
-      "url": "http://localhost:5000/api/v1/tee-times/364/bookings",
+      "url": "http://localhost:5000/api/v1/tee-times/38/bookings",
       "status": 409,
-      "latency_ms": 22.53,
+      "latency_ms": 28.53,
       "response_text_truncated": "{\"code\":\"not_enough_slots\",\"message\":\"Not enough slots available for your group size.\"}\n"
     },
     "finding": {
@@ -474,9 +474,9 @@
     },
     "http": {
       "method": "POST",
-      "url": "http://localhost:5000/api/v1/tee-times/364/bookings",
+      "url": "http://localhost:5000/api/v1/tee-times/38/bookings",
       "status": 409,
-      "latency_ms": 18.48,
+      "latency_ms": 26.91,
       "response_text_truncated": "{\"code\":\"not_enough_slots\",\"message\":\"Not enough slots available for your group size.\"}\n"
     },
     "finding": {

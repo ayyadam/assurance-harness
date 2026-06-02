@@ -9,8 +9,8 @@ Sent **18** probe(s) across **6** endpoint(s). Findings (LLM-classified, advisor
 | Category | Count |
 |---|---|
 | `unexpected_5xx` | 2 |
-| `business_rule_concern` | 8 |
-| `expected` | 8 |
+| `business_rule_concern` | 7 |
+| `expected` | 9 |
 
 ## Findings
 
@@ -23,16 +23,16 @@ Sent **18** probe(s) across **6** endpoint(s). Findings (LLM-classified, advisor
 | 5 | `GET /api/v1/tee-times` | `abusive` | 200 | `business_rule_concern` | med |
 | 6 | `GET /api/v1/tee-times/{tee_time_id}` | `edge` | 200 | `business_rule_concern` | med |
 | 7 | `GET /api/v1/tee-times/{tee_time_id}` | `abusive` | 200 | `business_rule_concern` | med |
-| 8 | `POST /api/v1/booking-assistant` | `happy` | 200 | `business_rule_concern` | med |
-| 9 | `POST /api/v1/booking-assistant` | `edge` | 200 | `business_rule_concern` | med |
-| 10 | `POST /api/v1/tee-times/{tee_time_id}/bookings` | `edge` | 409 | `business_rule_concern` | med |
-| 11 | `GET /api/v1/competitions` | `happy` | 200 | `expected` | — |
-| 12 | `GET /api/v1/competitions` | `edge` | 200 | `expected` | — |
-| 13 | `GET /api/v1/members/me` | `happy` | 200 | `expected` | — |
-| 14 | `GET /api/v1/members/me` | `edge` | 200 | `expected` | — |
-| 15 | `GET /api/v1/members/me` | `abusive` | 200 | `expected` | — |
-| 16 | `GET /api/v1/tee-times` | `happy` | 200 | `expected` | — |
-| 17 | `GET /api/v1/tee-times/{tee_time_id}` | `happy` | 200 | `expected` | — |
+| 8 | `POST /api/v1/booking-assistant` | `edge` | 200 | `business_rule_concern` | med |
+| 9 | `POST /api/v1/tee-times/{tee_time_id}/bookings` | `edge` | 409 | `business_rule_concern` | med |
+| 10 | `GET /api/v1/competitions` | `happy` | 200 | `expected` | — |
+| 11 | `GET /api/v1/competitions` | `edge` | 200 | `expected` | — |
+| 12 | `GET /api/v1/members/me` | `happy` | 200 | `expected` | — |
+| 13 | `GET /api/v1/members/me` | `edge` | 200 | `expected` | — |
+| 14 | `GET /api/v1/members/me` | `abusive` | 200 | `expected` | — |
+| 15 | `GET /api/v1/tee-times` | `happy` | 200 | `expected` | — |
+| 16 | `GET /api/v1/tee-times/{tee_time_id}` | `happy` | 200 | `expected` | — |
+| 17 | `POST /api/v1/booking-assistant` | `happy` | 200 | `expected` | — |
 | 18 | `POST /api/v1/tee-times/{tee_time_id}/bookings` | `happy` | 201 | `expected` | — |
 
 ## Detail
@@ -44,13 +44,13 @@ Sent **18** probe(s) across **6** endpoint(s). Findings (LLM-classified, advisor
 
 **Variant rationale:** Tests robustness by sending an empty body where none is expected, ensuring the system handles unexpected input gracefully.
 
-**Finding rationale:** The response status is 200 with a valid competition list, but an abusive input (sending a null body for a GET request) should have resulted in a client error like 400 Bad Request rather than successfully returning data.
+**Finding rationale:** The response status is 200, but the documented behaviour does not specify a successful response for an abusive input such as sending an empty body in a GET request. The system should have handled this case with a validation rejection (4xx) rather than returning a 200 OK.
 
-**HTTP:** `GET http://localhost:5000/api/v1/competitions` → `200` in `26 ms`
+**HTTP:** `GET http://localhost:5000/api/v1/competitions` → `200` in `22 ms`
 
 Response (first 400 chars):
 ```
-[{"date":"2026-06-12","format":"Stableford","id":1,"is_active":true,"name":"Monthly Stableford"}]
+[{"date":"2026-06-16","format":"Stableford","id":1,"is_active":true,"name":"Monthly Stableford"}]
 
 ```
 
@@ -63,7 +63,7 @@ Response (first 400 chars):
 
 **Finding rationale:** The response status is 409, which indicates a conflict, but the documented reason for this status code does not match the provided body message 'Not enough slots available for your group size.' This suggests an internal misconfiguration or logic error in handling abusive input. However, given that the actual issue seems to be around slot availability rather than an outright server crash, it's more accurately classified as a business rule concern.
 
-**HTTP:** `POST http://localhost:5000/api/v1/tee-times/364/bookings` → `409` in `18 ms`
+**HTTP:** `POST http://localhost:5000/api/v1/tee-times/38/bookings` → `409` in `27 ms`
 
 Request body:
 ```json
@@ -99,9 +99,9 @@ Response (first 400 chars):
 
 **Variant rationale:** Probes the system's robustness against injection attacks and malformed input.
 
-**Finding rationale:** The response indicates that the system did not reject or sanitize the potentially malicious input, instead interpreting it as a valid request for booking assistance with default values. This suggests a significant weakness in handling and validating user inputs.
+**Finding rationale:** The API responded with a 200 status and provided booking candidates despite receiving an abusive request containing SQL injection and XSS attack patterns. This indicates the system may be vulnerable to such attacks or is not properly sanitizing input, which poses a significant security risk.
 
-**HTTP:** `POST http://localhost:5000/api/v1/booking-assistant` → `200` in `4953 ms`
+**HTTP:** `POST http://localhost:5000/api/v1/booking-assistant` → `200` in `4940 ms`
 
 Request body:
 ```json
@@ -112,8 +112,8 @@ Request body:
 
 Response (first 400 chars):
 ```
-{"candidates":[],"intent":{"date":"2026-06-06","group_size":1,"not_after":null,"not_before":null,"period":"morning","players":[]}}
-
+{"candidates":[{"date":"2026-06-06","id":329,"is_available":true,"max_players":4,"slots_remaining":4,"time":"07:00:00"},{"date":"2026-06-06","id":330,"is_available":true,"max_players":4,"slots_remaining":4,"time":"07:10:00"},{"date":"2026-06-06","id":331,"is_available":true,"max_players":4,"slots_remaining":4,"time":"07:20:00"},{"date":"2026-06-06","id":332,"is_available":true,"max_players":4,"slo
+... (truncated)
 ```
 
 ### 4. `GET /api/v1/tee-times` — edge
@@ -123,13 +123,13 @@ Response (first 400 chars):
 
 **Variant rationale:** Checks if the endpoint handles edge cases gracefully when no body is expected, focusing on query parameters or path variables if applicable.
 
-**Finding rationale:** The response returns tee times for a future date (2026-06-02), which is technically valid per the schema, but it suggests a business-rule weakness as it allows booking or viewing tee times too far in advance. This could lead to issues with planning and availability management.
+**Finding rationale:** The response returns tee times for a future date (2026-06-02), which may indicate that the endpoint does not enforce any temporal constraints on the availability of tee times. This could lead to issues with booking or displaying tee times well into the future, suggesting a potential business rule weakness.
 
-**HTTP:** `GET http://localhost:5000/api/v1/tee-times` → `200` in `18 ms`
+**HTTP:** `GET http://localhost:5000/api/v1/tee-times` → `200` in `30 ms`
 
 Response (first 400 chars):
 ```
-[{"date":"2026-06-02","id":364,"is_available":true,"max_players":4,"slots_remaining":4,"time":"12:50:00"},{"date":"2026-06-02","id":365,"is_available":true,"max_players":4,"slots_remaining":4,"time":"13:00:00"},{"date":"2026-06-02","id":366,"is_available":true,"max_players":4,"slots_remaining":4,"time":"13:10:00"},{"date":"2026-06-02","id":367,"is_available":true,"max_players":4,"slots_remaining":
+[{"date":"2026-06-02","id":38,"is_available":true,"max_players":4,"slots_remaining":4,"time":"13:10:00"},{"date":"2026-06-02","id":39,"is_available":true,"max_players":4,"slots_remaining":4,"time":"13:20:00"},{"date":"2026-06-02","id":40,"is_available":true,"max_players":4,"slots_remaining":4,"time":"13:30:00"},{"date":"2026-06-02","id":41,"is_available":true,"max_players":4,"slots_remaining":4,"t
 ... (truncated)
 ```
 
@@ -140,13 +140,13 @@ Response (first 400 chars):
 
 **Variant rationale:** Tests the robustness of the endpoint against potential injection attacks and malformed inputs in query parameters or path variables.
 
-**Finding rationale:** The response returns tee times for a future date (2026-06-02) without any filtering applied, even though the input was abusive. This suggests that the endpoint does not properly handle or reject malformed inputs and may expose data unnecessarily.
+**Finding rationale:** The response returns tee times for a future date (2026-06-02) when the endpoint was probed with abusive input, suggesting that the API does not properly handle or reject malformed inputs. This could indicate a weakness in filtering or validation logic.
 
-**HTTP:** `GET http://localhost:5000/api/v1/tee-times` → `200` in `16 ms`
+**HTTP:** `GET http://localhost:5000/api/v1/tee-times` → `200` in `25 ms`
 
 Response (first 400 chars):
 ```
-[{"date":"2026-06-02","id":364,"is_available":true,"max_players":4,"slots_remaining":4,"time":"12:50:00"},{"date":"2026-06-02","id":365,"is_available":true,"max_players":4,"slots_remaining":4,"time":"13:00:00"},{"date":"2026-06-02","id":366,"is_available":true,"max_players":4,"slots_remaining":4,"time":"13:10:00"},{"date":"2026-06-02","id":367,"is_available":true,"max_players":4,"slots_remaining":
+[{"date":"2026-06-02","id":38,"is_available":true,"max_players":4,"slots_remaining":4,"time":"13:10:00"},{"date":"2026-06-02","id":39,"is_available":true,"max_players":4,"slots_remaining":4,"time":"13:20:00"},{"date":"2026-06-02","id":40,"is_available":true,"max_players":4,"slots_remaining":4,"time":"13:30:00"},{"date":"2026-06-02","id":41,"is_available":true,"max_players":4,"slots_remaining":4,"t
 ... (truncated)
 ```
 
@@ -157,13 +157,13 @@ Response (first 400 chars):
 
 **Variant rationale:** Probes the edge case of using the minimum allowed tee time ID, assuming IDs are positive integers starting from 1.
 
-**Finding rationale:** The response indicates that a tee time with an ID of 364 was returned, despite probing the edge case of using the minimum allowed tee time ID (expected to be 1). This suggests a potential issue in how IDs are managed or assigned.
+**Finding rationale:** The response indicates that a tee time with ID 38 is available, but the probe was intended to check the edge case of using the minimum allowed tee time ID (expected to be 1). This suggests a potential issue in how tee times are assigned or queried, possibly leading to confusion or mismanagement of bookings.
 
-**HTTP:** `GET http://localhost:5000/api/v1/tee-times/364` → `200` in `28 ms`
+**HTTP:** `GET http://localhost:5000/api/v1/tee-times/38` → `200` in `15 ms`
 
 Response (first 400 chars):
 ```
-{"date":"2026-06-02","id":364,"is_available":true,"max_players":4,"slots_remaining":4,"time":"12:50:00"}
+{"date":"2026-06-02","id":38,"is_available":true,"max_players":4,"slots_remaining":4,"time":"13:10:00"}
 
 ```
 
@@ -174,41 +174,17 @@ Response (first 400 chars):
 
 **Variant rationale:** Probes robustness against potential injection attacks or malformed input by attempting to use a string instead of an integer for the tee time ID.
 
-**Finding rationale:** The response indicates a successful retrieval of a tee time with ID 364 despite the endpoint being probed with an abusive string input instead of an integer, suggesting that the API does not properly validate or sanitize inputs. This could lead to potential injection attacks or other security vulnerabilities.
+**Finding rationale:** The API returned a 200 status and a valid tee time even though the input was expected to be an integer ID but was likely a string, indicating that the input validation is weak. This could allow unintended access or behavior.
 
-**HTTP:** `GET http://localhost:5000/api/v1/tee-times/364` → `200` in `16 ms`
-
-Response (first 400 chars):
-```
-{"date":"2026-06-02","id":364,"is_available":true,"max_players":4,"slots_remaining":4,"time":"12:50:00"}
-
-```
-
-### 8. `POST /api/v1/booking-assistant` — happy
-
-**Category:** `business_rule_concern`
-  **Severity:** `med`
-
-**Variant rationale:** Probes the typical use case with a minimal valid request.
-
-**Finding rationale:** The response indicates a future date ('2026-06-06') without any candidate tee-times, which suggests the booking assistant is not effectively proposing available slots despite interpreting the request correctly. This could lead to user frustration if no actionable options are provided.
-
-**HTTP:** `POST http://localhost:5000/api/v1/booking-assistant` → `200` in `9301 ms`
-
-Request body:
-```json
-{
-  "text": "a 4-ball Saturday morning"
-}
-```
+**HTTP:** `GET http://localhost:5000/api/v1/tee-times/38` → `200` in `21 ms`
 
 Response (first 400 chars):
 ```
-{"candidates":[],"intent":{"date":"2026-06-06","group_size":4,"not_after":null,"not_before":null,"period":"morning","players":[]}}
+{"date":"2026-06-02","id":38,"is_available":true,"max_players":4,"slots_remaining":4,"time":"13:10:00"}
 
 ```
 
-### 9. `POST /api/v1/booking-assistant` — edge
+### 8. `POST /api/v1/booking-assistant` — edge
 
 **Category:** `business_rule_concern`
   **Severity:** `med`
@@ -217,7 +193,7 @@ Response (first 400 chars):
 
 **Finding rationale:** The response indicates no candidate slots ('candidates': []) for a 1-person booking at 09:00 on January 1, 2024, despite the request being technically valid. This suggests that the system does not handle or propose single-player bookings, which may be an unintended business rule limitation.
 
-**HTTP:** `POST http://localhost:5000/api/v1/booking-assistant` → `200` in `5201 ms`
+**HTTP:** `POST http://localhost:5000/api/v1/booking-assistant` → `200` in `5169 ms`
 
 Request body:
 ```json
@@ -232,7 +208,7 @@ Response (first 400 chars):
 
 ```
 
-### 10. `POST /api/v1/tee-times/{tee_time_id}/bookings` — edge
+### 9. `POST /api/v1/tee-times/{tee_time_id}/bookings` — edge
 
 **Category:** `business_rule_concern`
   **Severity:** `med`
@@ -241,7 +217,7 @@ Response (first 400 chars):
 
 **Finding rationale:** The response indicates a 409 Conflict with the message 'Not enough slots available for your group size,' but the request body specifies a minimal group size of 1, which should not typically result in a slot availability issue. This suggests a potential business rule weakness or misconfiguration.
 
-**HTTP:** `POST http://localhost:5000/api/v1/tee-times/364/bookings` → `409` in `23 ms`
+**HTTP:** `POST http://localhost:5000/api/v1/tee-times/38/bookings` → `409` in `29 ms`
 
 Request body:
 ```json
@@ -266,7 +242,7 @@ Response (first 400 chars):
 
 ```
 
-### 11. `GET /api/v1/competitions` — happy
+### 10. `GET /api/v1/competitions` — happy
 
 **Category:** `expected`
 
@@ -274,15 +250,15 @@ Response (first 400 chars):
 
 **Finding rationale:** The response status is 200 and the body matches the documented schema for a successful response, containing an array of competition objects with expected fields.
 
-**HTTP:** `GET http://localhost:5000/api/v1/competitions` → `200` in `17 ms`
+**HTTP:** `GET http://localhost:5000/api/v1/competitions` → `200` in `15 ms`
 
 Response (first 400 chars):
 ```
-[{"date":"2026-06-12","format":"Stableford","id":1,"is_active":true,"name":"Monthly Stableford"}]
+[{"date":"2026-06-16","format":"Stableford","id":1,"is_active":true,"name":"Monthly Stableford"}]
 
 ```
 
-### 12. `GET /api/v1/competitions` — edge
+### 11. `GET /api/v1/competitions` — edge
 
 **Category:** `expected`
 
@@ -290,15 +266,15 @@ Response (first 400 chars):
 
 **Finding rationale:** The response status is 200 and the body matches the documented schema for a list of competitions, with each competition having the expected fields.
 
-**HTTP:** `GET http://localhost:5000/api/v1/competitions` → `200` in `5 ms`
+**HTTP:** `GET http://localhost:5000/api/v1/competitions` → `200` in `22 ms`
 
 Response (first 400 chars):
 ```
-[{"date":"2026-06-12","format":"Stableford","id":1,"is_active":true,"name":"Monthly Stableford"}]
+[{"date":"2026-06-16","format":"Stableford","id":1,"is_active":true,"name":"Monthly Stableford"}]
 
 ```
 
-### 13. `GET /api/v1/members/me` — happy
+### 12. `GET /api/v1/members/me` — happy
 
 **Category:** `expected`
 
@@ -306,7 +282,7 @@ Response (first 400 chars):
 
 **Finding rationale:** The response status is 200 and the body matches the documented schema for a successful authenticated request, containing all required fields such as 'email', 'first_name', 'handicap', etc.
 
-**HTTP:** `GET http://localhost:5000/api/v1/members/me` → `200` in `5 ms`
+**HTTP:** `GET http://localhost:5000/api/v1/members/me` → `200` in `22 ms`
 
 Response (first 400 chars):
 ```
@@ -314,7 +290,7 @@ Response (first 400 chars):
 
 ```
 
-### 14. `GET /api/v1/members/me` — edge
+### 13. `GET /api/v1/members/me` — edge
 
 **Category:** `expected`
 
@@ -322,7 +298,7 @@ Response (first 400 chars):
 
 **Finding rationale:** The response status is 200 and the body matches the documented schema for a successful response, containing all required fields such as 'email', 'first_name', 'handicap', etc.
 
-**HTTP:** `GET http://localhost:5000/api/v1/members/me` → `200` in `13 ms`
+**HTTP:** `GET http://localhost:5000/api/v1/members/me` → `200` in `18 ms`
 
 Response (first 400 chars):
 ```
@@ -330,7 +306,7 @@ Response (first 400 chars):
 
 ```
 
-### 15. `GET /api/v1/members/me` — abusive
+### 14. `GET /api/v1/members/me` — abusive
 
 **Category:** `expected`
 
@@ -338,7 +314,7 @@ Response (first 400 chars):
 
 **Finding rationale:** The response status is 200 and the body matches the documented schema for a successful response, containing all required fields without any unexpected elements.
 
-**HTTP:** `GET http://localhost:5000/api/v1/members/me` → `200` in `23 ms`
+**HTTP:** `GET http://localhost:5000/api/v1/members/me` → `200` in `16 ms`
 
 Response (first 400 chars):
 ```
@@ -346,7 +322,7 @@ Response (first 400 chars):
 
 ```
 
-### 16. `GET /api/v1/tee-times` — happy
+### 15. `GET /api/v1/tee-times` — happy
 
 **Category:** `expected`
 
@@ -354,15 +330,15 @@ Response (first 400 chars):
 
 **Finding rationale:** The response status is 200 and the body matches the documented schema for a successful response, listing tee times with all required fields present.
 
-**HTTP:** `GET http://localhost:5000/api/v1/tee-times` → `200` in `25 ms`
+**HTTP:** `GET http://localhost:5000/api/v1/tee-times` → `200` in `29 ms`
 
 Response (first 400 chars):
 ```
-[{"date":"2026-06-02","id":364,"is_available":true,"max_players":4,"slots_remaining":4,"time":"12:50:00"},{"date":"2026-06-02","id":365,"is_available":true,"max_players":4,"slots_remaining":4,"time":"13:00:00"},{"date":"2026-06-02","id":366,"is_available":true,"max_players":4,"slots_remaining":4,"time":"13:10:00"},{"date":"2026-06-02","id":367,"is_available":true,"max_players":4,"slots_remaining":
+[{"date":"2026-06-02","id":38,"is_available":true,"max_players":4,"slots_remaining":4,"time":"13:10:00"},{"date":"2026-06-02","id":39,"is_available":true,"max_players":4,"slots_remaining":4,"time":"13:20:00"},{"date":"2026-06-02","id":40,"is_available":true,"max_players":4,"slots_remaining":4,"time":"13:30:00"},{"date":"2026-06-02","id":41,"is_available":true,"max_players":4,"slots_remaining":4,"t
 ... (truncated)
 ```
 
-### 17. `GET /api/v1/tee-times/{tee_time_id}` — happy
+### 16. `GET /api/v1/tee-times/{tee_time_id}` — happy
 
 **Category:** `expected`
 
@@ -370,12 +346,35 @@ Response (first 400 chars):
 
 **Finding rationale:** The response status is 200 and the body matches the documented schema for a successful response, including all required fields with appropriate types.
 
-**HTTP:** `GET http://localhost:5000/api/v1/tee-times/364` → `200` in `28 ms`
+**HTTP:** `GET http://localhost:5000/api/v1/tee-times/38` → `200` in `27 ms`
 
 Response (first 400 chars):
 ```
-{"date":"2026-06-02","id":364,"is_available":true,"max_players":4,"slots_remaining":4,"time":"12:50:00"}
+{"date":"2026-06-02","id":38,"is_available":true,"max_players":4,"slots_remaining":4,"time":"13:10:00"}
 
+```
+
+### 17. `POST /api/v1/booking-assistant` — happy
+
+**Category:** `expected`
+
+**Variant rationale:** Probes the typical use case with a minimal valid request.
+
+**Finding rationale:** The response status is 200 and the body matches the documented schema for a successful response, providing a list of candidate tee-times that align with the request.
+
+**HTTP:** `POST http://localhost:5000/api/v1/booking-assistant` → `200` in `5015 ms`
+
+Request body:
+```json
+{
+  "text": "a 4-ball Saturday morning"
+}
+```
+
+Response (first 400 chars):
+```
+{"candidates":[{"date":"2026-06-06","id":329,"is_available":true,"max_players":4,"slots_remaining":4,"time":"07:00:00"},{"date":"2026-06-06","id":330,"is_available":true,"max_players":4,"slots_remaining":4,"time":"07:10:00"},{"date":"2026-06-06","id":331,"is_available":true,"max_players":4,"slots_remaining":4,"time":"07:20:00"},{"date":"2026-06-06","id":332,"is_available":true,"max_players":4,"slo
+... (truncated)
 ```
 
 ### 18. `POST /api/v1/tee-times/{tee_time_id}/bookings` — happy
@@ -386,7 +385,7 @@ Response (first 400 chars):
 
 **Finding rationale:** The response status code is 201, and the body matches the documented schema for a successful booking response, including all required fields.
 
-**HTTP:** `POST http://localhost:5000/api/v1/tee-times/364/bookings` → `201` in `41 ms`
+**HTTP:** `POST http://localhost:5000/api/v1/tee-times/38/bookings` → `201` in `33 ms`
 
 Request body:
 ```json
@@ -415,7 +414,7 @@ Request body:
 
 Response (first 400 chars):
 ```
-{"booked_at":"2026-06-02T12:42:36.918016Z","group_size":4,"id":2,"member_id":2,"tee_time_id":364,"visitor_id":null}
+{"booked_at":"2026-06-02T13:08:52.432878Z","group_size":4,"id":1,"member_id":2,"tee_time_id":38,"visitor_id":null}
 
 ```
 
