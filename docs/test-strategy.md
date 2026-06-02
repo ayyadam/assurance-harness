@@ -2,7 +2,7 @@
 
 **Status:** living document — updated as the assurance harness matures.
 **Owner:** Adam (acting as Digital Assurance Engineer)
-**Last updated:** 2026-06-02 *(phase-12 v2 v2 — agent regression suite)*
+**Last updated:** 2026-06-02 *(F-012 — R-018 root-cause fix)*
 
 ---
 
@@ -351,6 +351,58 @@ The finding is logged as R-019 and tracked. Re-evaluation trigger: more than ~1-
 **Process gap surfaced alongside this**
 
 This recurrence was reported to me by the user via a GitHub notification, not by me checking. My cadence has been: PR pre-merge checks green → squash-merge → done. I do not currently watch the *post-merge push run* on dev — which executes the merged squash commit and can fail independently of the PR run. Adopting "after merge, also watch the push run on dev" closes the gap.
+
+### F-012 — `confirm.click()` race with the booking page's smooth-scroll animation
+
+**Date:** 2026-06-02
+**Surfaced by:** Third post-mitigation recurrence of R-018 on PR #25, this time deep-dived from the failed-run Playwright trace instead of rerun-on-hit.
+**Severity:** Major (root cause for R-018's recurring functional flake)
+
+**Symptom**
+
+`test_assistant_interprets_request_and_books_a_slot` (and previously `test_member_books_a_tee_time`) intermittently times out at 30s on `page.wait_for_url(re.compile(r"/member/dashboard"))`. The failed-run screenshot shows the page still on `/member/book-tee-time` with the chosen slot selected — no error message, no navigation. Reruns pass cleanly.
+
+**Root cause** (traced via the failed run's Playwright trace + network log)
+
+The booking page's slot-selection JS does this on click:
+
+```js
+function selectTeeTime(id, el) {
+    // ...mark slot selected, write hidden input
+    const wrapper = document.getElementById('bookingFormWrapper');
+    anchorSlot.after(wrapper);              // DOM move
+    wrapper.classList.remove('show');       // animation reset
+    void wrapper.offsetHeight;              // force reflow
+    wrapper.classList.add('show');          // entrance animation
+    setTimeout(() => wrapper.scrollIntoView({ behavior: 'smooth' }), 50);
+}
+```
+
+The 50ms-delayed `behavior: 'smooth'` scroll is the real culprit. Playwright's flow after the slot click:
+
+1. Resolves `#confirmBookingBtn` → finds it.
+2. Auto-actionability check: visible, enabled, **stable**. The check observes the bounding box across two animation frames (~16ms apart). On a cold CI runner, this check often completes within the 50ms window *before* the smooth scroll begins, so the box is stable and the check passes.
+3. `scrollIntoView` (Playwright's own, instant) — runs.
+4. Dispatches the click event.
+5. The page's own smooth scroll, queued by the 50ms setTimeout, is now in flight. The click event reaches the button, but the surrounding viewport animation interferes with the click's form-submission side-effect.
+
+Result: the trace shows `performing click action → click action done → navigations have finished` (with no navigation actually scheduled). The form never POSTs. The test then waits the full 30s `wait_for_url` budget for a URL that never gets visited.
+
+This is the **same R-018 family** as F-009, but the mechanism is one layer deeper than the original diagnosis. F-009 named "cold-runner spike on the POST → 302 → dashboard GET chain" and fixed it with longer assertion timeouts + `wait_for_url`. That mitigation reduced hit rate but did not address the underlying race because the underlying race is **not server-side latency** — it's a client-side animation race that prevents the POST from happening at all.
+
+**Mitigation** (this PR)
+
+`functional/conftest.py` overrides pytest-playwright's `page` fixture to register an init script that sets `document.documentElement.style.scrollBehavior = 'auto'` on every navigation. CSS smooth-scroll is bypassed for tests; Playwright's deterministic scroll is the only one in play. The fixture composes naturally with `member_page` (which is built on `page`) so every functional test gets the deterministic behaviour for free.
+
+Tests still exercise the real submit button, the real form, the real handler — only the cosmetic transition is bypassed. The application's smooth-scroll UX is unchanged.
+
+**Local validation:** 5/5 pass on the previously-flaky tests after the fix.
+
+**Generalisation**
+
+Two-step deepening of R-018 across three PRs makes the methodological point: *rerun-on-hit is a tactic, not a strategy*. The cheapest fix the second and third time was "rerun again", and we did that. The right fix was diagnostic — pull the trace, find the actual mechanism, kill the race. Each rerun-on-hit deferred this work and let the same race keep showing up; the right time to do the diagnostic was the moment R-018 hit twice past its first mitigation. Adopted habit: *the second mitigation-pass recurrence of any flake gets a deep-dive PR*, not another rerun.
+
+R-018 status moves from *mitigated* (pre-F-012) to **closed** (post-F-012) in the register if this fix holds for the next 5–10 functional CI runs. Until then it stays *mitigated* with F-012 linked.
 
 ## 12. Roadmap
 
