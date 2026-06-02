@@ -2,7 +2,7 @@
 
 **Add time-of-day constraints to the booking assistant (F-008)**
 
-_Run: 2026-06-01 • model: `qwen2.5:32b-instruct-q4_K_M`_  
+_Run: 2026-06-02 • model: `qwen2.5:32b-instruct-q4_K_M`_  
 _Repo: ayyadam/golf-web-app_
 
 ## Summary
@@ -18,44 +18,42 @@ This PR changes the booking assistant to include time-of-day constraints for tee
 
 ## Ranked risks
 
-### 1. R-002 — _direct_ — **COVERAGE GAP**
+### 1. R-011 — _direct_
 
-**Why:** The diff introduces new logic and schema fields related to time-of-day constraints (not_before and not_after), which could lead to concurrent booking issues if not properly synchronized.
-
-**Covered by:** none (open, no layer)
-
-**Action:** Add concurrency tests for the booking endpoints to ensure that overlapping bookings are prevented.
-
-### 2. R-011 — _direct_
-
-**Why:** The diff modifies the BookingIntent schema and parsing logic, which directly affects how time-of-day constraints are interpreted by the AI booking feature. This could lead to incorrect slot proposals if not handled correctly.
+**Why:** The diff modifies the BookingIntent schema and parsing logic to handle new 'not_before' and 'not_after' fields. This directly affects how the booking assistant interprets time-of-day constraints.
 
 **Covered by:** ai_evaluation/
 
-**Action:** Run additional golden-set cases for the AI booking feature to ensure it handles new time-of-day constraints accurately.
+**Action:** Add golden-set cases for various time-of-day inputs (e.g., 'from 9am', 'before noon') to ensure correct interpretation.
 
-### 3. R-012 — _direct_
+### 2. R-012 — _direct_
 
-**Why:** The diff introduces new input fields (not_before and not_after) that could be exploited through prompt injection attacks if not properly sanitized.
+**Why:** The diff introduces new parsing logic for time-of-day constraints. This could potentially introduce a risk of prompt injection if the input is not properly sanitized.
 
 **Covered by:** ai_evaluation/
 
-**Action:** Verify the structured-output boundary by running additional adversarial tests on the new time-of-day constraints.
+**Action:** Review and test the new parsing functions (_parse_clock_token, _coerce_clock) to ensure they handle unexpected inputs safely.
 
-### 4. R-018 — _plausible_
+### 3. R-018 — _plausible_
 
-**Why:** The diff modifies the booking assistant logic and templates, which could introduce flakiness in functional tests if not properly synchronized with the updated schema.
+**Why:** The diff modifies the booking assistant's logic for interpreting time-of-day constraints. This could affect functional tests that rely on the booking assistant's output.
 
 **Covered by:** Playwright functional suite
 
-**Action:** Re-run functional tests to ensure they pass consistently after the changes.
+**Action:** Re-run functional tests to ensure they still pass and do not flake due to changes in the booking assistant's behavior.
+
+### 4. R-019 — _plausible_
+
+**Why:** The diff introduces new parsing logic for time-of-day constraints. This could potentially increase memory usage during test runs.
+
+**Covered by:** Playwright functional suite
+
+**Action:** Monitor memory usage during test runs to ensure they do not exceed limits and cause failures.
 
 ## Exploratory probes
 
-- Manually test the new time-of-day constraints by attempting to book a tee-time with overlapping 'not_before' and 'not_after' values.
-- Use curl to send requests with malformed or extreme time values (e.g., 25:00) to check if they are correctly handled.
-- Test the booking assistant's response when providing ambiguous time-of-day constraints, such as 'around lunchtime'.
-- Verify that the new time-of-day constraints are properly reflected in the UI by checking the rendered HTML for the book_tee_time page.
+- Test the booking assistant with various time-of-day inputs (e.g., 'from 9am', 'before noon') to verify correct interpretation.
+- Review the new parsing functions (_parse_clock_token, _coerce_clock) for potential security vulnerabilities or unexpected behavior.
 
 ---
 

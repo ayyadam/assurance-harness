@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-02T18:41:13.829418+00:00",
+  "generated_at": "2026-06-02T22:55:15.923362+00:00",
   "cases": [
     {
       "case_id": "pr-7-a11y",
@@ -9,99 +9,123 @@
       "runs": [
         {
           "n": 1,
-          "elapsed_s": 26.93,
+          "elapsed_s": 25.48,
           "error": null,
           "output": {
-            "summary": "This PR changes CSS and JavaScript to improve WCAG 2.1 AA accessibility violations on the dark theme.",
+            "summary": "This PR changes CSS and JavaScript to fix WCAG 2.1 AA accessibility violations on the dark theme.",
             "ranked_risks": [
               {
                 "id": "R-008",
                 "relevance": 3,
-                "rationale": "The diff directly addresses WCAG 2.1 AA colour contrast issues in `app/static/css/style.css` and adds accessible names to date inputs in `app/static/js/main.js`. This PR is explicitly aimed at mitigating this risk.",
-                "action": "Re-run the axe-core WCAG 2.1 A/AA sweep over six key pages to ensure no new violations have been introduced.",
+                "rationale": "The diff directly addresses WCAG 2.1 AA colour contrast issues in the dark theme by modifying CSS and JavaScript to ensure better accessibility.",
+                "action": "Re-run the axe-core WCAG 2.1 A/AA sweep over key pages to verify that the changes have resolved the violations.",
                 "covered_by": "axe-core sweep",
+                "is_gap": false
+              },
+              {
+                "id": "R-018",
+                "relevance": 2,
+                "rationale": "The diff modifies JavaScript related to date input and accessibility labels, which could potentially affect functional tests' interaction with client-side behavior.",
+                "action": "Run the functional test suite to ensure that changes do not introduce new flakiness or issues.",
+                "covered_by": "Playwright functional suite",
                 "is_gap": false
               },
               {
                 "id": "R-019",
                 "relevance": 2,
-                "rationale": "The diff modifies JavaScript and CSS files that could potentially affect the performance of accessibility tests on GitHub-hosted runners. Although not directly related, a reviewer should check if these changes might impact runner memory usage.",
-                "action": "Monitor CI runs for any OOM-kills or flakiness in the Playwright/accessibility job.",
+                "rationale": "The diff modifies JavaScript and CSS which could potentially affect memory usage in Playwright tests. Although it is speculative, a change in the test-side memory pressure might raise this risk.",
+                "action": "Monitor CI runs for any OOM-kills or memory-related issues after merging this PR.",
                 "covered_by": "Playwright functional suite",
                 "is_gap": false
               }
             ],
             "exploratory_probes": [
-              "Manually test the dark theme on different browsers to ensure all WCAG 2.1 AA violations are fixed.",
-              "Use a color contrast checker tool to verify that the new colors meet the required contrast ratios.",
-              "Test the date picker functionality in `main.js` with screen readers to ensure accessibility improvements are effective.",
-              "Check if any new elements introduced or modified in this PR have proper ARIA labels and roles."
+              "Manually verify that the dark theme's buttons and text have improved contrast using browser developer tools.",
+              "Check if the date input fields now have proper accessible names by inspecting their `aria-label` attributes in the browser.",
+              "Run a manual accessibility audit on key pages to ensure no new WCAG violations are introduced.",
+              "Test the application under different screen sizes and resolutions to ensure that the changes do not break responsive design."
             ],
             "model": "qwen2.5:32b-instruct-q4_K_M"
           }
         },
         {
           "n": 2,
-          "elapsed_s": 16.49,
+          "elapsed_s": 17.25,
           "error": null,
           "output": {
-            "summary": "This PR changes CSS and JavaScript to improve WCAG 2.1 AA accessibility violations on the dark theme.",
+            "summary": "This PR changes CSS and JavaScript to fix WCAG 2.1 AA accessibility violations on the dark theme.",
             "ranked_risks": [
               {
                 "id": "R-008",
                 "relevance": 3,
-                "rationale": "The diff directly addresses WCAG 2.1 AA colour contrast issues in `app/static/css/style.css` and adds accessible names to date inputs in `app/static/js/main.js`. These changes are aimed at mitigating accessibility violations.",
-                "action": "Re-run the axe-core WCAG 2.1 A/AA sweep over key pages to ensure no new regressions have been introduced.",
+                "rationale": "The diff directly addresses WCAG 2.1 AA colour contrast issues in the dark theme by modifying CSS and JavaScript to ensure better accessibility.",
+                "action": "Re-run the axe-core WCAG 2.1 A/AA sweep over key pages to verify that the changes have resolved the violations.",
                 "covered_by": "axe-core sweep",
+                "is_gap": false
+              },
+              {
+                "id": "R-018",
+                "relevance": 2,
+                "rationale": "The diff modifies JavaScript related to date input and accessibility labels, which could potentially affect functional tests' interaction with client-side behavior.",
+                "action": "Run the functional test suite to ensure that changes do not introduce new flakiness or issues.",
+                "covered_by": "Playwright functional suite",
                 "is_gap": false
               },
               {
                 "id": "R-019",
                 "relevance": 2,
-                "rationale": "The diff modifies CSS and JavaScript files that could potentially affect the performance of accessibility tests run on GitHub-hosted runners. Although not directly related, changes in these files might impact test stability.",
-                "action": "Monitor CI runs for any OOM-kills or flakes specifically during the Playwright/accessibility job.",
+                "rationale": "The diff modifies JavaScript and CSS which could potentially increase memory usage during accessibility testing. However, it is speculative whether this will significantly impact the hosted runner's memory ceiling.",
+                "action": "Monitor the CI job for any OOM errors or increased memory usage.",
                 "covered_by": "Playwright functional suite",
                 "is_gap": false
               }
             ],
             "exploratory_probes": [
-              "Manually verify that the dark theme's button colors meet WCAG 2.1 AA contrast requirements using a color contrast checker tool.",
-              "Test the date picker input in both light and dark themes to ensure it has an accessible name (aria-label) when rendered.",
-              "Check if any new accessibility issues are introduced by manually testing key pages with screen readers.",
-              "Verify that the changes do not introduce any layout shifts or visual regressions that could affect user experience."
+              "Manually test the dark theme in different browsers to ensure that all buttons and text have sufficient contrast.",
+              "Use axe-core manually on the dark theme pages to verify that no new accessibility issues are introduced.",
+              "Check if the date picker's alt input has the correct `aria-label` attribute when the page is loaded.",
+              "Verify that the functional tests pass without flakiness after merging this PR."
             ],
             "model": "qwen2.5:32b-instruct-q4_K_M"
           }
         },
         {
           "n": 3,
-          "elapsed_s": 16.42,
+          "elapsed_s": 17.65,
           "error": null,
           "output": {
-            "summary": "This PR changes CSS and JavaScript to improve WCAG 2.1 AA accessibility violations on the dark theme.",
+            "summary": "This PR changes CSS and JavaScript to fix WCAG 2.1 AA accessibility violations on the dark theme.",
             "ranked_risks": [
               {
                 "id": "R-008",
                 "relevance": 3,
-                "rationale": "The diff directly addresses WCAG 2.1 AA colour contrast issues in `app/static/css/style.css` and adds accessible names to date inputs in `app/static/js/main.js`. These changes are aimed at mitigating accessibility violations.",
-                "action": "Re-run the axe-core WCAG 2.1 A/AA sweep over key pages to ensure no new regressions have been introduced.",
+                "rationale": "The diff directly addresses WCAG 2.1 AA colour contrast issues in the dark theme by modifying CSS and JavaScript to ensure better accessibility.",
+                "action": "Re-run the axe-core WCAG 2.1 A/AA sweep over key pages to verify that the changes have resolved the violations.",
                 "covered_by": "axe-core sweep",
+                "is_gap": false
+              },
+              {
+                "id": "R-018",
+                "relevance": 2,
+                "rationale": "The diff modifies JavaScript related to date input and accessibility labels, which could potentially affect functional tests' interaction with client-side behavior.",
+                "action": "Run the functional test suite to ensure that changes do not introduce new flakiness or issues.",
+                "covered_by": "Playwright functional suite",
                 "is_gap": false
               },
               {
                 "id": "R-019",
                 "relevance": 2,
-                "rationale": "The diff modifies CSS and JavaScript files that could potentially affect the performance of accessibility tests run on GitHub-hosted runners. Although not directly related, changes in these files might impact test stability.",
-                "action": "Monitor CI runs for any OOM-kills or flakes specifically during the Playwright/accessibility job.",
+                "rationale": "The diff modifies JavaScript and CSS which could potentially increase memory usage during accessibility testing. However, it is speculative whether this will significantly impact the hosted runner's memory ceiling.",
+                "action": "Monitor the CI job for any OOM errors or increased memory usage.",
                 "covered_by": "Playwright functional suite",
                 "is_gap": false
               }
             ],
             "exploratory_probes": [
-              "Manually verify that the dark theme's button colors meet WCAG 2.1 AA contrast requirements using a color contrast checker tool.",
-              "Test the date picker input in both light and dark themes to ensure it has an accessible name (aria-label) when rendered.",
-              "Check if any new accessibility issues are introduced by manually testing key pages with screen readers.",
-              "Verify that the changes do not introduce any layout shifts or visual regressions that could affect user experience."
+              "Manually test the dark theme in different browsers to ensure that all buttons and text have sufficient contrast.",
+              "Use axe-core manually on the dark theme pages to verify that no new accessibility issues are introduced.",
+              "Check if the date picker's alt input has the correct `aria-label` attribute when the page is loaded.",
+              "Verify that the functional tests pass without flakiness after merging this PR."
             ],
             "model": "qwen2.5:32b-instruct-q4_K_M",
             "_metrics": {
@@ -123,155 +147,155 @@
       "runs": [
         {
           "n": 1,
-          "elapsed_s": 28.87,
+          "elapsed_s": 32.53,
           "error": null,
           "output": {
             "summary": "This PR changes the booking assistant to include time-of-day constraints for tee-time bookings.",
             "ranked_risks": [
               {
-                "id": "R-002",
-                "relevance": 3,
-                "rationale": "The diff introduces new logic in `app/services/booking_assistant.py` that filters tee times based on explicit time bounds (`not_before`, `not_after`). This could lead to concurrent bookings if the filtering logic is not robust.",
-                "action": "Add concurrency tests for booking endpoints with time-of-day constraints.",
-                "covered_by": "none (open, no layer)",
-                "is_gap": true
-              },
-              {
                 "id": "R-011",
                 "relevance": 3,
-                "rationale": "The diff modifies the booking assistant's intent parsing and slot-finding logic to include new time bounds (`not_before`, `not_after`). This could introduce errors if the AI model hallucinates or misinterprets these constraints.",
-                "action": "Add golden-set cases for time-of-day constraints in the AI evaluation.",
+                "rationale": "The diff modifies the BookingIntent schema and parsing logic in `app/services/booking_assistant.py` to handle new time-of-day constraints (`not_before`, `not_after`). This directly affects how the AI booking feature interprets user intent.",
+                "action": "Re-run the golden-set evaluation for R-011 to ensure the assistant correctly handles these new constraints.",
                 "covered_by": "ai_evaluation/",
                 "is_gap": false
               },
               {
                 "id": "R-012",
                 "relevance": 3,
-                "rationale": "The diff modifies the booking assistant's intent parsing logic to include new time bounds (`not_before`, `not_after`). This could introduce prompt injection vulnerabilities if the model is not constrained properly.",
-                "action": "Verify that the structured-output boundary holds for new time-of-day constraints.",
+                "rationale": "The diff modifies the BookingIntent schema and parsing logic in `app/services/booking_assistant.py` to handle new time-of-day constraints (`not_before`, `not_after`). This directly affects how user inputs are parsed and could introduce prompt injection vulnerabilities if not properly validated.",
+                "action": "Re-run the safety checks for R-012 with a focus on the new time-of-day constraint fields.",
                 "covered_by": "ai_evaluation/",
                 "is_gap": false
               },
               {
-                "id": "R-018",
+                "id": "R-006",
                 "relevance": 2,
-                "rationale": "The diff modifies the booking assistant's logic in `app/services/booking_assistant.py`, which could affect functional tests. The risk of flaky tests due to cold-container runners remains relevant.",
-                "action": "Re-run functional tests with time-of-day constraints to ensure stability.",
-                "covered_by": "Playwright functional suite",
+                "rationale": "The diff modifies `app/api/schemas.py` and `app/services/booking_assistant.py`, which could affect the JSON API contract. The new time-of-day constraints might not be correctly reflected in the live API behavior.",
+                "action": "Re-run Schemathesis property-based contract tests to ensure the new fields are correctly handled by the server.",
+                "covered_by": "Schemathesis contract suite",
+                "is_gap": false
+              },
+              {
+                "id": "R-008",
+                "relevance": 2,
+                "rationale": "The diff modifies `app/templates/member/book_tee_time.html` to display the new time constraints. This change could potentially affect accessibility if not properly formatted.",
+                "action": "Run axe-core WCAG 2.1 A/AA sweep over the updated booking page to ensure no regressions.",
+                "covered_by": "axe-core sweep",
                 "is_gap": false
               }
             ],
             "exploratory_probes": [
-              "Manually test the booking assistant by providing various time-of-day constraints and verifying that the correct tee times are proposed.",
-              "Use `curl` to send requests to the booking API with different time bounds (`not_before`, `not_after`) and verify the responses.",
-              "Check if concurrent bookings can be made within the same time window using multiple browser sessions.",
-              "Test edge cases such as overlapping time windows or invalid time inputs to ensure proper handling."
+              "Manually test the booking assistant with various time-of-day constraints (e.g., 'from 9am', 'before noon') and verify that the correct slots are proposed.",
+              "Check if malformed time inputs (e.g., '13:60') are handled gracefully by the assistant without crashing or producing incorrect results.",
+              "Verify that the new time constraints are correctly displayed on the booking page (`app/templates/member/book_tee_time.html`).",
+              "Test edge cases such as overlapping time windows and ensure the assistant handles them appropriately."
             ],
             "model": "qwen2.5:32b-instruct-q4_K_M"
           }
         },
         {
           "n": 2,
-          "elapsed_s": 22.52,
+          "elapsed_s": 30.53,
           "error": null,
           "output": {
             "summary": "This PR changes the booking assistant to include time-of-day constraints for tee-time bookings.",
             "ranked_risks": [
               {
-                "id": "R-002",
-                "relevance": 3,
-                "rationale": "The diff introduces new logic and schema fields (`not_before` and `not_after`) that directly affect the booking process. This could lead to concurrent bookings if not properly synchronized.",
-                "action": "Add concurrency tests for the booking endpoints.",
-                "covered_by": "none (open, no layer)",
-                "is_gap": true
-              },
-              {
                 "id": "R-011",
                 "relevance": 3,
-                "rationale": "The diff modifies the BookingIntent schema and parsing logic, which directly impacts how the AI booking feature interprets user requests. This could lead to incorrect slot proposals.",
-                "action": "Update the golden set cases for the AI booking feature to include time-of-day constraints.",
+                "rationale": "The diff modifies the BookingAssistant's parsing and handling of time-of-day constraints, directly impacting its ability to correctly interpret and propose slots based on these new constraints.",
+                "action": "Add golden-set cases for various time-of-day inputs (e.g., 'from 9am', 'before noon') to ensure correct interpretation.",
                 "covered_by": "ai_evaluation/",
                 "is_gap": false
               },
               {
                 "id": "R-012",
                 "relevance": 3,
-                "rationale": "The diff modifies the BookingIntent schema and parsing logic, which directly impacts how user inputs are interpreted. This could introduce new vectors for prompt injection attacks.",
-                "action": "Update the adversarial test set to include time-of-day constraints in the input validation.",
+                "rationale": "The diff introduces new parsing logic for time-of-day constraints, which could potentially be exploited if not properly constrained. The risk of prompt injection in the AI booking feature is directly raised by these changes.",
+                "action": "Verify that the structured-output boundary holds and conduct additional safety checks on the new time-of-day inputs.",
                 "covered_by": "ai_evaluation/",
                 "is_gap": false
               },
               {
                 "id": "R-018",
                 "relevance": 2,
-                "rationale": "The diff modifies the booking assistant logic and schema, which could affect functional tests that rely on timing assertions. This might cause flakiness if not properly addressed.",
-                "action": "Review and update functional test timeouts to account for new time-of-day constraints.",
+                "rationale": "The diff modifies the BookingAssistant's logic for handling time constraints, which could affect functional tests if these changes introduce timing issues or race conditions in Playwright interactions.",
+                "action": "Re-run functional tests to ensure that there are no new flakiness issues introduced by the time-of-day constraint parsing.",
+                "covered_by": "Playwright functional suite",
+                "is_gap": false
+              },
+              {
+                "id": "R-019",
+                "relevance": 2,
+                "rationale": "The diff introduces additional logic for handling time constraints, which could potentially increase memory usage in Playwright or axe-core tests if not optimized.",
+                "action": "Monitor CI runs to ensure that the new changes do not cause OOM issues on hosted runners.",
                 "covered_by": "Playwright functional suite",
                 "is_gap": false
               }
             ],
             "exploratory_probes": [
-              "Manually test the booking assistant with various time-of-day constraints in different scenarios (e.g., morning, afternoon) to ensure correct slot proposals.",
-              "Use `curl` to send requests with malformed or missing time-of-day constraints and verify that the system handles them gracefully.",
-              "Check if concurrent bookings can be made within the same time window by simulating multiple simultaneous booking attempts.",
-              "Test edge cases where the time-of-day constraints are at the boundary of morning/afternoon periods."
+              "Manually test the booking assistant with various time-of-day constraints (e.g., 'from 9am', 'before noon') and verify correct slot proposals.",
+              "Check if the booking assistant correctly handles malformed or unexpected time inputs (e.g., 'at 25:00').",
+              "Verify that the new time constraint logic does not introduce any race conditions in functional tests by manually triggering edge cases.",
+              "Monitor memory usage during CI runs to ensure that the new changes do not cause OOM issues on hosted runners."
             ],
             "model": "qwen2.5:32b-instruct-q4_K_M"
           }
         },
         {
           "n": 3,
-          "elapsed_s": 22.53,
+          "elapsed_s": 30.29,
           "error": null,
           "output": {
             "summary": "This PR changes the booking assistant to include time-of-day constraints for tee-time bookings.",
             "ranked_risks": [
               {
-                "id": "R-002",
-                "relevance": 3,
-                "rationale": "The diff introduces new logic and schema fields (`not_before` and `not_after`) that directly affect the booking process. This could lead to concurrent bookings if not properly synchronized.",
-                "action": "Add concurrency tests for the booking endpoints.",
-                "covered_by": "none (open, no layer)",
-                "is_gap": true
-              },
-              {
                 "id": "R-011",
                 "relevance": 3,
-                "rationale": "The diff modifies the BookingIntent schema and parsing logic, which directly impacts how the AI booking feature interprets user requests. This could lead to incorrect slot proposals.",
-                "action": "Update the golden set cases for the AI booking feature to include time-of-day constraints.",
+                "rationale": "The diff modifies the BookingAssistant's parsing and handling of time-of-day constraints, directly impacting its ability to correctly interpret and propose slots based on these new constraints.",
+                "action": "Add golden-set cases for various time-of-day inputs (e.g., 'from 9am', 'before noon') to ensure correct interpretation.",
                 "covered_by": "ai_evaluation/",
                 "is_gap": false
               },
               {
                 "id": "R-012",
                 "relevance": 3,
-                "rationale": "The diff modifies the BookingIntent schema and parsing logic, which directly impacts how user inputs are interpreted. This could introduce new vectors for prompt injection attacks.",
-                "action": "Update the adversarial test set to include time-of-day constraints in the input validation.",
+                "rationale": "The diff introduces new parsing logic for time-of-day constraints, which could potentially be exploited if not properly constrained. The risk of prompt injection in the AI booking feature is directly raised by these changes.",
+                "action": "Verify that the structured-output boundary holds and conduct additional safety checks on the new time-of-day inputs.",
                 "covered_by": "ai_evaluation/",
                 "is_gap": false
               },
               {
                 "id": "R-018",
                 "relevance": 2,
-                "rationale": "The diff modifies the booking assistant logic and schema, which could affect functional tests that rely on timing assertions. This might cause flakiness if not properly addressed.",
-                "action": "Review and update functional test timeouts to account for new time-of-day constraints.",
+                "rationale": "The diff modifies the BookingAssistant's logic for handling time constraints, which could affect functional tests if these changes introduce timing issues or race conditions in Playwright interactions.",
+                "action": "Re-run functional tests to ensure that there are no new flakiness issues introduced by the time-of-day constraint parsing.",
+                "covered_by": "Playwright functional suite",
+                "is_gap": false
+              },
+              {
+                "id": "R-019",
+                "relevance": 2,
+                "rationale": "The diff introduces additional logic for handling time constraints, which could potentially increase memory usage in Playwright or axe-core tests if not optimized.",
+                "action": "Monitor CI runs to ensure that the new changes do not cause OOM issues on hosted runners.",
                 "covered_by": "Playwright functional suite",
                 "is_gap": false
               }
             ],
             "exploratory_probes": [
-              "Manually test the booking assistant with various time-of-day constraints in different scenarios (e.g., morning, afternoon) to ensure correct slot proposals.",
-              "Use `curl` to send requests with malformed or missing time-of-day constraints and verify that the system handles them gracefully.",
-              "Check if concurrent bookings can be made within the same time window by simulating multiple simultaneous booking attempts.",
-              "Test edge cases where the time-of-day constraints are at the boundary of morning/afternoon periods."
+              "Manually test the booking assistant with various time-of-day constraints (e.g., 'from 9am', 'before noon') and verify correct slot proposals.",
+              "Check if the booking assistant correctly handles malformed or unexpected time inputs (e.g., 'at 25:00').",
+              "Verify that the new time constraint logic does not introduce any race conditions in functional tests by manually triggering edge cases.",
+              "Monitor memory usage during CI runs to ensure that the new changes do not cause OOM issues on hosted runners."
             ],
             "model": "qwen2.5:32b-instruct-q4_K_M",
             "_metrics": {
-              "top_value_mode": "R-002",
+              "top_value_mode": "R-011",
               "top_value_stability": 1.0,
               "expected_top_presence_rate": 1.0,
-              "expected_top_match_rate": 0.0,
-              "stable_divergent": true
+              "expected_top_match_rate": 1.0,
+              "stable_divergent": false
             }
           }
         }

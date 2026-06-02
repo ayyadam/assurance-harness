@@ -276,7 +276,7 @@ def main(argv: list[str] | None = None) -> int:
     cases = load_golden_set(args.golden_set)
     if args.refresh:
         for case in cases:
-            print(f"refreshing {case['case_id']} (PR #{case['pr']})...", file=sys.stderr)
+            print(f"refreshing {case['id']} (PR #{case['pr']})...", file=sys.stderr)
             refresh_case(case, args.reports_dir, args.model)
 
     scores = [score_case(c, args.reports_dir) for c in cases]

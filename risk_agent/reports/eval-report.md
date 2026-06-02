@@ -1,6 +1,6 @@
 # risk_agent v2 v2 — golden-set evaluation
 
-_Run: 2026-06-01_
+_Run: 2026-06-02_
 
 Compares the agent's emitted ranking (cached under `reports/pr-N-plan.json`) against the expected ranking per historic PR in [`golden_set.yaml`](../golden_set.yaml). Scoring is deterministic — no LLM in the scoring path.
 
@@ -10,11 +10,11 @@ Compares the agent's emitted ranking (cached under `reports/pr-N-plan.json`) aga
 |---|---|
 | Cases scored | 4 |
 | True positives | 5 |
-| False positives (over-pull) | 7 |
+| False positives (over-pull) | 5 |
 | False negatives (missed) | 2 |
-| **Precision** | **0.417** |
+| **Precision** | **0.500** |
 | **Recall** | **0.714** |
-| **F1** | **0.526** |
+| **F1** | **0.588** |
 | Relevance accuracy (matching `direct`/`plausible` on TPs) | 0.800 (4/5) |
 
 ## Per-case
@@ -31,33 +31,33 @@ Compares the agent's emitted ranking (cached under `reports/pr-N-plan.json`) aga
 
 ### pr-8-nplus1 — Fix N+1 query when listing tee times
 
-**PR #8** | precision: `0.333` | recall: `1.000` | F1: `0.500`
+**PR #8** | precision: `0.500` | recall: `1.000` | F1: `0.667`
 
 - Expected: `R-007(3)`
-- Actual:   `R-005(2)`, `R-007(3)`, `R-018(2)`
+- Actual:   `R-007(3)`, `R-017(2)`
 
 - ✓ TP: R-007 (expected 3, got 3)
-- ✗ FP (over-pull): R-005, R-018
+- ✗ FP (over-pull): R-017
 
 ### pr-11-f007 — Show all matching tee-time slots, not a silent 6 (F-007)
 
-**PR #11** | precision: `0.333` | recall: `1.000` | F1: `0.500`
+**PR #11** | precision: `0.500` | recall: `1.000` | F1: `0.667`
 
 - Expected: `R-011(3)`
-- Actual:   `R-011(3)`, `R-012(3)`, `R-018(2)`
+- Actual:   `R-011(3)`, `R-012(3)`
 
 - ✓ TP: R-011 (expected 3, got 3)
-- ✗ FP (over-pull): R-012, R-018
+- ✗ FP (over-pull): R-012
 
 ### pr-12-f008 — Add time-of-day constraints to the booking assistant (F-008)
 
 **PR #12** | precision: `0.500` | recall: `0.500` | F1: `0.500`
 
 - Expected: `R-006(2)`, `R-008(2)`, `R-011(3)`, `R-012(2)`
-- Actual:   `R-002(3)`, `R-011(3)`, `R-012(3)`, `R-018(2)`
+- Actual:   `R-011(3)`, `R-012(3)`, `R-018(2)`, `R-019(2)`
 
 - ✓ TP: R-011 (expected 3, got 3), R-012 (expected 2, got 3)
-- ✗ FP (over-pull): R-002, R-018
+- ✗ FP (over-pull): R-018, R-019
 - ✗ FN (missed): R-006, R-008
 
 ---

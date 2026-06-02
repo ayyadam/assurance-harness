@@ -2,12 +2,12 @@
 
 **Show all matching tee-time slots, not a silent 6 (F-007)**
 
-_Run: 2026-06-01 • model: `qwen2.5:32b-instruct-q4_K_M`_  
+_Run: 2026-06-02 • model: `qwen2.5:32b-instruct-q4_K_M`_  
 _Repo: ayyadam/golf-web-app_
 
 ## Summary
 
-This PR changes the `find_candidate_slots` function in `app/services/booking_assistant.py` to return all matching tee-time slots without a hard limit, and adds corresponding unit tests.
+This PR changes the booking assistant's behavior to return all matching tee-time slots instead of a capped subset.
 
 ## Changed files
 
@@ -18,34 +18,26 @@ This PR changes the `find_candidate_slots` function in `app/services/booking_ass
 
 ### 1. R-011 — _direct_
 
-**Why:** The diff modifies the booking assistant's slot-finding logic, which directly affects how AI-generated intents are translated into bookable slots. This change could introduce new errors in slot selection.
+**Why:** The diff modifies `find_candidate_slots` in `app/services/booking_assistant.py`, which directly affects how the booking assistant proposes tee-time slots. This change could introduce new errors or inconsistencies in slot selection.
 
 **Covered by:** ai_evaluation/
 
-**Action:** Add a golden-set case for F-007 to ensure all matching slots are returned correctly.
+**Action:** Add a golden-set case for different date and time scenarios to ensure the assistant's behavior is correct.
 
 ### 2. R-012 — _direct_
 
-**Why:** The diff modifies the booking assistant's logic, which could potentially affect how AI-generated inputs are handled. This change might introduce new vulnerabilities if not properly constrained.
+**Why:** The diff modifies `find_candidate_slots` in `app/services/booking_assistant.py`, which could potentially affect how inputs are processed. This change might introduce new vulnerabilities if the input handling is not robust.
 
 **Covered by:** ai_evaluation/
 
-**Action:** Re-run the contract suite to ensure that structured-output boundary holds and no unauthorised actions can be injected.
-
-### 3. R-018 — _plausible_
-
-**Why:** The diff changes how slots are returned, which could affect functional tests if they rely on a specific number of slots being returned. This might cause flakiness in CI.
-
-**Covered by:** Playwright functional suite
-
-**Action:** Manually probe the booking assistant's slot-finding logic to ensure it behaves as expected with different limits and no limit.
+**Action:** Re-run the contract suite to ensure that the assistant's structured output boundary holds and no unauthorized actions can be injected.
 
 ## Exploratory probes
 
-- Use curl to request tee-time slots for a specific date and verify that all matching slots are returned without truncation.
-- Check if the booking assistant returns the correct number of slots when an explicit limit is provided.
-- Manually test the booking assistant's slot-finding logic in a browser with different input scenarios (e.g., no member, member already booked on some slots).
-- Verify that the functional tests still pass after this change by running them locally.
+- Manually test the booking assistant with a variety of date and time inputs to verify it returns all matching slots as expected.
+- Check if the booking assistant correctly excludes slots already booked by a member.
+- Test the assistant's behavior when no limit is provided versus when an explicit limit is set.
+- Verify that the assistant does not return more than 6 slots in scenarios where the old cap was enforced.
 
 ---
 
