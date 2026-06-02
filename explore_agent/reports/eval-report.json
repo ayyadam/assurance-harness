@@ -1,0 +1,197 @@
+{
+  "totals": {
+    "cases": 18,
+    "found_in_report": 18,
+    "category_correct": 9,
+    "accuracy": 0.5,
+    "confusion": {
+      "expected": {
+        "expected": 9,
+        "unexpected_5xx": 2,
+        "business_rule_concern": 7
+      }
+    }
+  },
+  "cases": [
+    {
+      "case_id": "competitions-get-happy",
+      "endpoint": "GET /api/v1/competitions",
+      "variant": "happy",
+      "expected_category": "expected",
+      "actual_category": "expected",
+      "actual_status": 200,
+      "found_in_report": true,
+      "category_match": true
+    },
+    {
+      "case_id": "competitions-get-edge",
+      "endpoint": "GET /api/v1/competitions",
+      "variant": "edge",
+      "expected_category": "expected",
+      "actual_category": "expected",
+      "actual_status": 200,
+      "found_in_report": true,
+      "category_match": true
+    },
+    {
+      "case_id": "competitions-get-abusive",
+      "endpoint": "GET /api/v1/competitions",
+      "variant": "abusive",
+      "expected_category": "expected",
+      "actual_category": "unexpected_5xx",
+      "actual_status": 200,
+      "found_in_report": true,
+      "category_match": false
+    },
+    {
+      "case_id": "members-me-get-happy",
+      "endpoint": "GET /api/v1/members/me",
+      "variant": "happy",
+      "expected_category": "expected",
+      "actual_category": "expected",
+      "actual_status": 200,
+      "found_in_report": true,
+      "category_match": true
+    },
+    {
+      "case_id": "members-me-get-edge",
+      "endpoint": "GET /api/v1/members/me",
+      "variant": "edge",
+      "expected_category": "expected",
+      "actual_category": "expected",
+      "actual_status": 200,
+      "found_in_report": true,
+      "category_match": true
+    },
+    {
+      "case_id": "members-me-get-abusive",
+      "endpoint": "GET /api/v1/members/me",
+      "variant": "abusive",
+      "expected_category": "expected",
+      "actual_category": "expected",
+      "actual_status": 200,
+      "found_in_report": true,
+      "category_match": true
+    },
+    {
+      "case_id": "tee-times-list-happy",
+      "endpoint": "GET /api/v1/tee-times",
+      "variant": "happy",
+      "expected_category": "expected",
+      "actual_category": "expected",
+      "actual_status": 200,
+      "found_in_report": true,
+      "category_match": true
+    },
+    {
+      "case_id": "tee-times-list-edge",
+      "endpoint": "GET /api/v1/tee-times",
+      "variant": "edge",
+      "expected_category": "expected",
+      "actual_category": "business_rule_concern",
+      "actual_status": 200,
+      "found_in_report": true,
+      "category_match": false
+    },
+    {
+      "case_id": "tee-times-list-abusive",
+      "endpoint": "GET /api/v1/tee-times",
+      "variant": "abusive",
+      "expected_category": "expected",
+      "actual_category": "business_rule_concern",
+      "actual_status": 200,
+      "found_in_report": true,
+      "category_match": false
+    },
+    {
+      "case_id": "tee-times-detail-happy",
+      "endpoint": "GET /api/v1/tee-times/{tee_time_id}",
+      "variant": "happy",
+      "expected_category": "expected",
+      "actual_category": "expected",
+      "actual_status": 200,
+      "found_in_report": true,
+      "category_match": true
+    },
+    {
+      "case_id": "tee-times-detail-edge",
+      "endpoint": "GET /api/v1/tee-times/{tee_time_id}",
+      "variant": "edge",
+      "expected_category": "expected",
+      "actual_category": "business_rule_concern",
+      "actual_status": 200,
+      "found_in_report": true,
+      "category_match": false
+    },
+    {
+      "case_id": "tee-times-detail-abusive",
+      "endpoint": "GET /api/v1/tee-times/{tee_time_id}",
+      "variant": "abusive",
+      "expected_category": "expected",
+      "actual_category": "business_rule_concern",
+      "actual_status": 200,
+      "found_in_report": true,
+      "category_match": false
+    },
+    {
+      "case_id": "booking-assistant-happy",
+      "endpoint": "POST /api/v1/booking-assistant",
+      "variant": "happy",
+      "expected_category": "expected",
+      "actual_category": "expected",
+      "actual_status": 200,
+      "found_in_report": true,
+      "category_match": true
+    },
+    {
+      "case_id": "booking-assistant-edge",
+      "endpoint": "POST /api/v1/booking-assistant",
+      "variant": "edge",
+      "expected_category": "expected",
+      "actual_category": "business_rule_concern",
+      "actual_status": 200,
+      "found_in_report": true,
+      "category_match": false
+    },
+    {
+      "case_id": "booking-assistant-abusive",
+      "endpoint": "POST /api/v1/booking-assistant",
+      "variant": "abusive",
+      "expected_category": "expected",
+      "actual_category": "business_rule_concern",
+      "actual_status": 200,
+      "found_in_report": true,
+      "category_match": false
+    },
+    {
+      "case_id": "bookings-create-happy",
+      "endpoint": "POST /api/v1/tee-times/{tee_time_id}/bookings",
+      "variant": "happy",
+      "expected_category": "expected",
+      "actual_category": "expected",
+      "actual_status": 201,
+      "found_in_report": true,
+      "category_match": true
+    },
+    {
+      "case_id": "bookings-create-edge",
+      "endpoint": "POST /api/v1/tee-times/{tee_time_id}/bookings",
+      "variant": "edge",
+      "expected_category": "expected",
+      "actual_category": "business_rule_concern",
+      "actual_status": 409,
+      "found_in_report": true,
+      "category_match": false
+    },
+    {
+      "case_id": "bookings-create-abusive",
+      "endpoint": "POST /api/v1/tee-times/{tee_time_id}/bookings",
+      "variant": "abusive",
+      "expected_category": "expected",
+      "actual_category": "unexpected_5xx",
+      "actual_status": 409,
+      "found_in_report": true,
+      "category_match": false
+    }
+  ]
+}

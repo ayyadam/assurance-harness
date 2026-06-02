@@ -182,6 +182,10 @@ uv run python -m explore_agent.run --no-llm                        # determinist
 uv run python -m explore_agent.ui_run                              # all tours, headless
 uv run python -m explore_agent.ui_run --tour booking-assistant     # single tour
 uv run python -m explore_agent.ui_run --headed                     # show the browser
+
+# Exploratory agent — eval against the golden set (API surface)
+uv run python -m explore_agent.eval                                # score against cached report
+uv run python -m explore_agent.eval --refresh                      # re-run the agent first
 ```
 
 ### Observability stack

@@ -1,0 +1,213 @@
+# Explore-agent golden set — expected category per (endpoint, variant).
+#
+# Ground truth for the v2 v1 evaluation tier. Each case keys an
+# (endpoint, variant) combination to the category a reviewer would assign
+# after looking at the response in context.
+#
+# Construction principle: the expected value is what a Digital Assurance
+# Engineer would conclude after reading the request, response, and the
+# endpoint's documented behaviour. Defensibility > convenience.
+#
+# Why every case is currently `expected`
+# --------------------------------------
+# The SUT has no known defects in the v1 API surface (every endpoint is
+# covered by the deterministic spine — contract, perf, a11y, data-quality —
+# and findings from those gates are tracked separately in §11 of the
+# strategy doc). For the explore agent's probes:
+#
+#   - happy variants: documented behaviour exercised cleanly. expected.
+#   - edge variants on read endpoints (GET): empty body, single-id lookups,
+#     query-param edge cases — all produce documented 200s. expected.
+#   - abusive variants on read endpoints (GET): the agent has no body to
+#     send on a GET; "abusive" reduces to a normal GET. expected.
+#   - abusive variants on POST endpoints with bodies: injection-style
+#     strings are accepted as opaque user input; the SUT does not eval
+#     them, the database parameterises them, and the AI booking endpoint
+#     treats them as natural-language text (R-012 — the structured-output
+#     boundary holds). The response shape is documented. expected.
+#   - 4xx responses on write conflicts (409 "slot full" after a sibling
+#     variant booked the slot) are documented behaviour. expected.
+#
+# This makes the eval cleanly measure ONE thing: how often the agent
+# over-flags benign responses. The baseline accuracy is the v2 v1
+# deliverable; future judge-prompt tightening can be evaluated against it.
+#
+# When a real defect surfaces (intentional or otherwise), the case for
+# the affected (endpoint, variant) is updated to the appropriate
+# non-expected category and the baseline shifts accordingly.
+
+cases:
+  # ── GET /api/v1/competitions ──────────────────────────────────────
+  - id: competitions-get-happy
+    endpoint: "GET /api/v1/competitions"
+    variant: happy
+    expected_category: expected
+    notes: |
+      Public read of the competitions list. Returns the seeded "Monthly
+      Stableford" competition with the documented schema. 200 expected.
+
+  - id: competitions-get-edge
+    endpoint: "GET /api/v1/competitions"
+    variant: edge
+    expected_category: expected
+    notes: |
+      Edge variant on a GET endpoint without query params reduces to a
+      normal GET. Same documented 200 response.
+
+  - id: competitions-get-abusive
+    endpoint: "GET /api/v1/competitions"
+    variant: abusive
+    expected_category: expected
+    notes: |
+      Abusive variant on a GET with no body has nothing to attack; the
+      request is functionally identical to the happy variant. 200 with
+      the documented body is expected. The agent currently mislabels
+      this as unexpected_5xx — that misclassification is what the eval
+      surfaces.
+
+  # ── GET /api/v1/members/me ───────────────────────────────────────
+  - id: members-me-get-happy
+    endpoint: "GET /api/v1/members/me"
+    variant: happy
+    expected_category: expected
+    notes: |
+      Authenticated read of the seeded john.smith member's profile.
+      Returns the documented MemberOut schema. 200 expected.
+
+  - id: members-me-get-edge
+    endpoint: "GET /api/v1/members/me"
+    variant: edge
+    expected_category: expected
+    notes: |
+      Same as happy — no edge surface to probe on a /me endpoint with
+      no params. 200 expected.
+
+  - id: members-me-get-abusive
+    endpoint: "GET /api/v1/members/me"
+    variant: abusive
+    expected_category: expected
+    notes: |
+      Same as happy — no body to attack on a GET. 200 expected.
+
+  # ── GET /api/v1/tee-times ────────────────────────────────────────
+  - id: tee-times-list-happy
+    endpoint: "GET /api/v1/tee-times"
+    variant: happy
+    expected_category: expected
+    notes: |
+      Authenticated list of available tee times. Returns documented
+      TeeTimeOut[] schema. 200 expected.
+
+  - id: tee-times-list-edge
+    endpoint: "GET /api/v1/tee-times"
+    variant: edge
+    expected_category: expected
+    notes: |
+      Edge variant returns today's seeded data. The agent's "future
+      date" framing of today's date is a known limitation (it lacks
+      temporal context); the response itself is documented and correct.
+      200 expected.
+
+  - id: tee-times-list-abusive
+    endpoint: "GET /api/v1/tee-times"
+    variant: abusive
+    expected_category: expected
+    notes: |
+      GET with no body to attack. The agent's "no filtering applied,
+      may expose data" framing is over-flagging — the endpoint
+      documents returning the available-slots list. 200 expected.
+
+  # ── GET /api/v1/tee-times/{tee_time_id} ──────────────────────────
+  - id: tee-times-detail-happy
+    endpoint: "GET /api/v1/tee-times/{tee_time_id}"
+    variant: happy
+    expected_category: expected
+    notes: |
+      Seed context substitutes a real tee_time_id. Returns documented
+      single-resource shape. 200 expected.
+
+  - id: tee-times-detail-edge
+    endpoint: "GET /api/v1/tee-times/{tee_time_id}"
+    variant: edge
+    expected_category: expected
+    notes: |
+      Seed-context substitution overrides the agent's intended
+      "minimum-id" probe; the request hits a real id and succeeds.
+      Documented 200. The agent flags this as business_rule_concern
+      on a phantom "minimum id should be 1" rationale — pure
+      over-flag.
+
+  - id: tee-times-detail-abusive
+    endpoint: "GET /api/v1/tee-times/{tee_time_id}"
+    variant: abusive
+    expected_category: expected
+    notes: |
+      Same as edge — seed-context substitution overrides the agent's
+      intended "string id" probe; the request hits a real id. 200
+      expected. The agent's "abusive string accepted" framing is
+      hallucinated; the URL shows a real integer was used.
+
+  # ── POST /api/v1/booking-assistant ───────────────────────────────
+  - id: booking-assistant-happy
+    endpoint: "POST /api/v1/booking-assistant"
+    variant: happy
+    expected_category: expected
+    notes: |
+      Natural-language intent extracted, candidates proposed. The
+      structured-output boundary (R-012) holds. Documented response
+      shape. 200 expected.
+
+  - id: booking-assistant-edge
+    endpoint: "POST /api/v1/booking-assistant"
+    variant: edge
+    expected_category: expected
+    notes: |
+      Edge variant uses a historical date (2024-01-01) — no tee times
+      seeded for it, so candidates=[] is correct behaviour. The agent
+      flags as business_rule_concern arguing the system should still
+      propose slots; that misreads the data scope. 200 expected.
+
+  - id: booking-assistant-abusive
+    endpoint: "POST /api/v1/booking-assistant"
+    variant: abusive
+    expected_category: expected
+    notes: |
+      Prompt-injection / SQL-style payload sent as the text input. The
+      LLM treats it as natural language, extracts a plausible intent,
+      and deterministic code proposes slots. R-012 holds. Documented
+      response shape. The agent's "system silently accepted attack"
+      framing is alarming but **the behaviour is the designed-in
+      safety property** — over-flagging an architectural feature as
+      a defect. 200 expected.
+
+  # ── POST /api/v1/tee-times/{tee_time_id}/bookings ────────────────
+  - id: bookings-create-happy
+    endpoint: "POST /api/v1/tee-times/{tee_time_id}/bookings"
+    variant: happy
+    expected_category: expected
+    notes: |
+      Valid booking against a real, available slot. Returns documented
+      201 with the booking row. expected.
+
+  - id: bookings-create-edge
+    endpoint: "POST /api/v1/tee-times/{tee_time_id}/bookings"
+    variant: edge
+    expected_category: expected
+    notes: |
+      Sibling happy variant already booked the slot; edge hits 409
+      "Not enough slots available for your group size". The error
+      message could be tighter, but the 4xx on a write conflict is
+      documented behaviour. expected. (If the error-message wording
+      is later treated as a defect, this case flips to
+      business_rule_concern.)
+
+  - id: bookings-create-abusive
+    endpoint: "POST /api/v1/tee-times/{tee_time_id}/bookings"
+    variant: abusive
+    expected_category: expected
+    notes: |
+      Same situation as edge — slot already full after the happy
+      booking, returns 409. The injection-style player names are
+      accepted as opaque strings and parameterised into the DB. The
+      agent labels this unexpected_5xx, which is wrong — 409 is 4xx,
+      not 5xx, and the response is documented behaviour. expected.
