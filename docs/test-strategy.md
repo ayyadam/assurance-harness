@@ -302,6 +302,24 @@ Two lessons. First, *default tool timeouts are tuned for fast local environments
 
 Maps to R-018 (now mitigated).
 
+### F-010 — Operational endpoint silently leaked into the v1 API contract
+
+**Date:** 2026-06-02
+**Surfaced by:** Schemathesis contract gate on testing-system PR #19 (phase 11 observability stack), the same week the regression shipped
+**Severity:** Minor (no behavioural defect; the published spec was inaccurate)
+
+Phase 11 added `prometheus-flask-exporter` to the SUT to expose `/metrics` for the observability stack to scrape (golf-web-app PR #13). The exporter registered `/metrics` directly on the Flask app rather than on a blueprint. APIFlask discovers all app-level routes when generating the OpenAPI spec; it added `/metrics` with the default `application/json` content type while the endpoint actually serves `text/plain` (Prometheus exposition format). The first CI run on the matching testing-system phase-11 PR failed at the Schemathesis contract gate — `Received: text/plain; Documented: application/json`.
+
+**Resolution**
+
+Fixed in [golf-web-app PR #14](https://github.com/ayyadam/golf-web-app/pull/14): an APIFlask `spec_processor` in `create_app()` strips `/metrics` from the served spec before publication. The endpoint still exists at runtime (the observability stack scrapes it normally); it just isn't advertised in the v1 JSON API contract. A unit test (`test_metrics_endpoint_not_in_openapi_spec`) fetches `/api/v1/openapi.json` and asserts `/metrics` is absent from `spec['paths']` — any future regression now fails in SUT unit CI before the contract gate has to.
+
+**Generalisation**
+
+Same lesson as F-003: *an auto-generated OpenAPI spec documents the routes the framework discovers, which is not always the set of routes the author considers part of the contract*. F-003 was about the spec under-describing real behaviour (missing 5xx); F-010 is about it over-describing (advertising an operational endpoint as part of the API). Both are the same class of failure — a spec that drifts from author intent because the framework doesn't know what the author meant.
+
+The bigger story is that the standing contract gate caught a regression I introduced in the same PR cycle as the feature that introduced it. The harness did its job: F-003's lesson informed the gate, and the gate then caught the next instance of the same lesson playing out. Maps to R-006.
+
 ## 12. Roadmap
 
 The full phased plan lives in conversational notes; the abbreviated public form:
