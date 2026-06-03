@@ -2,7 +2,7 @@
 
 **Status:** living document — updated as the assurance harness matures.
 **Owner:** Adam (acting as Digital Assurance Engineer)
-**Last updated:** 2026-06-02 *(F-013 — risk_agent subject-mechanism sharpening lifts F1 0.526 → 0.588)*
+**Last updated:** 2026-06-03 *(F-014 — risk_agent golden set 4 → 9 cases; honest baseline F1 0.421)*
 
 ---
 
@@ -65,7 +65,7 @@ Layers planned across the project. Each layer has an explicit "why this exists" 
 | Performance | **Done** | k6 (thresholds-as-code) | `testing-system/nonfunctional/performance/` | Latency/error budgets on the read-path API; fail the PR on regression beyond budget |
 | Data quality | **Done** | pandera (schemas + invariants) | `testing-system/data_quality/` | Validate the live database against column contracts and business-rule invariants (e.g. 18 holes with a 1..18 stroke-index permutation) |
 | AI evaluation | **Done (phase 8 v1)** | Black-box golden-set scoring (deterministic + LLM-judge) | [`testing-system/ai_evaluation/`](../ai_evaluation/README.md) | Quantifies model accuracy, safety, latency across a model list. Two grading tiers — deterministic field equality + an LLM-judge (holistic 0-10 + per-rubric fuzzy pass/fail). Current 5-model report: [`ai_evaluation/reports/report.md`](../ai_evaluation/reports/report.md) |
-| Risk-prioritisation (advisory) | **Done (phase 9 v3)** | Local Ollama agent + deterministic post-processing + golden-set eval | [`testing-system/risk_agent/`](../risk_agent/README.md) | Given a PR diff + the live risk register, produces a ranked test plan with `covered_by` per risk, coverage-gap flags, relevance label (`direct` / `plausible`), and exploratory probes. Advisory only, not a CI gate. v2 v1 made `covered_by` and `is_gap` deterministic; v2 v2 added a golden-set evaluation tier ([`risk_agent.eval`](../risk_agent/eval.py)) that scores the agent against expected ranks per historic PR (precision, recall, F1 — deterministic, no LLM in scoring); v3 added a subject-vs-adjacent discrimination rule to the system prompt and sharpened R-002 / R-018 / R-019 register rows to name their subject mechanisms explicitly (transaction boundary, post-click client-side timing, runner memory ceiling). **F1: 0.526 → 0.588** (precision 0.417 → 0.500, relevance accuracy preserved at 0.800); two false positives eliminated. See [F-013](#f-013--risk_agent-subject-vs-adjacent-rule--sharpened-rows-lift-f1-0526--0588) and [`risk_agent/reports/eval-report.md`](../risk_agent/reports/eval-report.md) |
+| Risk-prioritisation (advisory) | **In progress (phase 9 v4)** — v4 v1 done, v4 v2 queued | Local Ollama agent + deterministic post-processing + golden-set eval | [`testing-system/risk_agent/`](../risk_agent/README.md) | Given a PR diff + the live risk register, produces a ranked test plan with `covered_by` per risk, coverage-gap flags, relevance label (`direct` / `plausible`), and exploratory probes. Advisory only, not a CI gate. v2 v1 made `covered_by` and `is_gap` deterministic; v2 v2 added a golden-set evaluation tier ([`risk_agent.eval`](../risk_agent/eval.py)); v3 added a subject-vs-adjacent prompt rule and sharpened R-002 / R-018 / R-019 register rows (F1 0.526 → 0.588 on the 4-case set); **v4 v1 grew the golden set 4 → 9 cases** across varied diff shapes (workflow bump, booking-service refactor, API error contract, null-byte rejection, OpenAPI spec drift). The honest baseline is **F1 0.421** (precision 0.333 / recall 0.571 / relevance accuracy 0.875). The drop from 0.588 is the finding: the 4-case set was unrepresentative. v4 v2 will target the failure modes the bigger set surfaced. See [F-013](#f-013--risk_agent-subject-vs-adjacent-rule--sharpened-rows-lift-f1-0526--0588), [F-014](#f-014--golden-set-growth-4--9-cases-surfaces-three-new-failure-modes-honest-baseline-f1-0421) and [`risk_agent/reports/eval-report.md`](../risk_agent/reports/eval-report.md) |
 | Triage (advisory) | **Done (phase 10 v1 v2)** | Local Ollama agent over `gh` log dumps + golden-set eval | [`testing-system/triage_agent/`](../triage_agent/README.md) | Clusters failed CI runs by signature `(test path, test name, error class)`, then asks the LLM for a category (flake / defect / infra / env) and a candidate register R-ID per cluster. Closed-vocabulary enum on the R-ID — the model cannot invent risks. v1 v2 added a golden-set evaluation tier ([`triage_agent.eval`](../triage_agent/eval.py)) scoring the agent against expected (category, R-ID) per known cluster — deterministic, no LLM in scoring. Current baseline: 5/5 on category, R-ID, and combined. Historical insight from v1 v1: R-018 was actually present at run #18 (2026-05-28), three weeks before it was logged. See [`triage_agent/reports/report.md`](../triage_agent/reports/report.md) and [`triage_agent/reports/eval-report.md`](../triage_agent/reports/eval-report.md) |
 | Production observability | **Done (phase 11 v1)** | Prometheus + Grafana (metrics only; Loki + Alertmanager v2 candidates) | [`testing-system/observability/`](../observability/README.md) | Local stack scraping the SUT's `/metrics` (provisioned by `prometheus-flask-exporter`), provisioned dashboard with request rate / error rate / p95 latency / per-path breakdowns. SLO thresholds on the dashboard match the k6 perf gate's pre-merge budget — same SLOs, two enforcement points. Closes R-013. See [`observability/README.md`](../observability/README.md) and [`observability/evidence/grafana-sut-overview.png`](../observability/evidence/grafana-sut-overview.png) |
 | Exploratory (advisory) | **Done (phase 12 v2 v1)** | Local Ollama agent — API surface via OpenAPI, UI surface via Playwright, deterministic eval tier | [`testing-system/explore_agent/`](../explore_agent/README.md) | Two surfaces share the same package and the same closed-enum + LLM-jury pattern. **API** (`explore_agent.run`, v1 v1): every v1 endpoint probed with three LLM-generated payload variants (happy / edge / abusive, including prompt-injection on AI endpoints), responses classified into `expected` / `unexpected_5xx` / `schema_drift` / `business_rule_concern`. **UI** (`explore_agent.ui_run`, v1 v2): three predefined tours, each with an LLM-planned step sequence executed in Playwright, per-step state captured and LLM-judged into `expected` / `unexpected_5xx` / `js_error` / `dead_end` / `business_rule_concern`. **Eval** (`explore_agent.eval`, v2 v1): golden-set evaluation tier mirroring [`risk_agent.eval`](../risk_agent/eval.py) and [`triage_agent.eval`](../triage_agent/eval.py) — deterministic scoring against expected category per (endpoint, variant), no LLM in the scoring path. **Baseline: 50.0% accuracy (9/18 cases)** — every case's expected category is `expected` (no defects in the seeded surface) and the agent over-flags 9 of them (7 as `business_rule_concern`, 2 as `unexpected_5xx`). This quantifies the documented v1 v1 over-flagging behaviour and gives a measurable target for any future judge-prompt tightening or model swap. v1 v2's UI agent also surfaced the *plan-once-from-starting-page* limitation cleanly (LLM hallucinated `.candidate-slot` when the actual class was `.booking-slot`); the architectural fix (adaptive single-step) is tracked in the [phase-12 sub-roadmap](#phase-12-sub-roadmap), with the eval baseline as its decision input. Both probing surfaces remain local-only (cost-prohibitive for CI); the eval is also local-only. See [`explore_agent/reports/report.md`](../explore_agent/reports/report.md) (API), [`explore_agent/reports/ui/report.md`](../explore_agent/reports/ui/report.md) (UI), [`explore_agent/reports/eval-report.md`](../explore_agent/reports/eval-report.md) (eval). |
@@ -455,6 +455,45 @@ The result names a pattern worth keeping: **a system-prompt rule and the artifac
 
 R-002 stays *open* (the underlying overbooking risk is still un-mitigated by an automated check); the register-row change is about *how the risk is described*, not whether it exists. The mitigation column still names the planned Schemathesis concurrency probe.
 
+### F-014 — Golden-set growth 4 → 9 cases surfaces three new failure modes; honest baseline F1 0.421
+
+**Date:** 2026-06-03
+**Surfaced by:** Phase 9 v4 v1 — adding 5 new golden-set cases (PRs #2, #3, #5, #6, #14) across varied diff shapes (CI workflow, server-side refactor, API error contract, security input handling, OpenAPI spec drift) deliberately chosen to stress-test v3 outside the original 4 cases.
+**Severity:** Moderate (the *measurement* of agent quality was overfitted; the agent's *behaviour* hasn't regressed — it's the same agent, more honestly scored)
+
+**Finding**
+
+| Metric | v3 final (4 cases) | v4 v1 baseline (9 cases) |
+|---|---|---|
+| F1 | 0.588 | **0.421** |
+| Precision | 0.500 | 0.333 |
+| Recall | 0.714 | 0.571 |
+| Relevance accuracy | 0.800 | 0.875 |
+| TPs / FPs / FNs | 5 / 5 / 2 | 8 / 16 / 6 |
+
+The headline F1 dropped. That is the *point* of v4 v1: the 4-case set was not representative, and any v3 (or earlier) claim about agent quality is tied to that set, not to "the agent's behaviour on golf-web-app PRs in general". The new baseline is honest.
+
+**Three failure modes the bigger set exposed:**
+
+1. **The v3 subject-mechanism rule on R-002 does not fire on PR #3** (the deliberate stress test). PR #3 refactors the booking-create flow from inline route handlers into a service layer. The check-then-create pattern *at the POST /book transaction boundary* is preserved verbatim and relocated. R-002's row was sharpened in v3 precisely to name this boundary. The agent did not pull R-002 — it emitted R-012, R-013, R-014, R-015 instead. The PR #3 F1 is **0.000**. The v3 rule taught the agent to recognise the subject mechanism on PRs that *change inputs* to that mechanism (the AI-parsing case the prompt's worked example covers); it does not appear to generalise to PRs that *relocate* the same mechanism without changing inputs. The prompt or the row needs a second pass.
+
+2. **R-006 has its own keyword-broad-row problem.** PR #6 (null-byte rejection) and PR #14 (hide /metrics from OpenAPI spec) both materially change the API contract. The agent missed R-006 on both — F1 0.400 and 0.000 respectively. On PR #6 the agent saw the diff as security input handling (and correctly pulled R-003 at plausible); on PR #14 it saw the diff as observability cleanup (and incorrectly pulled R-013 instead). R-006's row currently reads "no service-boundary contract verification" — that describes *what was missing* (a gap that has since been mitigated), not the subject mechanism *the contract surface itself*. The same v3 pattern that fixed R-002 applies here.
+
+3. **Pattern continues: R-012, R-013, R-015 are still over-pulled on adjacent surfaces.** R-012 (prompt injection) on PRs #5 and #6 (no AI surface). R-015 (PII in fixtures) on PRs #5 and #6 (the "test data" surface match). R-013 (no production observability) on PRs #3 and #14 (server-side changes treated as observability concerns). All three rows are written in the same keyword-broad shape v3 retired from R-002 / R-018 / R-019.
+
+**What v4 v1 does NOT do**
+
+This PR ships the honest baseline. The fixes for the three findings above are v4 v2's job — applying the v3 prompt+row sharpening pattern to R-006, R-012, R-013, R-015, and a second-pass sharpening on R-002 to handle the relocation case PR #3 surfaced. Mixing the measurement and the fix in one PR would hide whether the v4 v2 lift came from real improvement or from re-fitting the prompt to the new set.
+
+**Generalisation**
+
+Two methodological points:
+
+- *A small golden set is a benchmark, not a baseline.* The v3 PR claimed F1 0.588 honestly against 4 cases. That was correct given the data; it was wrong as a general statement about the agent. Doubling the set was the cheapest move to find out.
+- *Stress-test the previous fix in the new set.* PR #3 was added deliberately because it modifies the exact mechanism R-002 was sharpened to capture. The fact that v3's rule didn't fire on the relocation case is a direct, evidence-led finding for v4 v2 — not a guess about where to look next.
+
+The eval and regression suites stay measurable; the 9-case set replaces the 4-case set in `golden_set.yaml` for all future runs.
+
 ## 12. Roadmap
 
 The full phased plan lives in conversational notes; the abbreviated public form:
@@ -471,7 +510,7 @@ The full phased plan lives in conversational notes; the abbreviated public form:
 | 6 | Data quality (pandera) on the live database | **Done** |
 | 7 | golf-web-app AI feature (natural-language booking, local Ollama) | **Done** |
 | 8 | AI evaluation harness | **Done (v1)** — deterministic + LLM-judge (holistic + fuzzy) |
-| 9 | Risk-prioritisation agent (PR diff → ranked test plan) | **Done (v3)** — v2 v1 added deterministic `covered_by` + `is_gap` and a relevance scale; v2 v2 added a golden-set evaluation tier with deterministic scoring; v3 added a subject-vs-adjacent prompt rule and sharpened R-002 / R-018 / R-019 register rows to name subject mechanisms. F1 0.526 → 0.588 (precision 0.417 → 0.500). PR-comment Action deferred (needs hosted-LLM commitment) |
+| 9 | Risk-prioritisation agent (PR diff → ranked test plan) | **In progress (v4 v1 done, v4 v2 queued)** — v2 v1 added deterministic `covered_by` + `is_gap` and a relevance scale; v2 v2 added a golden-set evaluation tier with deterministic scoring; v3 added a subject-vs-adjacent prompt rule and sharpened R-002 / R-018 / R-019 rows (F1 0.526 → 0.588 on the 4-case set); v4 v1 grew the golden set 4 → 9 cases (honest baseline F1 0.421 — drop from 0.588 is the finding). v4 v2 targets the failure modes the bigger set surfaced. PR-comment Action deferred (needs hosted-LLM commitment) |
 | 10 | Triage agent (CI failure clustering) | **Done (v1 v2)** — v1 v1: heuristic clustering + LLM category + R-ID xref. v1 v2: golden-set eval tier with deterministic scorer. 5/5 baseline on five real failures from last 30 days |
 | 11 | Prometheus + Grafana observability stack | **Done (v1)** — local stack scraping the SUT, provisioned dashboard with SLOs aligned to the k6 gate; closes R-013. Loki + Alertmanager deferred to v2 |
 | 12 | Exploratory testing agent + tests of agents | **Done (v1 v1, v1 v2, v2 v1, v2 v2)** — see sub-roadmap below for deferred-but-tracked work |

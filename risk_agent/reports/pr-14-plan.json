@@ -1,0 +1,36 @@
+{
+  "summary": "This PR changes the OpenAPI specification to hide the `/metrics` endpoint, ensuring that it does not appear in the published v1 spec.",
+  "ranked_risks": [
+    {
+      "id": "R-013",
+      "relevance": 2,
+      "rationale": "The diff modifies the OpenAPI spec to exclude the `/metrics` endpoint, which is used for production observability. This change could affect how metrics are observed and reported in a deployed instance.",
+      "action": "Verify that the /metrics endpoint still functions correctly and is properly exposed for monitoring purposes.",
+      "covered_by": "k6 performance gate",
+      "is_gap": false
+    },
+    {
+      "id": "R-018",
+      "relevance": 2,
+      "rationale": "The diff modifies the OpenAPI spec to exclude the `/metrics` endpoint. Although this change does not directly affect functional tests, it could indirectly impact observability and thus the reliability of test results.",
+      "action": "Run a full suite of functional tests to ensure that all endpoints are functioning as expected.",
+      "covered_by": "Playwright functional suite",
+      "is_gap": false
+    },
+    {
+      "id": "R-019",
+      "relevance": 2,
+      "rationale": "The diff modifies the OpenAPI spec to exclude the `/metrics` endpoint. Although this change does not directly affect memory usage, it could indirectly impact observability and thus the reliability of test results.",
+      "action": "Monitor the CI runs for any OOM-kills or flaky behavior after merging this PR.",
+      "covered_by": "Playwright functional suite",
+      "is_gap": false
+    }
+  ],
+  "exploratory_probes": [
+    "Manually verify that the `/metrics` endpoint is still accessible and returns expected data.",
+    "Check if the OpenAPI spec at `/api/v1/openapi.json` no longer includes the `/metrics` endpoint.",
+    "Run a local instance of the application and manually test the `/metrics` endpoint to ensure it functions correctly.",
+    "Verify that the observability stack (Prometheus/Grafana) still scrapes metrics from the `/metrics` endpoint."
+  ],
+  "model": "qwen2.5:32b-instruct-q4_K_M"
+}

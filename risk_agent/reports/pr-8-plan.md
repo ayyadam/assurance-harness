@@ -2,7 +2,7 @@
 
 **Fix N+1 query when listing tee times**
 
-_Run: 2026-06-02 • model: `qwen2.5:32b-instruct-q4_K_M`_  
+_Run: 2026-06-03 • model: `qwen2.5:32b-instruct-q4_K_M`_  
 _Repo: ayyadam/golf-web-app_
 
 ## Summary
@@ -34,9 +34,9 @@ This PR changes the relationship loading strategy in `app/models/booking.py` to 
 ## Exploratory probes
 
 - Manually test the listing endpoint for tee times to observe if the N+1 query issue has been resolved.
-- Check the database logs to ensure that the batch-loading strategy is being executed as expected.
-- Run a local load test using k6 against the read-path API to verify latency improvements.
-- Verify that the change does not introduce any new issues by manually probing other related endpoints.
+- Check the database queries in a local development environment with logging enabled to verify that bookings are batch-loaded efficiently.
+- Run a load test locally using k6 or similar tool to simulate multiple users accessing the tee time listing and monitor performance metrics.
+- Verify that the change does not introduce any new issues by manually testing related endpoints such as booking creation.
 
 ---
 

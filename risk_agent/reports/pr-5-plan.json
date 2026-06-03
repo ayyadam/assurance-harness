@@ -1,0 +1,36 @@
+{
+  "summary": "This PR changes the v1 API error contract and adds validation for UTF-8 encoding in input schemas.",
+  "ranked_risks": [
+    {
+      "id": "R-006",
+      "relevance": 3,
+      "rationale": "The diff modifies `app/api/schemas.py` to add new validation logic (`utf8_safe`) and adjusts error responses in `app/api/views.py`. These changes directly impact the JSON API contract.",
+      "action": "Re-run the Schemathesis property-based contract tests against the live API in CI.",
+      "covered_by": "Schemathesis contract suite",
+      "is_gap": false
+    },
+    {
+      "id": "R-012",
+      "relevance": 2,
+      "rationale": "The diff modifies input validation for the booking feature (`app/api/schemas.py`), which could affect how inputs are sanitized and validated. This is adjacent to the risk of prompt injection.",
+      "action": "Add additional test cases in `tests/unit/test_api_v1.py` to verify that structured-output boundary holds against adversarial inputs.",
+      "covered_by": "ai_evaluation/",
+      "is_gap": false
+    },
+    {
+      "id": "R-015",
+      "relevance": 2,
+      "rationale": "The diff modifies input validation logic (`utf8_safe`) which could affect how fixture data is validated. This is adjacent to the risk of test fixtures containing real PII.",
+      "action": "Review and update any relevant fixture data in `tests/unit/test_api_v1.py` to ensure it remains synthetic.",
+      "covered_by": "Synthetic seed data",
+      "is_gap": false
+    }
+  ],
+  "exploratory_probes": [
+    "Manually trigger a booking request with invalid UTF-8 input via curl to verify the new validation logic.",
+    "Test the API endpoints for error responses (409 Conflict, 422 Unprocessable Entity) using curl and validate that they are correctly returned.",
+    "Check if the updated schemas in `app/api/schemas.py` handle edge cases like empty strings or non-UTF8 characters properly.",
+    "Verify that the new validation logic does not break existing functional tests by running them manually."
+  ],
+  "model": "qwen2.5:32b-instruct-q4_K_M"
+}

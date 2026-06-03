@@ -1,0 +1,20 @@
+{
+  "summary": "This PR changes the GitHub Actions configuration to use Node.js 24 compatible versions, updating action versions and adding an environment variable for compatibility.",
+  "ranked_risks": [
+    {
+      "id": "R-017",
+      "relevance": 3,
+      "rationale": "The diff directly addresses the risk by bumping GitHub Actions to Node.js 24 compatible versions.",
+      "action": "Verify that all actions are now using Node.js 24 and ensure no deprecated actions remain.",
+      "covered_by": "CI workflow configuration",
+      "is_gap": false
+    }
+  ],
+  "exploratory_probes": [
+    "Run the CI pipeline locally with Node.js 24 to verify compatibility.",
+    "Check if any new warnings or errors appear in the CI logs after merging this PR.",
+    "Manually trigger a build on GitHub Actions to confirm that all jobs complete successfully.",
+    "Review the updated action versions for any breaking changes or deprecations."
+  ],
+  "model": "qwen2.5:32b-instruct-q4_K_M"
+}
