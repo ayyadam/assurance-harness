@@ -2,7 +2,7 @@
 
 **Status:** living document — updated as the assurance harness matures.
 **Owner:** Adam (acting as Digital Assurance Engineer)
-**Last updated:** 2026-06-03 *(F-016 — risk_agent deterministic register pre-filter (phase 13 v1); F1 0.462 → 0.710)*
+**Last updated:** 2026-06-03 *(R-018 closed after 5 clean post-F-012 CI runs; F-009's 15s expect() timeout reverted)*
 
 ---
 
@@ -402,7 +402,7 @@ Tests still exercise the real submit button, the real form, the real handler —
 
 Two-step deepening of R-018 across three PRs makes the methodological point: *rerun-on-hit is a tactic, not a strategy*. The cheapest fix the second and third time was "rerun again", and we did that. The right fix was diagnostic — pull the trace, find the actual mechanism, kill the race. Each rerun-on-hit deferred this work and let the same race keep showing up; the right time to do the diagnostic was the moment R-018 hit twice past its first mitigation. Adopted habit: *the second mitigation-pass recurrence of any flake gets a deep-dive PR*, not another rerun.
 
-R-018 status moves from *mitigated* (pre-F-012) to **closed** (post-F-012) in the register if this fix holds for the next 5–10 functional CI runs. Until then it stays *mitigated* with F-012 linked.
+R-018 status moves from *mitigated* (pre-F-012) to **closed** (post-F-012) in the register if this fix holds for the next 5–10 functional CI runs. **Update (2026-06-03):** 5 consecutive clean Functional Tests runs (PR #26's post-merge run, PR #27's CI + post-merge, PR #28's CI + post-merge, PR #29's CI + post-merge, PR #30's CI + post-merge) have validated F-012 without recurrence. R-018 status is now **closed** in the register, and F-009's 15s `expect.set_options(timeout=15_000)` has been reverted to Playwright's 5s default — the timeout bump was a wrong-problem mitigation that F-012 made unnecessary.
 
 ### F-013 — `risk_agent` subject-vs-adjacent rule + sharpened rows lift F1 0.526 → 0.588
 

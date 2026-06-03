@@ -2,7 +2,7 @@
 
 **Status:** living document — updated as risks are surfaced, mitigated, or accepted.
 **Owner:** Adam
-**Last updated:** 2026-06-02 *(R-018 root cause traced; F-012 added)*
+**Last updated:** 2026-06-03 *(R-018 closed after 5 clean post-F-012 CI runs; F-009 timeout bump reverted)*
 
 This register drives test prioritisation. See [`test-strategy.md` §8](test-strategy.md#8-risk-based-prioritisation) for how it informs decisions.
 
@@ -13,7 +13,7 @@ A row in this register is **a risk to product quality**, not a defect. A defect 
 - **L** Likelihood of occurring in production: L (low) / M (medium) / H (high)
 - **I** Impact if it does occur: L / M / H
 - **Score** = L × I, with H=3, M=2, L=1; ties broken in favour of irreversible failures
-- **Status:** open / mitigated / accepted
+- **Status:** open / mitigated / closed / accepted
 - **Mitigation:** a brief description with link to the assurance check that addresses it, where one exists
 
 ## Active risks
@@ -37,12 +37,12 @@ A row in this register is **a risk to product quality**, not a defect. A defect 
 | R-015 | Test fixtures or seed data contain real PII | L | H | 3 | **mitigated** | All fixture data is synthetic (`testadmin`, `testmember`, `othermember`, `Visitor Test`); the seed file uses placeholder names and phone numbers |
 | R-016 | Long-running CI exceeds GitHub free-tier minutes on a private repo | L | L | 1 | **accepted** | Current pipeline is ~3 min/run; would require ~700 pushes/month to brush the 2,000 min/month free limit |
 | R-017 | Workflow uses deprecated Node.js 20 actions — will break when GitHub forces Node.js 24 default | M | L | 2 | **mitigated** | Action versions bumped: `actions/checkout@v5`, `actions/setup-python@v6`, `actions/upload-artifact@v5`, `astral-sh/setup-uv@v5` |
-| R-018 | Functional tests flake on CI when Playwright navigation-after-click assertions race client-side timing (form-submit, redirect, scroll animation) on a cold-container runner — eroding trust in the gate. The risk lives in the *Playwright/functional layer's interaction with post-click client-side behaviour* — not in unrelated application code, server-side endpoints, CSS-only changes, or AI-intent parsing | M | M | 4 | **mitigated** | Original mitigation (F-009 / `fix/r-018-functional-flake`): global expect timeout bumped to 15s, URL assertions converted to `page.wait_for_url(...)` (30s default). That reduced hit rate but **did not address the underlying mechanism** — a third recurrence on PR #25 was deep-dived via the failed-run Playwright trace, exposing a client-side race between the slot-click smooth-scroll animation and Playwright's confirm-button click. The form was never POSTing. Root-cause fix in `investigate/r-018-deep-dive`: `functional/conftest.py` page-fixture override registers an init script that disables CSS smooth-scroll for tests, so Playwright's deterministic scroll is the only one in play. The application's UX is unchanged. See [Finding F-009](test-strategy.md#f-009--functional-test-flake-on-the-booking-confirm-redirect-default-playwright-timeout-too-tight-for-cold-runner) and [Finding F-012](test-strategy.md#f-012--confirmclick-race-with-the-booking-pages-smooth-scroll-animation). Will move to **closed** if no recurrence over the next 5–10 functional CI runs |
+| R-018 | Functional tests flake on CI when Playwright navigation-after-click assertions race client-side timing (form-submit, redirect, scroll animation) on a cold-container runner — eroding trust in the gate. The risk lives in the *Playwright/functional layer's interaction with post-click client-side behaviour* — not in unrelated application code, server-side endpoints, CSS-only changes, or AI-intent parsing | M | M | 4 | **closed** | Root-cause fix in F-012 (`functional/conftest.py` page-fixture override disables CSS smooth-scroll for tests, killing the slot-click animation race with Playwright's confirm click). F-009's earlier 15s `expect.set_options` timeout was a wrong-problem mitigation — F-012 made it unnecessary, and after 5 clean consecutive functional CI runs validated F-012 the timeout was reverted to Playwright's 5s default. See [Finding F-009](test-strategy.md#f-009--functional-test-flake-on-the-booking-confirm-redirect-default-playwright-timeout-too-tight-for-cold-runner) and [Finding F-012](test-strategy.md#f-012--confirmclick-race-with-the-booking-pages-smooth-scroll-animation) |
 | R-019 | GitHub-hosted runner OOM-kills the Playwright/accessibility job (exit 137) on cold runs because Chromium startup peaks above the runner's memory ceiling — same job passes on rerun, eroding trust in the gate. The risk lives at the *hosted-runner memory boundary* — raised by changes that add browser contexts, parallelise page navigations, or expand axe-core sweep scope. Application-code changes that don't materially increase test-side memory pressure do NOT raise this risk | M | M | 4 | **partially mitigated** | Three observed recurrences across two job types: PR #19 second CI on Accessibility (axe), and twice on Functional Tests (Playwright) — most recently post-merge dev run [`26822385733`](https://github.com/ayyadam/testing-system/actions/runs/26822385733) on 2026-06-02. Class of failure is distinct from R-018: this is the runner being OOM-killed during Playwright/Chromium startup, not a Playwright timeout. Each occurrence has passed cleanly on rerun. Current strategy: **rerun-on-hit, do not chase**. The cost of debugging a hosted-runner memory ceiling against a deeply-cached image build is high; the cost of one click on `gh run rerun --failed` is low. Re-evaluate if the rate climbs above ~1-in-10. See [Finding F-011](test-strategy.md#f-011--repeated-runner-oom-on-playwrighta11y-jobs) |
 
 ## Retired risks
 
-(none yet — risks move here when they cease to apply, e.g. when a system component is removed)
+(none yet — risks move here when they cease to apply, e.g. when a system component is removed; the "Active risks" table holds rows that are open, mitigated, closed, or accepted)
 
 ## Update protocol
 
