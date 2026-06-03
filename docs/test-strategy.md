@@ -2,7 +2,7 @@
 
 **Status:** living document — updated as the assurance harness matures.
 **Owner:** Adam (acting as Digital Assurance Engineer)
-**Last updated:** 2026-06-03 *(R-018 closed after 5 clean post-F-012 CI runs; F-009's 15s expect() timeout reverted)*
+**Last updated:** 2026-06-04 *(F-017 — phase 13 v2 mapping tightening; F1 0.710 → 0.733; coupling-between-rows surfaced)*
 
 ---
 
@@ -65,7 +65,7 @@ Layers planned across the project. Each layer has an explicit "why this exists" 
 | Performance | **Done** | k6 (thresholds-as-code) | `testing-system/nonfunctional/performance/` | Latency/error budgets on the read-path API; fail the PR on regression beyond budget |
 | Data quality | **Done** | pandera (schemas + invariants) | `testing-system/data_quality/` | Validate the live database against column contracts and business-rule invariants (e.g. 18 holes with a 1..18 stroke-index permutation) |
 | AI evaluation | **Done (phase 8 v1)** | Black-box golden-set scoring (deterministic + LLM-judge) | [`testing-system/ai_evaluation/`](../ai_evaluation/README.md) | Quantifies model accuracy, safety, latency across a model list. Two grading tiers — deterministic field equality + an LLM-judge (holistic 0-10 + per-rubric fuzzy pass/fail). Current 5-model report: [`ai_evaluation/reports/report.md`](../ai_evaluation/reports/report.md) |
-| Risk-prioritisation (advisory) | **Done (phase 13 v1)** | Local Ollama agent + deterministic register pre-filter + deterministic post-processing + golden-set eval | [`testing-system/risk_agent/`](../risk_agent/README.md) | Given a PR diff + the live risk register, produces a ranked test plan with `covered_by` per risk, coverage-gap flags, relevance label (`direct` / `plausible`), and exploratory probes. Advisory only, not a CI gate. v2 v1 made `covered_by` and `is_gap` deterministic; v2 v2 added a golden-set evaluation tier ([`risk_agent.eval`](../risk_agent/eval.py)); v3 added a subject-vs-adjacent prompt rule and sharpened R-002 / R-018 / R-019 (F1 0.526 → 0.588 on the 4-case set); v4 v1 grew the golden set 4 → 9 cases (honest baseline F1 0.421); v4 v2 sharpened R-006 (F1 → 0.462) and documented the LLM-tuning ceiling in [F-015](#f-015--r-006-row-sharpening-lifts-f1-0421--0462-three-attempted-sharpenings-reveal-the-llm-tuning-ceiling); **phase 13 v1 added a deterministic register pre-filter** ([`risk_agent/prefilter.py`](../risk_agent/prefilter.py)) that classifies the diff by file path before the agent ever sees the register, so the agent only judges relevance among layer-relevant candidates. **F1: 0.462 → 0.710** (precision 0.360 → 0.647, recall 0.643 → 0.786, FP count 16 → 6). PR #3 — the deliberate v3 / v4 v2 stress test that previously sat at F1 0.000 — now catches R-002. PR #7 and PR #14 hit F1 1.000. See [F-013](#f-013--risk_agent-subject-vs-adjacent-rule--sharpened-rows-lift-f1-0526--0588), [F-014](#f-014--golden-set-growth-4--9-cases-surfaces-three-new-failure-modes-honest-baseline-f1-0421), [F-015](#f-015--r-006-row-sharpening-lifts-f1-0421--0462-three-attempted-sharpenings-reveal-the-llm-tuning-ceiling), [F-016](#f-016--deterministic-register-pre-filter-phase-13-v1-lifts-f1-0462--0710), and [`risk_agent/reports/eval-report.md`](../risk_agent/reports/eval-report.md) |
+| Risk-prioritisation (advisory) | **Done (phase 13 v2)** | Local Ollama agent + deterministic register pre-filter + deterministic post-processing + golden-set eval | [`testing-system/risk_agent/`](../risk_agent/README.md) | Given a PR diff + the live risk register, produces a ranked test plan with `covered_by` per risk, coverage-gap flags, relevance label (`direct` / `plausible`), and exploratory probes. Advisory only, not a CI gate. v2 v1 made `covered_by` and `is_gap` deterministic; v2 v2 added a golden-set eval tier; v3 added a subject-vs-adjacent prompt rule + sharpened R-002/R-018/R-019 (F1 0.526 → 0.588 on 4-case); v4 v1 grew the golden set 4 → 9 cases (baseline F1 0.421); v4 v2 sharpened R-006 (F1 → 0.462) and documented the LLM-tuning ceiling in [F-015](#f-015--r-006-row-sharpening-lifts-f1-0421--0462-three-attempted-sharpenings-reveal-the-llm-tuning-ceiling); phase 13 v1 added a deterministic register pre-filter (F1 → 0.710); **phase 13 v2 tightened R-001 / R-011 / R-018 mappings** based on v1's 6 remaining FPs (F1 → **0.733**, precision 0.647 → 0.688). PR #6 climbed F1 0.500 → 1.000 (now cleanly catches R-003 + R-006). The remaining 2 v1 FPs (R-012 on PR #11, R-019 on PR #2) need content-aware filtering — a v3 candidate. v2 also surfaced an unexpected coupling-between-rows effect on PR #12 ([F-017](#f-017--mapping-tightening-phase-13-v2-lifts-f1-0710--0733-cross-row-coupling-surfaced)). See [F-013](#f-013--risk_agent-subject-vs-adjacent-rule--sharpened-rows-lift-f1-0526--0588), [F-014](#f-014--golden-set-growth-4--9-cases-surfaces-three-new-failure-modes-honest-baseline-f1-0421), [F-015](#f-015--r-006-row-sharpening-lifts-f1-0421--0462-three-attempted-sharpenings-reveal-the-llm-tuning-ceiling), [F-016](#f-016--deterministic-register-pre-filter-phase-13-v1-lifts-f1-0462--0710), [F-017](#f-017--mapping-tightening-phase-13-v2-lifts-f1-0710--0733-cross-row-coupling-surfaced), and [`risk_agent/reports/eval-report.md`](../risk_agent/reports/eval-report.md) |
 | Triage (advisory) | **Done (phase 10 v1 v2)** | Local Ollama agent over `gh` log dumps + golden-set eval | [`testing-system/triage_agent/`](../triage_agent/README.md) | Clusters failed CI runs by signature `(test path, test name, error class)`, then asks the LLM for a category (flake / defect / infra / env) and a candidate register R-ID per cluster. Closed-vocabulary enum on the R-ID — the model cannot invent risks. v1 v2 added a golden-set evaluation tier ([`triage_agent.eval`](../triage_agent/eval.py)) scoring the agent against expected (category, R-ID) per known cluster — deterministic, no LLM in scoring. Current baseline: 5/5 on category, R-ID, and combined. Historical insight from v1 v1: R-018 was actually present at run #18 (2026-05-28), three weeks before it was logged. See [`triage_agent/reports/report.md`](../triage_agent/reports/report.md) and [`triage_agent/reports/eval-report.md`](../triage_agent/reports/eval-report.md) |
 | Production observability | **Done (phase 11 v1)** | Prometheus + Grafana (metrics only; Loki + Alertmanager v2 candidates) | [`testing-system/observability/`](../observability/README.md) | Local stack scraping the SUT's `/metrics` (provisioned by `prometheus-flask-exporter`), provisioned dashboard with request rate / error rate / p95 latency / per-path breakdowns. SLO thresholds on the dashboard match the k6 perf gate's pre-merge budget — same SLOs, two enforcement points. Closes R-013. See [`observability/README.md`](../observability/README.md) and [`observability/evidence/grafana-sut-overview.png`](../observability/evidence/grafana-sut-overview.png) |
 | Exploratory (advisory) | **Done (phase 12 v2 v1)** | Local Ollama agent — API surface via OpenAPI, UI surface via Playwright, deterministic eval tier | [`testing-system/explore_agent/`](../explore_agent/README.md) | Two surfaces share the same package and the same closed-enum + LLM-jury pattern. **API** (`explore_agent.run`, v1 v1): every v1 endpoint probed with three LLM-generated payload variants (happy / edge / abusive, including prompt-injection on AI endpoints), responses classified into `expected` / `unexpected_5xx` / `schema_drift` / `business_rule_concern`. **UI** (`explore_agent.ui_run`, v1 v2): three predefined tours, each with an LLM-planned step sequence executed in Playwright, per-step state captured and LLM-judged into `expected` / `unexpected_5xx` / `js_error` / `dead_end` / `business_rule_concern`. **Eval** (`explore_agent.eval`, v2 v1): golden-set evaluation tier mirroring [`risk_agent.eval`](../risk_agent/eval.py) and [`triage_agent.eval`](../triage_agent/eval.py) — deterministic scoring against expected category per (endpoint, variant), no LLM in the scoring path. **Baseline: 50.0% accuracy (9/18 cases)** — every case's expected category is `expected` (no defects in the seeded surface) and the agent over-flags 9 of them (7 as `business_rule_concern`, 2 as `unexpected_5xx`). This quantifies the documented v1 v1 over-flagging behaviour and gives a measurable target for any future judge-prompt tightening or model swap. v1 v2's UI agent also surfaced the *plan-once-from-starting-page* limitation cleanly (LLM hallucinated `.candidate-slot` when the actual class was `.booking-slot`); the architectural fix (adaptive single-step) is tracked in the [phase-12 sub-roadmap](#phase-12-sub-roadmap), with the eval baseline as its decision input. Both probing surfaces remain local-only (cost-prohibitive for CI); the eval is also local-only. See [`explore_agent/reports/report.md`](../explore_agent/reports/report.md) (API), [`explore_agent/reports/ui/report.md`](../explore_agent/reports/ui/report.md) (UI), [`explore_agent/reports/eval-report.md`](../explore_agent/reports/eval-report.md) (eval). |
@@ -619,6 +619,77 @@ In each case the deterministic move was *narrower* than the original behaviour b
 - `risk_agent/render.py` — markdown report includes a `Pre-filter` section listing what was filtered out.
 - `tests/test_prefilter.py` — 9 unit tests covering per-layer expectations for the 6 representative PR shapes, the fallback rule, the kept/filtered partition consistency, and the PR #8 `models/**` regression guard. Deterministic code → testable code → first-order benefit of moving classification to the spine.
 
+### F-017 — Mapping tightening (phase 13 v2) lifts F1 0.710 → 0.733; cross-row coupling surfaced
+
+**Date:** 2026-06-04
+**Surfaced by:** Phase 13 v2 — acting on v1's 6 remaining false positives, the mapping for R-001, R-011, and R-018 was narrowed to match where the subject mechanism *actually* lives rather than the broader "any file in this layer" patterns v1 used.
+**Severity:** Moderate (modest F1 lift; a more interesting structural finding about how pre-filter changes propagate into the agent's reasoning beyond just narrowing its options)
+
+**What changed**
+
+| Row | v1 patterns | v2 patterns | Why |
+|---|---|---|---|
+| R-001 | `tests/conftest.py`, `app/models/**` | `tests/conftest.py` | FK pragma enforcement is the subject mechanism, configured in conftest only. v1's model-side path fired on query-strategy tweaks (PR #8) that have nothing to do with FK semantics. |
+| R-011 | `app/services/booking_assistant.py`, `app/templates/member/book_tee_time.html`, `app/api/schemas.py` | drop schemas.py | AI-feature correctness lives in the assistant + its template. `schemas.py` is contract surface (R-006). The PR #12 case still has R-011 in candidates via the other two paths. |
+| R-018 | `app/templates/**`, `app/static/js/**`, `app/routes/member.py`, `app/routes/visitor.py` | drop the route paths | The smooth-scroll race F-012 traced is entirely client-side. Server-side route changes that preserve redirect targets don't affect the race. |
+
+**Headline measurement**
+
+| Metric | Phase 13 v1 | Phase 13 v2 |
+|---|---|---|
+| F1 | 0.710 | **0.733** |
+| Precision | 0.647 | 0.688 |
+| Recall | 0.786 | 0.786 |
+| TP / FP / FN | 11 / 6 / 3 | 11 / 5 / 3 |
+
+The headline jump is small. The case-level picture has more nuance.
+
+**Per-case wins**
+
+- **PR #6 (reject null bytes): F1 0.500 → 1.000.** Best individual case-level lift. Under v1, the agent over-pulled R-011 on this schemas-only diff and missed R-003. Under v2 R-011 isn't a candidate (no AI-surface paths in the diff), and the agent cleanly catches both R-003 (plausible) and R-006 (direct). The narrower R-011 mapping let the right rows land.
+- **R-018 over-pull on PR #3 eliminated.** R-018 is no longer a candidate for booking-route-only diffs — the smooth-scroll race truly lives on the client side.
+- **R-001 over-pull on PR #8 eliminated.** R-001 is no longer a candidate for query-strategy model changes.
+
+**The displaced-FP pattern**
+
+In each case where a narrowed mapping removed an FP, **R-007 (performance/latency) became the new over-pull source** on the same case:
+
+- PR #3: R-018 FP → R-007 FP
+- PR #5: R-011 FP → R-007 FP
+- PR #8: R-001 FP → R-009 FP (a different broad-mapping row)
+
+R-007's mapping (`app/models/**`, `app/routes/**`, `app/api/**`, `app/services/**`) is genuinely broad — performance risk lives anywhere a query pattern can regress, which is *most server-side code*. Path-based filtering can't narrow R-007 without losing real coverage. v3's content-aware filtering — keying on `+from sqlalchemy` / new query patterns / N+1 shapes — is where this gets fixed.
+
+**The unexpected finding: cross-row coupling on PR #12**
+
+PR #12's candidate set is *identical* under v1 and v2 (the v2 R-011 narrowing didn't change PR #12's candidates because PR #12 has booking_assistant.py + template — both still map to R-011). The same `user_message` is sent to Ollama under both versions. Yet:
+
+| Run | Phase 13 v1 ranking | Phase 13 v2 ranking |
+|---|---|---|
+| Run 1 | `R-011`(3), `R-012`(3), `R-006`(2), `R-008`(2) | `R-011`(3), `R-012`(3) |
+| Run 2 | `R-011`(3), `R-012`(3), `R-018`(2), `R-019`(2) | `R-011`(3), `R-012`(3) |
+| Run 3 | `R-011`(3), `R-012`(3), `R-018`(2), `R-019`(2) | `R-011`(3), `R-012`(3) |
+
+v2's R-006/R-008 *miss* on PR #12 (3/3 runs) is what dragged that case from F1 0.857 → 0.667. But the candidate set is identical. The system prompt is identical. The register text is identical. The diff is identical. The only thing that changed is *what's in other rows' mappings* — which the agent doesn't see directly.
+
+Working hypothesis: **the agent picks up signal about a diff's "domain" from the relative breadth of candidate rows**, not just their text. Under v1, R-011's broader mapping (including schemas.py) signalled "this diff is in the AI feature's domain" more strongly, which seems to have pulled the agent into emitting *other AI-adjacent rows* (R-006, R-008) at the plausible tier. Under v2, with R-011 mapping narrower to assistant + template only, the same `schemas.py` change reads as less in R-011's domain to the agent, and the tail of the ranking collapses.
+
+This means the pre-filter's effect on agent behaviour is **not just "remove candidates"** — it's also a signal about *what kind of change this is*. That's a v3 design input: when we tighten a row's mapping, we may be unintentionally signalling away from the diff's broader concerns. Possible mitigations:
+- Separate "narrowed for matching purposes" from "the agent's perception of the diff's domain" — e.g. always include all candidate rows in the prompt context, but mark which ones the pre-filter considers most direct.
+- Restructure the user-message construction to decouple the candidate set from the per-row relevance signal.
+- Track this empirically: a v3 pattern would re-test whether further narrowing of one row causes other rows to drop on the same diff.
+
+**What this means for v3**
+
+- **R-007 mapping narrowing** is a v3 candidate but path-based filtering won't solve it cleanly — it needs content-aware shape detection.
+- **R-012 PR #11 and R-019 PR #2 over-pulls** still require content-aware filtering (a `booking_assistant.py` non-prompt-change vs an action-version bump are both path-invisible).
+- **Cross-row coupling** is a structural design question, not a mapping question. v3 should attempt at least one experiment to confirm or refute the hypothesis (e.g. add a row to candidates artificially and observe whether other tail entries reappear).
+
+**What v2 ships**
+
+- `risk_agent/prefilter.py` — R-001, R-011, R-018 patterns tightened with rationales explaining the narrowing.
+- `tests/test_prefilter.py` — PR #3, PR #8 cases updated to reflect v2 expectations; two new regression guards added (schemas-only diff must not raise R-011; template-only diff must still raise R-018).
+
 ## 12. Roadmap
 
 The full phased plan lives in conversational notes; the abbreviated public form:
@@ -639,7 +710,7 @@ The full phased plan lives in conversational notes; the abbreviated public form:
 | 10 | Triage agent (CI failure clustering) | **Done (v1 v2)** — v1 v1: heuristic clustering + LLM category + R-ID xref. v1 v2: golden-set eval tier with deterministic scorer. 5/5 baseline on five real failures from last 30 days |
 | 11 | Prometheus + Grafana observability stack | **Done (v1)** — local stack scraping the SUT, provisioned dashboard with SLOs aligned to the k6 gate; closes R-013. Loki + Alertmanager deferred to v2 |
 | 12 | Exploratory testing agent + tests of agents | **Done (v1 v1, v1 v2, v2 v1, v2 v2)** — see sub-roadmap below for deferred-but-tracked work |
-| 13 | Deterministic register pre-filter for the risk_agent | **Done (v1)** — Phase 9 v4 v2's F-015 documented the LLM-tuning ceiling. v1 added [`risk_agent/prefilter.py`](../risk_agent/prefilter.py): a declarative R-ID → file-glob mapping with full-register fallback on no-match. The agent's schema enum is also narrowed so the model physically cannot emit a filtered-out R-ID. **F1: 0.462 → 0.710** (+0.248); FP count 16 → 6. PR #3 (the v3/v4 v2 stress test) and PR #14 went from F1 0.000 → 1.000 and 0.667 → 1.000 respectively. v2 v2 regression remains clean. Pre-filter has unit tests in [`tests/test_prefilter.py`](../tests/test_prefilter.py) — moving classification to deterministic code makes it testable, the first-order benefit. See [F-016](#f-016--deterministic-register-pre-filter-phase-13-v1-lifts-f1-0462--0710) |
+| 13 | Deterministic register pre-filter for the risk_agent | **Done (v2)** — v1 added [`risk_agent/prefilter.py`](../risk_agent/prefilter.py) (F1 0.462 → 0.710; FP count 16 → 6). v2 tightened R-001 / R-011 / R-018 mappings based on v1's remaining 6 FPs (F1 → 0.733; precision 0.647 → 0.688; PR #6 climbed F1 0.500 → 1.000). v2 also surfaced cross-row coupling on PR #12 and demonstrated that path-based filtering has its own ceiling — R-012's PR #11 and R-019's PR #2 over-pulls remain because they require content-aware filtering (a v3 candidate). See [F-016](#f-016--deterministic-register-pre-filter-phase-13-v1-lifts-f1-0462--0710), [F-017](#f-017--mapping-tightening-phase-13-v2-lifts-f1-0710--0733-cross-row-coupling-surfaced) |
 
 ### Phase 12 sub-roadmap
 

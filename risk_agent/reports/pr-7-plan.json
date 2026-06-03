@@ -4,17 +4,17 @@
     {
       "id": "R-008",
       "relevance": 3,
-      "rationale": "The diff modifies CSS styles and JavaScript to address specific WCAG 2.1 AA contrast issues and adds aria-label attributes for better accessibility. These changes directly impact the mechanisms described in R-008.",
-      "action": "Re-run the axe-core WCAG 2.1 A/AA sweep over six key pages in CI to ensure no new violations are introduced.",
+      "rationale": "The diff modifies `style.css` and `main.js` to address specific WCAG 2.1 AA contrast issues and ensure accessible names for input elements. These changes directly impact the accessibility validation mechanism.",
+      "action": "Re-run the axe-core WCAG 2.1 A/AA sweep over six key pages in CI to validate that no new violations have been introduced.",
       "covered_by": "axe-core sweep",
       "is_gap": false
     }
   ],
   "exploratory_probes": [
-    "Manually test the dark theme on different browsers to verify that contrast issues have been resolved.",
-    "Use a screen reader to navigate the application and check if aria-label attributes are correctly read out.",
-    "Verify that form elements with alt inputs now have accessible names in both light and dark themes.",
-    "Check the visual appearance of buttons and text colors in the dark theme to ensure they meet WCAG 2.1 AA standards."
+    "Manually test the dark theme on different browsers to ensure all text and button colors meet the required contrast ratios.",
+    "Use a screen reader to navigate the date picker input and verify that the `aria-label` is correctly set and announced.",
+    "Check if the changes in `style.css` affect any other elements beyond those explicitly mentioned, ensuring no unintended accessibility issues arise.",
+    "Validate that the updated styles do not break existing functionality or introduce new visual inconsistencies."
   ],
   "model": "qwen2.5:32b-instruct-q4_K_M",
   "filtered_out_ids": [

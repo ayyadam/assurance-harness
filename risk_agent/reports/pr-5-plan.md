@@ -7,7 +7,7 @@ _Repo: ayyadam/golf-web-app_
 
 ## Summary
 
-This PR changes the v1 API error contract and modifies schemas to include UTF-8 validation and status code adjustments.
+This PR changes the v1 API error contract and modifies schema validation for UTF-8 encoding and player handicap ranges.
 
 ## Changed files
 
@@ -19,26 +19,26 @@ This PR changes the v1 API error contract and modifies schemas to include UTF-8 
 
 ### 1. R-006 — _direct_
 
-**Why:** The diff directly modifies the OpenAPI spec by changing schema field types (e.g., `Decimal` to `Float`) and adding new validations (`utf8_safe`, `Range`). These changes affect the published API contract.
+**Why:** The diff directly modifies the OpenAPI spec by changing status-code mappings and adding new validations in `app/api/schemas.py` and `app/api/views.py`. These changes affect the published API contract.
 
 **Covered by:** Schemathesis contract suite
 
-**Action:** Re-run the contract suite in `contract/` against the live API to ensure no drift from what clients can rely on.
+**Action:** Re-run the Schemathesis property-based contract tests to ensure no drift from the documented behavior.
 
-### 2. R-011 — _plausible_
+### 2. R-007 — _plausible_
 
-**Why:** The diff modifies error handling and status codes for booking-related endpoints. Although not directly related to AI feature correctness, changes in validation behavior could indirectly affect the booking process.
+**Why:** The diff modifies error handling and validation logic in `app/api/views.py` which could potentially impact performance if new validations introduce significant overhead.
 
-**Covered by:** ai_evaluation/
+**Covered by:** k6 performance gate
 
-**Action:** Add golden-set cases for new validation scenarios (e.g., UTF-8 encoding errors) to ensure the booking service handles them correctly.
+**Action:** Run a load test with k6 to ensure that the changes do not cause latency or throughput regressions.
 
 ## Exploratory probes
 
-- Manually test a POST request to `/auth/token` with invalid credentials and verify that it returns 401 Unauthorized.
-- Test a POST request to `/tee-times/<int:tee_time_id>/bookings` with an out-of-range handicap value (e.g., -20) and ensure it returns 422 Unprocessable Entity.
-- Verify that booking requests for past tee times return 409 Conflict instead of 400 Bad Request.
-- Check the response for a malformed request body by sending invalid JSON to `/tee-times/<int:tee_time_id>/bookings` and confirm it returns 400 Bad Request.
+- Manually trigger an API request with a malformed UTF-8 string in the username field and verify it returns 422.
+- Send a booking request with a player handicap out of range (e.g., -15) and ensure it returns 422.
+- Check if a past tee time booking request now correctly returns 409 instead of 400.
+- Verify that the API response for `book_tee_time` includes the correct status codes for different error scenarios.
 
 ## Pre-filter
 
@@ -51,6 +51,7 @@ _Filtered out by the deterministic pre-filter before the LLM saw the register (n
 - R-008
 - R-009
 - R-010
+- R-011
 - R-012
 - R-013
 - R-014

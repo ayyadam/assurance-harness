@@ -46,10 +46,17 @@ from risk_agent.register import Risk
 _MAPPING: list[tuple[str, list[str], str]] = [
     (
         "R-001",
-        ["tests/conftest.py", "app/models/**"],
-        "SQLite FK pragma is set in tests/conftest.py; model changes can "
-        "introduce new FK relations whose enforcement diverges between "
-        "in-memory SQLite (local) and Postgres (CI).",
+        ["tests/conftest.py"],
+        "SQLite FK pragma enforcement is configured in tests/conftest.py — "
+        "that file is the subject mechanism. Phase 13 v1 also mapped "
+        "app/models/** here on the theory that model changes could introduce "
+        "new FK relations, but in v1's eval PR #8 demonstrated the false-"
+        "positive shape: query-strategy changes (lazy='dynamic' → 'selectin') "
+        "modify models without touching FK semantics. Path-based filtering "
+        "can't distinguish FK-affecting model changes from query-tuning ones; "
+        "v2 narrows to conftest.py and accepts that genuinely new FK "
+        "relations would need either content-aware filtering (v3) or the "
+        "agent's fallback judgement.",
     ),
     (
         "R-002",
@@ -145,11 +152,17 @@ _MAPPING: list[tuple[str, list[str], str]] = [
         [
             "app/services/booking_assistant.py",
             "app/templates/member/book_tee_time.html",
-            "app/api/schemas.py",
         ],
         "AI feature correctness lives in the assistant service (prompt + "
-        "intent schema + slot proposal), the template that renders the "
-        "assistant's UI surface, and the API schema for BookingIntentOut.",
+        "intent schema + slot proposal) and the template that renders the "
+        "assistant's UI surface. Phase 13 v1 also mapped app/api/schemas.py "
+        "here because BookingIntentOut is defined there, but in v1's eval "
+        "PRs #5 and #6 demonstrated the false-positive shape: contract "
+        "corrections and security input validators also touch schemas.py "
+        "but have nothing to do with AI feature correctness. v2 narrows to "
+        "the assistant module + its template; the rare AI-only schemas-py "
+        "change would typically accompany an assistant-module change too "
+        "(see PR #12, which touches both).",
     ),
     (
         "R-012",
@@ -207,14 +220,20 @@ _MAPPING: list[tuple[str, list[str], str]] = [
         [
             "app/templates/**",
             "app/static/js/**",
-            "app/routes/member.py",
-            "app/routes/visitor.py",
         ],
         "Functional flake subject: client-side timing on post-click "
         "flows. Templates with form-submit + scroll/redirect, JS that "
-        "schedules animations after click, and the route handlers whose "
-        "redirect targets are asserted by Playwright. Pure server-side "
-        "or AI-prompt changes do not affect the client-side race.",
+        "schedules animations after click. The smooth-scroll race that "
+        "F-012 traced as R-018's actual mechanism lives entirely on the "
+        "client side. Phase 13 v1 also mapped app/routes/member.py and "
+        "visitor.py on the theory that route-redirect targets could shift "
+        "what Playwright asserts; in v1's eval PR #3 (booking-service "
+        "refactor) showed this is too broad — server-side route changes "
+        "that preserve redirect targets don't affect the client-side race. "
+        "v2 narrows to where the actual mechanism lives. R-018 is now "
+        "closed in the register but kept here so a future PR that removes "
+        "F-012's smooth-scroll override or reintroduces the race "
+        "mechanism still surfaces.",
     ),
     (
         "R-019",

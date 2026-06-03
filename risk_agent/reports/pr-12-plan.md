@@ -7,7 +7,7 @@ _Repo: ayyadam/golf-web-app_
 
 ## Summary
 
-This PR changes the booking assistant to include time-of-day constraints in its intent parsing and schema definitions.
+This PR changes the booking assistant to include time-of-day constraints in the booking process.
 
 ## Changed files
 
@@ -20,34 +20,26 @@ This PR changes the booking assistant to include time-of-day constraints in its 
 
 ### 1. R-011 — _direct_
 
-**Why:** The diff modifies the BookingIntent class and related functions to handle new time-of-day constraints (`not_before` and `not_after`). This directly affects how the booking assistant interprets and proposes tee times.
+**Why:** The diff modifies the BookingIntent schema and parsing logic to handle new time-of-day constraints (not_before and not_after), directly impacting how the assistant interprets and proposes tee times.
 
 **Covered by:** ai_evaluation/
 
-**Action:** Add golden-set cases for various time-of-day constraints (e.g., 'from 9am', 'before noon') to ensure correct parsing and slot proposal.
+**Action:** Add golden-set cases for various time-of-day scenarios in ai_evaluation/.
 
 ### 2. R-012 — _direct_
 
-**Why:** The diff introduces new input fields (`not_before` and `not_after`) that could potentially be exploited for prompt injection. The mitigation relies on the structured-output boundary, but this needs to be verified with the new inputs.
+**Why:** The diff introduces new input fields (not_before and not_after) that could potentially be exploited through prompt injection if not properly sanitized.
 
 **Covered by:** ai_evaluation/
 
-**Action:** Run additional adversarial tests targeting the new time-of-day constraints to ensure no unauthorized actions can be injected.
-
-### 3. R-006 — _plausible_
-
-**Why:** The diff modifies the schema definitions in `app/api/schemas.py`, which could affect the published API contract. The changes include adding new fields (`not_before` and `not_after`).
-
-**Covered by:** Schemathesis contract suite
-
-**Action:** Re-run the Schemathesis property-based contract tests to ensure the OpenAPI spec and endpoint behaviors align with client expectations.
+**Action:** Verify the structured-output boundary by running additional adversarial tests on these new fields.
 
 ## Exploratory probes
 
-- Test the booking assistant's response to various time-of-day constraints (e.g., 'from 9am', 'before noon') using curl or a browser.
-- Manually verify that the new `not_before` and `not_after` fields are correctly displayed in the UI (`app/templates/member/book_tee_time.html`).
-- Check if the booking assistant handles malformed time-of-day inputs gracefully (e.g., invalid formats like '9:61').
-- Ensure that the functional tests (`tests/unit/test_booking_assistant.py`) cover edge cases for the new time constraints.
+- Test the booking assistant with various time-of-day constraints to ensure correct interpretation (e.g., 'from 9am', 'before noon').
+- Manually verify that the assistant correctly handles malformed or unexpected input for not_before and not_after.
+- Check if the new fields are properly reflected in the API documentation and contract tests.
+- Validate that the booking assistant's response includes accurate time-of-day constraints as interpreted from user inputs.
 
 ## Pre-filter
 

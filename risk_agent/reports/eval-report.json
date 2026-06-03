@@ -2,11 +2,11 @@
   "totals": {
     "cases": 9,
     "true_positives": 11,
-    "false_positives": 6,
+    "false_positives": 5,
     "false_negatives": 3,
-    "precision": 0.647,
+    "precision": 0.688,
     "recall": 0.786,
-    "f1": 0.71,
+    "f1": 0.733,
     "relevance_correct": 8,
     "relevance_accuracy": 0.727
   },
@@ -41,13 +41,13 @@
       },
       "actual": {
         "R-007": 3,
-        "R-001": 2
+        "R-009": 2
       },
       "true_positives": [
         "R-007"
       ],
       "false_positives": [
-        "R-001"
+        "R-009"
       ],
       "false_negatives": [],
       "precision": 0.5,
@@ -92,23 +92,22 @@
       },
       "actual": {
         "R-011": 3,
-        "R-012": 3,
-        "R-006": 2
+        "R-012": 3
       },
       "true_positives": [
-        "R-006",
         "R-011",
         "R-012"
       ],
       "false_positives": [],
       "false_negatives": [
+        "R-006",
         "R-008"
       ],
       "precision": 1.0,
-      "recall": 0.75,
-      "f1": 0.857,
-      "relevance_correct": 2,
-      "relevance_accuracy": 0.667
+      "recall": 0.5,
+      "f1": 0.667,
+      "relevance_correct": 1,
+      "relevance_accuracy": 0.5
     },
     {
       "case_id": "pr-2-actions-bump",
@@ -143,13 +142,13 @@
       },
       "actual": {
         "R-002": 3,
-        "R-018": 2
+        "R-007": 2
       },
       "true_positives": [
         "R-002"
       ],
       "false_positives": [
-        "R-018"
+        "R-007"
       ],
       "false_negatives": [],
       "precision": 0.5,
@@ -168,13 +167,13 @@
       },
       "actual": {
         "R-006": 3,
-        "R-011": 2
+        "R-007": 2
       },
       "true_positives": [
         "R-006"
       ],
       "false_positives": [
-        "R-011"
+        "R-007"
       ],
       "false_negatives": [
         "R-003"
@@ -194,23 +193,20 @@
         "R-003": 2
       },
       "actual": {
-        "R-006": 2,
-        "R-011": 2
+        "R-003": 2,
+        "R-006": 2
       },
       "true_positives": [
+        "R-003",
         "R-006"
       ],
-      "false_positives": [
-        "R-011"
-      ],
-      "false_negatives": [
-        "R-003"
-      ],
-      "precision": 0.5,
-      "recall": 0.5,
-      "f1": 0.5,
-      "relevance_correct": 0,
-      "relevance_accuracy": 0.0
+      "false_positives": [],
+      "false_negatives": [],
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "relevance_correct": 1,
+      "relevance_accuracy": 0.5
     },
     {
       "case_id": "pr-14-hide-metrics",

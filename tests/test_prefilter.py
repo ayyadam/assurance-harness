@@ -42,10 +42,12 @@ def _risks(*ids: str) -> list[Risk]:
         ),
         # PR #3 shape: booking-service refactor — touches routes + service + models.
         # The deliberate v3/v4 v2 stress test for R-002.
+        # Post-v2: R-018 no longer expected (phase 13 v2 removed routes from its
+        # mapping; the smooth-scroll race lives in templates + JS).
         (
             ["app/routes/member.py", "app/routes/visitor.py", "app/services/booking_service.py"],
-            {"R-002", "R-007", "R-018"},
-            {"R-005", "R-008", "R-010", "R-014", "R-017", "R-019"},
+            {"R-002", "R-007"},
+            {"R-005", "R-008", "R-010", "R-014", "R-017", "R-018", "R-019"},
         ),
         # PR #7 shape: a11y CSS + DOM-mutating JS only
         (
@@ -54,6 +56,9 @@ def _risks(*ids: str) -> list[Risk]:
             {"R-002", "R-005", "R-006", "R-010", "R-014", "R-017"},
         ),
         # PR #12 shape: AI feature schema + template + assistant
+        # Post-v2: R-011 still candidate via booking_assistant.py + template
+        # (the schemas.py path was removed from R-011 in v2; verifying that the
+        # other paths still cover the AI case).
         (
             [
                 "app/api/schemas.py",
@@ -70,13 +75,35 @@ def _risks(*ids: str) -> list[Risk]:
             {"R-002", "R-005", "R-008", "R-010", "R-014", "R-017"},
         ),
         # PR #8 shape: model query strategy change (lazy='dynamic' → 'selectin').
-        # Regression guard: the project uses `app/models/` as a directory, not
+        # Regression guard #1: the project uses `app/models/` as a directory, not
         # a single `app/models.py` file. Without the `app/models/**` pattern,
         # PR #8 hits the fallback (full register) and R-017 gets over-pulled.
+        # Post-v2: R-001 no longer expected (phase 13 v2 removed models/** from
+        # its mapping; FK pragma is the subject mechanism, not models). v3
+        # content-aware filtering may reintroduce a narrower model-side hook.
         (
             ["app/models/booking.py"],
-            {"R-001", "R-002", "R-007", "R-009"},
-            {"R-005", "R-008", "R-010", "R-014", "R-017", "R-019"},
+            {"R-002", "R-007", "R-009"},
+            {"R-001", "R-005", "R-008", "R-010", "R-014", "R-017", "R-019"},
+        ),
+        # PR #5 / #6 shape: API schema-only changes (contract corrections,
+        # input security). Regression guard for the phase 13 v2 R-011 narrowing:
+        # schemas.py changes alone should NOT raise R-011 (AI feature
+        # correctness); R-011's candidate paths are now booking_assistant.py
+        # and its template only.
+        (
+            ["app/api/schemas.py", "app/api/views.py"],
+            {"R-003", "R-006"},
+            {"R-011", "R-005", "R-008", "R-010", "R-014", "R-017", "R-018", "R-019"},
+        ),
+        # Template-only diff — regression guard for the phase 13 v2 R-018
+        # narrowing: the smooth-scroll race mechanism lives in templates + JS,
+        # so a template change should still raise R-018. v2 removed the
+        # routes patterns but kept these.
+        (
+            ["app/templates/member/book_tee_time.html"],
+            {"R-008", "R-011", "R-018"},
+            {"R-002", "R-005", "R-010", "R-014", "R-017", "R-019"},
         ),
     ],
 )
