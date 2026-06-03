@@ -157,7 +157,14 @@ def refresh_case(case: dict, reports_dir: Path, model: str) -> None:
     result = prioritise(risks, diff, model=model)
     md = render_markdown(result, diff)
     reports_dir.mkdir(parents=True, exist_ok=True)
-    (reports_dir / f"pr-{case['pr']}-plan.md").write_text(md, encoding="utf-8")
+    # PR diffs occasionally contain lone surrogates as test data (e.g.
+    # golf-web-app PR #6's null-byte/lone-surrogate rejection tests). If
+    # the agent echoes one in a rationale, the default UTF-8 encoder
+    # raises. The markdown report is human-readable — replacing the
+    # surrogate with the Unicode replacement char is fine; the JSON is
+    # already ASCII-safe via json.dumps' default ensure_ascii=True.
+    md_path = reports_dir / f"pr-{case['pr']}-plan.md"
+    md_path.write_bytes(md.encode("utf-8", errors="replace"))
     (reports_dir / f"pr-{case['pr']}-plan.json").write_text(json.dumps(result.to_json(), indent=2), encoding="utf-8")
 
 

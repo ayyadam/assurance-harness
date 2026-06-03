@@ -7,7 +7,7 @@ _Repo: ayyadam/golf-web-app_
 
 ## Summary
 
-This PR changes the validation of API string inputs to reject null bytes, ensuring that invalid UTF-8 or NUL bytes do not cause server errors.
+This PR changes input validation in API schemas to reject null bytes and lone surrogates, ensuring cleaner error responses instead of internal server errors.
 
 ## Changed files
 
@@ -16,36 +16,28 @@ This PR changes the validation of API string inputs to reject null bytes, ensuri
 
 ## Ranked risks
 
-### 1. R-012 — _direct_
+### 1. R-006 — _direct_
 
-**Why:** The diff modifies input validation for strings in the authentication and booking endpoints, directly addressing the risk of prompt injection by ensuring that inputs are sanitized to prevent unauthorized actions.
+**Why:** The diff modifies the `safe_text` validation function in `app/api/schemas.py`, which directly affects the API contract by adding a new validation rule for null bytes. This change ensures that invalid inputs are rejected with a clean 422 response, aligning with the published v1 API contract.
+
+**Covered by:** Schemathesis contract suite
+
+**Action:** Re-run the Schemathesis property-based contract tests in `contract/` to ensure the updated validation rules do not introduce any spec/behavior mismatches.
+
+### 2. R-012 — _plausible_
+
+**Why:** The diff adds a new validation rule for null bytes and lone surrogates in `app/api/schemas.py`, which could potentially mitigate prompt injection risks by ensuring that invalid inputs are rejected. However, the risk is still plausible as the AI booking feature's input handling remains unchanged.
 
 **Covered by:** ai_evaluation/
 
-**Action:** Add a golden-set case for null byte and lone surrogate validation in the AI booking feature.
-
-### 2. R-003 — _plausible_ — **COVERAGE GAP**
-
-**Why:** The diff touches authentication-related input validation, which could indirectly affect session/cookie manipulation or weak password handling. A reasonable reviewer would check if these changes impact authentication mechanisms.
-
-**Covered by:** none (open, no layer)
-
-**Action:** Re-run the contract suite to ensure that no new vulnerabilities are introduced in the authentication process.
-
-### 3. R-015 — _plausible_
-
-**Why:** The diff modifies input validation for strings used in API requests. While it does not directly touch test fixtures or seed data, changes in input validation could indirectly affect how synthetic data is handled.
-
-**Covered by:** Synthetic seed data
-
-**Action:** Verify that the updated validation logic does not inadvertently introduce real PII into test fixtures.
+**Action:** Add test cases to the phase-8 eval (`ai_evaluation/`) to verify that the new validation rules do not inadvertently allow any unauthorised actions through prompt injection.
 
 ## Exploratory probes
 
-- Test POST /api/v1/auth/token with a username containing null bytes to ensure it returns 422.
-- Test POST /api/v1/auth/token with a password containing lone surrogates to ensure it returns 422.
-- Manually probe the booking endpoint (POST /book) with inputs containing null bytes or lone surrogates to verify they are rejected.
-- Check if the updated validation logic affects any existing functional tests related to authentication and bookings.
+- Send a POST request to `/api/v1/auth/token` with a username containing a null byte (e.g., `a\x00b`) and observe the response status code.
+- Send a POST request to `/api/v1/auth/token` with a username containing a lone surrogate (e.g., `\ud800`) and observe the response status code.
+- Verify that the new validation rules do not affect existing valid inputs by sending a POST request with typical valid credentials.
+- Check if the updated validation logic is applied consistently across all relevant API endpoints by testing other input fields in different schemas.
 
 ---
 

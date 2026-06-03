@@ -7,7 +7,7 @@ _Repo: ayyadam/golf-web-app_
 
 ## Summary
 
-This PR changes the v1 API error contract and adds validation for UTF-8 encoding in input schemas.
+This PR changes the v1 API error contract by modifying schemas and views to handle UTF-8 validation, update status codes for conflicts, and adjust schema fields.
 
 ## Changed files
 
@@ -19,34 +19,26 @@ This PR changes the v1 API error contract and adds validation for UTF-8 encoding
 
 ### 1. R-006 — _direct_
 
-**Why:** The diff modifies `app/api/schemas.py` to add new validation logic (`utf8_safe`) and adjusts error responses in `app/api/views.py`. These changes directly impact the JSON API contract.
+**Why:** The diff modifies `app/api/schemas.py` and `app/api/views.py`, directly touching the OpenAPI spec, endpoint route definitions, request/response schemas, status-code mapping, and validation behavior. These changes affect the published v1 API contract.
 
 **Covered by:** Schemathesis contract suite
 
-**Action:** Re-run the Schemathesis property-based contract tests against the live API in CI.
+**Action:** Re-run the Schemathesis property-based contract tests to ensure the updated contract matches the live API.
 
 ### 2. R-012 — _plausible_
 
-**Why:** The diff modifies input validation for the booking feature (`app/api/schemas.py`), which could affect how inputs are sanitized and validated. This is adjacent to the risk of prompt injection.
+**Why:** The diff modifies `app/api/schemas.py` and `app/api/views.py`, which are adjacent to the AI booking feature inputs. Although the changes do not directly affect the AI input handling, they could indirectly impact how inputs are validated or processed.
 
 **Covered by:** ai_evaluation/
 
-**Action:** Add additional test cases in `tests/unit/test_api_v1.py` to verify that structured-output boundary holds against adversarial inputs.
-
-### 3. R-015 — _plausible_
-
-**Why:** The diff modifies input validation logic (`utf8_safe`) which could affect how fixture data is validated. This is adjacent to the risk of test fixtures containing real PII.
-
-**Covered by:** Synthetic seed data
-
-**Action:** Review and update any relevant fixture data in `tests/unit/test_api_v1.py` to ensure it remains synthetic.
+**Action:** Manually probe the API endpoints for potential prompt injection vulnerabilities by sending adversarial inputs.
 
 ## Exploratory probes
 
-- Manually trigger a booking request with invalid UTF-8 input via curl to verify the new validation logic.
-- Test the API endpoints for error responses (409 Conflict, 422 Unprocessable Entity) using curl and validate that they are correctly returned.
-- Check if the updated schemas in `app/api/schemas.py` handle edge cases like empty strings or non-UTF8 characters properly.
-- Verify that the new validation logic does not break existing functional tests by running them manually.
+- Send a POST request to `/auth/token` with non-UTF8 characters in `username` and `password` fields to verify UTF-8 validation.
+- Send a POST request to `/tee-times/<int:tee_time_id>/bookings` with invalid player handicaps (e.g., -15 or 60) to ensure proper validation and error responses.
+- Check the response for a GET request to `/tee-times/<int:tee_time_id>` when the tee time does not exist, ensuring it returns a 404 status code.
+- Send a POST request to `/tee-times/<int:tee_time_id>/bookings` with a group size that exceeds available slots and verify it returns a 409 Conflict status code.
 
 ---
 

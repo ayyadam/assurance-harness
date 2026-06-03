@@ -9,65 +9,66 @@ Compares the agent's emitted ranking (cached under `reports/pr-N-plan.json`) aga
 | Metric | Value |
 |---|---|
 | Cases scored | 9 |
-| True positives | 8 |
+| True positives | 9 |
 | False positives (over-pull) | 16 |
-| False negatives (missed) | 6 |
-| **Precision** | **0.333** |
-| **Recall** | **0.571** |
-| **F1** | **0.421** |
-| Relevance accuracy (matching `direct`/`plausible` on TPs) | 0.875 (7/8) |
+| False negatives (missed) | 5 |
+| **Precision** | **0.360** |
+| **Recall** | **0.643** |
+| **F1** | **0.462** |
+| Relevance accuracy (matching `direct`/`plausible` on TPs) | 0.667 (6/9) |
 
 ## Per-case
 
 ### pr-7-a11y — Fix WCAG 2.1 AA accessibility violations on dark theme
 
-**PR #7** | precision: `0.500` | recall: `1.000` | F1: `0.667`
+**PR #7** | precision: `0.333` | recall: `1.000` | F1: `0.500`
 
 - Expected: `R-008(3)`
-- Actual:   `R-008(3)`, `R-018(2)`
+- Actual:   `R-008(3)`, `R-018(2)`, `R-019(2)`
 
 - ✓ TP: R-008 (expected 3, got 3)
-- ✗ FP (over-pull): R-018
+- ✗ FP (over-pull): R-018, R-019
 
 ### pr-8-nplus1 — Fix N+1 query when listing tee times
 
 **PR #8** | precision: `0.500` | recall: `1.000` | F1: `0.667`
 
 - Expected: `R-007(3)`
-- Actual:   `R-007(3)`, `R-017(2)`
+- Actual:   `R-007(2)`, `R-017(2)`
 
-- ✓ TP: R-007 (expected 3, got 3)
+- ✓ TP: R-007 (expected 3, got 2)
 - ✗ FP (over-pull): R-017
 
 ### pr-11-f007 — Show all matching tee-time slots, not a silent 6 (F-007)
 
-**PR #11** | precision: `0.500` | recall: `1.000` | F1: `0.667`
+**PR #11** | precision: `0.250` | recall: `1.000` | F1: `0.400`
 
 - Expected: `R-011(3)`
-- Actual:   `R-011(3)`, `R-012(2)`
+- Actual:   `R-011(3)`, `R-012(3)`, `R-018(2)`, `R-019(2)`
 
 - ✓ TP: R-011 (expected 3, got 3)
-- ✗ FP (over-pull): R-012
+- ✗ FP (over-pull): R-012, R-018, R-019
 
 ### pr-12-f008 — Add time-of-day constraints to the booking assistant (F-008)
 
-**PR #12** | precision: `0.500` | recall: `0.500` | F1: `0.500`
+**PR #12** | precision: `0.667` | recall: `0.500` | F1: `0.571`
 
 - Expected: `R-006(2)`, `R-008(2)`, `R-011(3)`, `R-012(2)`
-- Actual:   `R-011(3)`, `R-012(3)`, `R-018(2)`, `R-019(2)`
+- Actual:   `R-010(2)`, `R-011(2)`, `R-012(3)`
 
-- ✓ TP: R-011 (expected 3, got 3), R-012 (expected 2, got 3)
-- ✗ FP (over-pull): R-018, R-019
+- ✓ TP: R-011 (expected 3, got 2), R-012 (expected 2, got 3)
+- ✗ FP (over-pull): R-010
 - ✗ FN (missed): R-006, R-008
 
 ### pr-2-actions-bump — Bump GitHub Actions to Node.js 24 compatible versions
 
-**PR #2** | precision: `1.000` | recall: `1.000` | F1: `1.000`
+**PR #2** | precision: `0.333` | recall: `1.000` | F1: `0.500`
 
 - Expected: `R-017(3)`
-- Actual:   `R-017(3)`
+- Actual:   `R-017(3)`, `R-018(2)`, `R-019(2)`
 
 - ✓ TP: R-017 (expected 3, got 3)
+- ✗ FP (over-pull): R-018, R-019
 
 ### pr-3-booking-service — Refactor: extract general booking logic into a service layer
 
@@ -81,35 +82,35 @@ Compares the agent's emitted ranking (cached under `reports/pr-N-plan.json`) aga
 
 ### pr-5-api-error-contract — Correct and complete the v1 API error contract
 
-**PR #5** | precision: `0.333` | recall: `0.500` | F1: `0.400`
+**PR #5** | precision: `0.500` | recall: `0.500` | F1: `0.500`
 
 - Expected: `R-003(2)`, `R-006(3)`
-- Actual:   `R-006(3)`, `R-012(2)`, `R-015(2)`
+- Actual:   `R-006(3)`, `R-012(2)`
 
 - ✓ TP: R-006 (expected 3, got 3)
-- ✗ FP (over-pull): R-012, R-015
+- ✗ FP (over-pull): R-012
 - ✗ FN (missed): R-003
 
 ### pr-6-null-bytes — Reject null bytes in API string inputs (prevent 500)
 
-**PR #6** | precision: `0.333` | recall: `0.500` | F1: `0.400`
+**PR #6** | precision: `0.500` | recall: `0.500` | F1: `0.500`
 
 - Expected: `R-003(2)`, `R-006(3)`
-- Actual:   `R-003(2)`, `R-012(3)`, `R-015(2)`
+- Actual:   `R-006(3)`, `R-012(2)`
 
-- ✓ TP: R-003 (expected 2, got 2)
-- ✗ FP (over-pull): R-012, R-015
-- ✗ FN (missed): R-006
+- ✓ TP: R-006 (expected 3, got 3)
+- ✗ FP (over-pull): R-012
+- ✗ FN (missed): R-003
 
 ### pr-14-hide-metrics — Hide /metrics from the v1 OpenAPI spec (F-010)
 
-**PR #14** | precision: `0.000` | recall: `0.000` | F1: `0.000`
+**PR #14** | precision: `0.500` | recall: `1.000` | F1: `0.667`
 
 - Expected: `R-006(3)`
-- Actual:   `R-013(2)`, `R-018(2)`, `R-019(2)`
+- Actual:   `R-006(3)`, `R-013(2)`
 
-- ✗ FP (over-pull): R-013, R-018, R-019
-- ✗ FN (missed): R-006
+- ✓ TP: R-006 (expected 3, got 3)
+- ✗ FP (over-pull): R-013
 
 ---
 

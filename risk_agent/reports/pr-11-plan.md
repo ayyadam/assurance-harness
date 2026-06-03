@@ -18,26 +18,42 @@ This PR changes the booking assistant's behavior to return all matching tee-time
 
 ### 1. R-011 — _direct_
 
-**Why:** The diff modifies `find_candidate_slots` in `app/services/booking_assistant.py`, which directly affects the AI booking feature's slot proposal mechanism. The change ensures that all matching slots are returned rather than a capped subset.
+**Why:** The diff modifies `find_candidate_slots` in `app/services/booking_assistant.py`, which directly affects how the booking assistant proposes tee-time slots. This change could introduce new errors or inconsistencies in slot selection.
 
 **Covered by:** ai_evaluation/
 
-**Action:** Add golden-set cases for different input scenarios to ensure the assistant correctly proposes all available slots.
+**Action:** Add a golden-set case for different date and time scenarios to ensure correct slot proposals.
 
-### 2. R-012 — _plausible_
+### 2. R-012 — _direct_
 
-**Why:** The diff modifies the booking assistant's slot-finding logic in `app/services/booking_assistant.py`, which is adjacent to the AI feature. Although it does not directly affect prompt injection, changes here could indirectly impact how inputs are processed.
+**Why:** The diff modifies the booking assistant's logic in `app/services/booking_assistant.py`, which could potentially introduce new vulnerabilities if input handling is not robust. The change affects how slots are proposed based on user intent.
 
 **Covered by:** ai_evaluation/
 
-**Action:** Re-run the structured-output boundary tests to ensure that the model still emits a domain intent and deterministic code executes correctly.
+**Action:** Re-run the contract suite to ensure that the structured-output boundary holds and no unauthorised actions can be injected via inputs.
+
+### 3. R-018 — _plausible_
+
+**Why:** The diff changes how slots are returned in `app/services/booking_assistant.py`, which could affect functional tests if the timing of slot proposals impacts test assertions.
+
+**Covered by:** Playwright functional suite
+
+**Action:** Re-run functional tests to ensure that Playwright interactions with the booking assistant still behave as expected.
+
+### 4. R-019 — _plausible_
+
+**Why:** The diff modifies `app/services/booking_assistant.py`, which could indirectly affect memory usage if the number of slots returned increases significantly. This might impact CI runner performance.
+
+**Covered by:** Playwright functional suite
+
+**Action:** Monitor CI runs for any OOM-kills or increased memory usage during Playwright tests.
 
 ## Exploratory probes
 
-- Manually test the booking assistant with various input scenarios (e.g., different dates, group sizes) to verify it returns all matching slots.
-- Check if the booking assistant handles edge cases like no available slots or very large numbers of matching slots.
-- Verify that the booking assistant's output is correctly displayed in the UI for a member user.
-- Test the booking assistant with a member who has already booked some slots to ensure exclusions work as expected.
+- Manually test the booking assistant with a variety of date and time inputs to ensure all matching slots are correctly returned.
+- Check if the booking assistant's slot proposals are consistent across multiple requests.
+- Verify that the booking assistant excludes slots already booked by the member.
+- Test the booking assistant with an explicit limit to confirm it still caps the list as expected.
 
 ---
 
