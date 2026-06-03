@@ -1,6 +1,6 @@
 # risk_agent v2 v2 — golden-set evaluation
 
-_Run: 2026-06-02_
+_Run: 2026-06-03_
 
 Compares the agent's emitted ranking (cached under `reports/pr-N-plan.json`) against the expected ranking per historic PR in [`golden_set.yaml`](../golden_set.yaml). Scoring is deterministic — no LLM in the scoring path.
 
@@ -8,14 +8,14 @@ Compares the agent's emitted ranking (cached under `reports/pr-N-plan.json`) aga
 
 | Metric | Value |
 |---|---|
-| Cases scored | 4 |
-| True positives | 5 |
-| False positives (over-pull) | 5 |
-| False negatives (missed) | 2 |
-| **Precision** | **0.500** |
-| **Recall** | **0.714** |
-| **F1** | **0.588** |
-| Relevance accuracy (matching `direct`/`plausible` on TPs) | 0.800 (4/5) |
+| Cases scored | 9 |
+| True positives | 8 |
+| False positives (over-pull) | 16 |
+| False negatives (missed) | 6 |
+| **Precision** | **0.333** |
+| **Recall** | **0.571** |
+| **F1** | **0.421** |
+| Relevance accuracy (matching `direct`/`plausible` on TPs) | 0.875 (7/8) |
 
 ## Per-case
 
@@ -44,7 +44,7 @@ Compares the agent's emitted ranking (cached under `reports/pr-N-plan.json`) aga
 **PR #11** | precision: `0.500` | recall: `1.000` | F1: `0.667`
 
 - Expected: `R-011(3)`
-- Actual:   `R-011(3)`, `R-012(3)`
+- Actual:   `R-011(3)`, `R-012(2)`
 
 - ✓ TP: R-011 (expected 3, got 3)
 - ✗ FP (over-pull): R-012
@@ -59,6 +59,57 @@ Compares the agent's emitted ranking (cached under `reports/pr-N-plan.json`) aga
 - ✓ TP: R-011 (expected 3, got 3), R-012 (expected 2, got 3)
 - ✗ FP (over-pull): R-018, R-019
 - ✗ FN (missed): R-006, R-008
+
+### pr-2-actions-bump — Bump GitHub Actions to Node.js 24 compatible versions
+
+**PR #2** | precision: `1.000` | recall: `1.000` | F1: `1.000`
+
+- Expected: `R-017(3)`
+- Actual:   `R-017(3)`
+
+- ✓ TP: R-017 (expected 3, got 3)
+
+### pr-3-booking-service — Refactor: extract general booking logic into a service layer
+
+**PR #3** | precision: `0.000` | recall: `0.000` | F1: `0.000`
+
+- Expected: `R-002(3)`
+- Actual:   `R-012(3)`, `R-013(2)`, `R-014(2)`, `R-015(2)`
+
+- ✗ FP (over-pull): R-012, R-013, R-014, R-015
+- ✗ FN (missed): R-002
+
+### pr-5-api-error-contract — Correct and complete the v1 API error contract
+
+**PR #5** | precision: `0.333` | recall: `0.500` | F1: `0.400`
+
+- Expected: `R-003(2)`, `R-006(3)`
+- Actual:   `R-006(3)`, `R-012(2)`, `R-015(2)`
+
+- ✓ TP: R-006 (expected 3, got 3)
+- ✗ FP (over-pull): R-012, R-015
+- ✗ FN (missed): R-003
+
+### pr-6-null-bytes — Reject null bytes in API string inputs (prevent 500)
+
+**PR #6** | precision: `0.333` | recall: `0.500` | F1: `0.400`
+
+- Expected: `R-003(2)`, `R-006(3)`
+- Actual:   `R-003(2)`, `R-012(3)`, `R-015(2)`
+
+- ✓ TP: R-003 (expected 2, got 2)
+- ✗ FP (over-pull): R-012, R-015
+- ✗ FN (missed): R-006
+
+### pr-14-hide-metrics — Hide /metrics from the v1 OpenAPI spec (F-010)
+
+**PR #14** | precision: `0.000` | recall: `0.000` | F1: `0.000`
+
+- Expected: `R-006(3)`
+- Actual:   `R-013(2)`, `R-018(2)`, `R-019(2)`
+
+- ✗ FP (over-pull): R-013, R-018, R-019
+- ✗ FN (missed): R-006
 
 ---
 

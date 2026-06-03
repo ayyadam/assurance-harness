@@ -75,3 +75,105 @@ cases:
       - {id: R-006, relevance: 2}
       - {id: R-008, relevance: 2}
       - {id: R-012, relevance: 2}
+
+  # PR #2 — Bump GitHub Actions to Node.js 24 compatible versions
+  # Diff: actions/checkout v4→v5, actions/setup-python v5→v6,
+  # actions/upload-artifact v4→v5; adds FORCE_JAVASCRIPT_ACTIONS_TO_NODE24
+  # env var globally. Workflow-only change.
+  # R-017 direct: this PR exists to address the Node.js 20 deprecation
+  # named by the risk row; the bumped action versions are exactly those
+  # the risk-row mitigation column lists.
+  # Nothing else raised: no application code, schema, or test code touched.
+  - id: pr-2-actions-bump
+    pr: 2
+    repo: ayyadam/golf-web-app
+    title: "Bump GitHub Actions to Node.js 24 compatible versions"
+    expected_ranks:
+      - {id: R-017, relevance: 3}
+
+  # PR #3 — Refactor: extract general booking logic into a service layer
+  # Diff: moves the inline booking-create flow from app/routes/member.py
+  # and app/routes/visitor.py into a new app/services/booking_service.py
+  # (PlayerInput, parse_handicap, validate_general_booking,
+  # validate_player_handicaps, create_general_booking). The check-then-
+  # create pattern AT the POST /book transaction boundary is preserved
+  # verbatim, just relocated. The functional test target is unchanged.
+  # R-002 direct: the diff plainly modifies the subject mechanism R-002
+  # names — the booking-creation request's race against the uniqueness
+  # check at the POST /book transaction boundary. Both member.py and
+  # visitor.py booking handlers are touched. The refactor preserves the
+  # underlying race; the contract Schemathesis probe should re-run.
+  # Nothing else raised: no API spec change, no AI surface, no a11y/CSS,
+  # no Playwright client-side timing.
+  # NOTE: this case is the deliberate stress test for v3's subject-vs-
+  # adjacent rule — the agent should pull R-002 here precisely because
+  # the diff modifies the named mechanism, not just shared terminology.
+  - id: pr-3-booking-service
+    pr: 3
+    repo: ayyadam/golf-web-app
+    title: "Refactor: extract general booking logic into a service layer"
+    expected_ranks:
+      - {id: R-002, relevance: 3}
+
+  # PR #5 — Correct and complete the v1 API error contract
+  # Diff: utf8_safe validator on TokenRequest + PlayerInputSchema; Decimal
+  # → Float on MemberOut.handicap (matches spec's number type); Range(-10,
+  # 54) on PlayerInputSchema.handicap; post_dump appends 'Z' to naive UTC
+  # booked_at (RFC 3339); status-code refinement (400→422 for invalid
+  # input, 400→409 for state conflicts) with @api_bp.doc updates.
+  # R-006 direct: this PR exists to fix contract/behaviour mismatches
+  # surfaced by contract fuzzing (the Schemathesis suite). The spec is
+  # corrected so its declared types/status codes match the actual
+  # behaviour — squarely R-006's subject mechanism.
+  # R-003 plausible: /auth/token's input handling is tightened; a reviewer
+  # would re-run the defensive baseline auth checks named in R-003's
+  # mitigation column to confirm no input now gets through that didn't
+  # authenticate before, or vice versa.
+  # Nothing else raised: no AI surface, no a11y/CSS, no booking transaction.
+  - id: pr-5-api-error-contract
+    pr: 5
+    repo: ayyadam/golf-web-app
+    title: "Correct and complete the v1 API error contract"
+    expected_ranks:
+      - {id: R-006, relevance: 3}
+      - {id: R-003, relevance: 2}
+
+  # PR #6 — Reject null bytes in API string inputs (prevent 500)
+  # Diff: utf8_safe → safe_text adds a NUL-byte check (Postgres text
+  # columns reject 0x00 even though it UTF-8-encodes fine, surfacing as a
+  # 500 without validation). Applied to TokenRequest + PlayerInputSchema.
+  # Adds two unit tests on /auth/token.
+  # R-006 direct: the contract previously said "valid request → 2xx" but
+  # behaviour was "NUL byte → 500"; the PR makes behaviour match the spec
+  # by returning a clean 422. The Schemathesis suite re-runs against the
+  # tightened contract.
+  # R-003 plausible: same /auth/token endpoint tightened — same defensive
+  # baseline check applies. Subject mechanism (auth bypass) untouched, but
+  # the auth endpoint's input layer is modified.
+  # Nothing else raised: no AI, no booking, no a11y, no infrastructure.
+  - id: pr-6-null-bytes
+    pr: 6
+    repo: ayyadam/golf-web-app
+    title: "Reject null bytes in API string inputs (prevent 500)"
+    expected_ranks:
+      - {id: R-006, relevance: 3}
+      - {id: R-003, relevance: 2}
+
+  # PR #14 — Hide /metrics from the v1 OpenAPI spec (F-010)
+  # Diff: adds an @app.spec_processor in app/__init__.py that pops the
+  # /metrics path from the OpenAPI document; adds a unit test verifying
+  # the spec no longer advertises /metrics. The /metrics endpoint itself
+  # is unchanged — only the published spec changes.
+  # R-006 direct: this PR exists because the spec was advertising a route
+  # whose content type (text/plain Prometheus exposition) didn't match
+  # the declared application/json — a spec-vs-behaviour mismatch caught
+  # by the contract gate (F-010). Fixing the spec to accurately describe
+  # the v1 API contract IS R-006's subject mechanism.
+  # Nothing else raised: R-013 (observability) untouched — only the spec
+  # listing changes, not the endpoint itself; no auth, no booking, no AI.
+  - id: pr-14-hide-metrics
+    pr: 14
+    repo: ayyadam/golf-web-app
+    title: "Hide /metrics from the v1 OpenAPI spec (F-010)"
+    expected_ranks:
+      - {id: R-006, relevance: 3}

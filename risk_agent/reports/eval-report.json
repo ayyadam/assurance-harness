@@ -1,14 +1,14 @@
 {
   "totals": {
-    "cases": 4,
-    "true_positives": 5,
-    "false_positives": 5,
-    "false_negatives": 2,
-    "precision": 0.5,
-    "recall": 0.714,
-    "f1": 0.588,
-    "relevance_correct": 4,
-    "relevance_accuracy": 0.8
+    "cases": 9,
+    "true_positives": 8,
+    "false_positives": 16,
+    "false_negatives": 6,
+    "precision": 0.333,
+    "recall": 0.571,
+    "f1": 0.421,
+    "relevance_correct": 7,
+    "relevance_accuracy": 0.875
   },
   "cases": [
     {
@@ -68,7 +68,7 @@
       },
       "actual": {
         "R-011": 3,
-        "R-012": 3
+        "R-012": 2
       },
       "true_positives": [
         "R-011"
@@ -116,6 +116,141 @@
       "f1": 0.5,
       "relevance_correct": 1,
       "relevance_accuracy": 0.5
+    },
+    {
+      "case_id": "pr-2-actions-bump",
+      "pr": 2,
+      "title": "Bump GitHub Actions to Node.js 24 compatible versions",
+      "expected": {
+        "R-017": 3
+      },
+      "actual": {
+        "R-017": 3
+      },
+      "true_positives": [
+        "R-017"
+      ],
+      "false_positives": [],
+      "false_negatives": [],
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "relevance_correct": 1,
+      "relevance_accuracy": 1.0
+    },
+    {
+      "case_id": "pr-3-booking-service",
+      "pr": 3,
+      "title": "Refactor: extract general booking logic into a service layer",
+      "expected": {
+        "R-002": 3
+      },
+      "actual": {
+        "R-012": 3,
+        "R-013": 2,
+        "R-014": 2,
+        "R-015": 2
+      },
+      "true_positives": [],
+      "false_positives": [
+        "R-012",
+        "R-013",
+        "R-014",
+        "R-015"
+      ],
+      "false_negatives": [
+        "R-002"
+      ],
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "relevance_correct": 0,
+      "relevance_accuracy": 0.0
+    },
+    {
+      "case_id": "pr-5-api-error-contract",
+      "pr": 5,
+      "title": "Correct and complete the v1 API error contract",
+      "expected": {
+        "R-006": 3,
+        "R-003": 2
+      },
+      "actual": {
+        "R-006": 3,
+        "R-012": 2,
+        "R-015": 2
+      },
+      "true_positives": [
+        "R-006"
+      ],
+      "false_positives": [
+        "R-012",
+        "R-015"
+      ],
+      "false_negatives": [
+        "R-003"
+      ],
+      "precision": 0.333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "relevance_correct": 1,
+      "relevance_accuracy": 1.0
+    },
+    {
+      "case_id": "pr-6-null-bytes",
+      "pr": 6,
+      "title": "Reject null bytes in API string inputs (prevent 500)",
+      "expected": {
+        "R-006": 3,
+        "R-003": 2
+      },
+      "actual": {
+        "R-012": 3,
+        "R-003": 2,
+        "R-015": 2
+      },
+      "true_positives": [
+        "R-003"
+      ],
+      "false_positives": [
+        "R-012",
+        "R-015"
+      ],
+      "false_negatives": [
+        "R-006"
+      ],
+      "precision": 0.333,
+      "recall": 0.5,
+      "f1": 0.4,
+      "relevance_correct": 1,
+      "relevance_accuracy": 1.0
+    },
+    {
+      "case_id": "pr-14-hide-metrics",
+      "pr": 14,
+      "title": "Hide /metrics from the v1 OpenAPI spec (F-010)",
+      "expected": {
+        "R-006": 3
+      },
+      "actual": {
+        "R-013": 2,
+        "R-018": 2,
+        "R-019": 2
+      },
+      "true_positives": [],
+      "false_positives": [
+        "R-013",
+        "R-018",
+        "R-019"
+      ],
+      "false_negatives": [
+        "R-006"
+      ],
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "relevance_correct": 0,
+      "relevance_accuracy": 0.0
     }
   ]
 }

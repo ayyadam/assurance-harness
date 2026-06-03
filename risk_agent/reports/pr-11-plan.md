@@ -2,7 +2,7 @@
 
 **Show all matching tee-time slots, not a silent 6 (F-007)**
 
-_Run: 2026-06-02 • model: `qwen2.5:32b-instruct-q4_K_M`_  
+_Run: 2026-06-03 • model: `qwen2.5:32b-instruct-q4_K_M`_  
 _Repo: ayyadam/golf-web-app_
 
 ## Summary
@@ -18,26 +18,26 @@ This PR changes the booking assistant's behavior to return all matching tee-time
 
 ### 1. R-011 — _direct_
 
-**Why:** The diff modifies `find_candidate_slots` in `app/services/booking_assistant.py`, which directly affects how the booking assistant proposes tee-time slots. This change could introduce new errors or inconsistencies in slot selection.
+**Why:** The diff modifies `find_candidate_slots` in `app/services/booking_assistant.py`, which directly affects the AI booking feature's slot proposal mechanism. The change ensures that all matching slots are returned rather than a capped subset.
 
 **Covered by:** ai_evaluation/
 
-**Action:** Add a golden-set case for different date and time scenarios to ensure the assistant's behavior is correct.
+**Action:** Add golden-set cases for different input scenarios to ensure the assistant correctly proposes all available slots.
 
-### 2. R-012 — _direct_
+### 2. R-012 — _plausible_
 
-**Why:** The diff modifies `find_candidate_slots` in `app/services/booking_assistant.py`, which could potentially affect how inputs are processed. This change might introduce new vulnerabilities if the input handling is not robust.
+**Why:** The diff modifies the booking assistant's slot-finding logic in `app/services/booking_assistant.py`, which is adjacent to the AI feature. Although it does not directly affect prompt injection, changes here could indirectly impact how inputs are processed.
 
 **Covered by:** ai_evaluation/
 
-**Action:** Re-run the contract suite to ensure that the assistant's structured output boundary holds and no unauthorized actions can be injected.
+**Action:** Re-run the structured-output boundary tests to ensure that the model still emits a domain intent and deterministic code executes correctly.
 
 ## Exploratory probes
 
-- Manually test the booking assistant with a variety of date and time inputs to verify it returns all matching slots as expected.
-- Check if the booking assistant correctly excludes slots already booked by a member.
-- Test the assistant's behavior when no limit is provided versus when an explicit limit is set.
-- Verify that the assistant does not return more than 6 slots in scenarios where the old cap was enforced.
+- Manually test the booking assistant with various input scenarios (e.g., different dates, group sizes) to verify it returns all matching slots.
+- Check if the booking assistant handles edge cases like no available slots or very large numbers of matching slots.
+- Verify that the booking assistant's output is correctly displayed in the UI for a member user.
+- Test the booking assistant with a member who has already booked some slots to ensure exclusions work as expected.
 
 ---
 
