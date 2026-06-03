@@ -17,18 +17,34 @@ This PR changes the GitHub Actions configuration to use Node.js 24 compatible ve
 
 ### 1. R-017 — _direct_
 
-**Why:** The diff directly addresses the risk by bumping GitHub Actions to Node.js 24 compatible versions.
+**Why:** The diff directly updates the version of several actions (actions/checkout@v5, actions/setup-python@v6, actions/upload-artifact@v5) to be compatible with Node.js 24.
 
 **Covered by:** CI workflow configuration
 
-**Action:** Verify that all actions are now using Node.js 24 and ensure no deprecated actions remain.
+**Action:** Verify that all updated actions are functioning correctly in CI by running a test pipeline.
+
+### 2. R-018 — _plausible_
+
+**Why:** The diff updates the version of `actions/checkout` and `actions/setup-python`, which could indirectly affect the functional tests if there are compatibility issues with Playwright or other dependencies.
+
+**Covered by:** Playwright functional suite
+
+**Action:** Run the functional test suite to ensure that all tests pass without flaking.
+
+### 3. R-019 — _plausible_
+
+**Why:** The diff updates the version of `actions/checkout` and `actions/setup-python`, which could indirectly affect memory usage if there are changes in how these actions initialize or run.
+
+**Covered by:** Playwright functional suite
+
+**Action:** Monitor the CI runs for any OOM-kills or unexpected failures after merging this PR.
 
 ## Exploratory probes
 
-- Run the CI pipeline locally with Node.js 24 to verify compatibility.
-- Check if any new warnings or errors appear in the CI logs after merging this PR.
-- Manually trigger a build on GitHub Actions to confirm that all jobs complete successfully.
-- Review the updated action versions for any breaking changes or deprecations.
+- Run a full CI pipeline to ensure all jobs complete successfully with the new Node.js 24 compatible versions.
+- Check the logs of the functional test job for any flaky behavior that might indicate timing issues.
+- Verify that the memory usage of the Playwright/accessibility job does not exceed the runner's limits after updating the actions.
+- Manually trigger a rerun of the CI pipeline to ensure consistency in passing tests.
 
 ---
 

@@ -7,7 +7,7 @@ _Repo: ayyadam/golf-web-app_
 
 ## Summary
 
-This PR changes CSS and JavaScript to fix WCAG 2.1 AA accessibility violations on the dark theme.
+This PR changes CSS and JavaScript to improve WCAG 2.1 AA accessibility violations on the dark theme.
 
 ## Changed files
 
@@ -22,22 +22,30 @@ This PR changes CSS and JavaScript to fix WCAG 2.1 AA accessibility violations o
 
 **Covered by:** axe-core sweep
 
-**Action:** Re-run the axe-core WCAG 2.1 A/AA sweep over key pages to verify that the changes have resolved the violations.
+**Action:** Verify that the changes resolve all identified WCAG violations using axe-core.
 
 ### 2. R-018 — _plausible_
 
-**Why:** The diff modifies JavaScript related to date input and accessibility labels, which could potentially affect functional tests that rely on Playwright's interaction with client-side behavior.
+**Why:** The diff modifies client-side behavior with new CSS and JavaScript, which could potentially affect functional tests' timing and interaction with Playwright.
 
 **Covered by:** Playwright functional suite
 
-**Action:** Run the functional test suite to ensure that changes do not introduce new flakiness or issues in the Playwright layer.
+**Action:** Run the functional test suite to ensure that no flakiness is introduced due to these changes.
+
+### 3. R-019 — _plausible_
+
+**Why:** The diff introduces new CSS and JavaScript which could potentially increase memory usage during browser navigation in CI tests.
+
+**Covered by:** Playwright functional suite
+
+**Action:** Monitor the CI runs for any OOM errors or increased memory usage due to these changes.
 
 ## Exploratory probes
 
-- Manually verify the dark theme's contrast ratios for success and danger buttons using a color contrast checker tool.
-- Check if the date input fields have proper accessible names by inspecting their `aria-label` attributes in the browser developer tools.
-- Test the accessibility of the dark theme on different screen readers to ensure that all elements are properly labeled and navigable.
-- Run the axe-core WCAG 2.1 A/AA sweep manually against the key pages affected by this PR.
+- Manually test the dark theme on different browsers to ensure that all accessibility improvements are visible and functional.
+- Use axe-core to run an accessibility audit on the dark theme in a local environment.
+- Check if the new CSS and JavaScript changes affect any existing automated tests by running them locally.
+- Verify that the alt input for date pickers is correctly labeled with `aria-label`.
 
 ---
 

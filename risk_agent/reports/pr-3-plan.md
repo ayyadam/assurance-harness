@@ -7,7 +7,7 @@ _Repo: ayyadam/golf-web-app_
 
 ## Summary
 
-The changes introduced in the diff centralize booking validation and creation logic into a new service module (`booking_service.py`). This refactoring aims to ensure consistency across different paths (member and visitor) for tee time bookings.
+The diff introduces a new service module for booking validation and creation logic, refactors existing form handling in `book_tee_time` routes, and adds unit tests.
 
 ## Changed files
 
@@ -20,40 +20,40 @@ The changes introduced in the diff centralize booking validation and creation lo
 
 ### 1. R-012 — _direct_
 
-**Why:** The introduction of the `create_general_booking` function requires callers to manage session commits explicitly. This could lead to inconsistent states if not handled correctly.
+**Why:** The introduction of the `create_general_booking` function centralizes booking logic but requires callers to manage session commits. This could lead to inconsistent state if not handled correctly.
 
 **Covered by:** ai_evaluation/
 
-**Action:** Ensure all call sites properly handle session management and add unit tests that cover commit/rollback scenarios.
+**Action:** Ensure all call sites properly commit or rollback transactions after calling this service method.
 
 ### 2. R-013 — _plausible_
 
-**Why:** The `validate_general_booking` function now returns a `BookingValidationError`, which might not be handled consistently across different parts of the application.
+**Why:** The `validate_general_booking` and `validate_player_handicaps` functions return errors but do not enforce them. The caller must handle these appropriately.
 
 **Covered by:** k6 performance gate
 
-**Action:** Review all call sites to ensure consistent error handling and update documentation.
+**Action:** Review all call sites to ensure they properly handle validation errors.
 
 ### 3. R-014 — _plausible_
 
-**Why:** The new `PlayerInput` class introduces a data structure that might not be fully utilized or validated in existing forms or APIs.
+**Why:** The new `BookingValidationError` class introduces a new error handling mechanism that may not be consistently used across the application.
 
 **Covered by:** CI workflow configuration
 
-**Action:** Ensure all relevant forms and APIs are updated to use the `PlayerInput` class correctly.
+**Action:** Ensure consistent use of this error type and update documentation accordingly.
 
 ### 4. R-015 — _plausible_
 
-**Why:** The refactoring could introduce subtle bugs if not all validation rules are consistently applied across different paths.
+**Why:** Refactoring form handling in `book_tee_time` routes could introduce subtle bugs if not thoroughly tested.
 
 **Covered by:** Synthetic seed data
 
-**Action:** Perform a thorough code review and add additional unit tests to cover edge cases.
+**Action:** Add integration tests to cover all paths through the refactored code.
 
 ## Exploratory probes
 
-- Consider adding integration tests that simulate booking scenarios from both member and visitor paths to ensure consistency.
-- Review the JSON API (if implemented) to ensure it uses the new service module correctly.
+- Are there any existing call sites that do not properly handle session commits or validation errors?
+- Do other parts of the application use similar error handling mechanisms, and if so, should they be updated for consistency?
 
 ---
 

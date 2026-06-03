@@ -7,7 +7,7 @@ _Repo: ayyadam/golf-web-app_
 
 ## Summary
 
-This PR changes the OpenAPI specification to hide the `/metrics` endpoint, ensuring that it does not appear in the published v1 spec.
+This PR changes the `app/__init__.py` file to hide the `/metrics` endpoint from the v1 OpenAPI spec and adds a unit test in `tests/unit/test_metrics.py` to ensure that `/metrics` is not included in the published spec.
 
 ## Changed files
 
@@ -16,36 +16,28 @@ This PR changes the OpenAPI specification to hide the `/metrics` endpoint, ensur
 
 ## Ranked risks
 
-### 1. R-013 — _plausible_
+### 1. R-006 — _direct_
 
-**Why:** The diff modifies the OpenAPI spec to exclude the `/metrics` endpoint, which is used for production observability. This change could affect how metrics are observed and reported in a deployed instance.
+**Why:** The diff directly modifies the OpenAPI specification by removing the `/metrics` endpoint from it, which affects the published v1 API contract.
+
+**Covered by:** Schemathesis contract suite
+
+**Action:** Re-run the Schemathesis property-based contract tests to ensure that the modified spec aligns with the actual behavior of the endpoints.
+
+### 2. R-013 — _plausible_
+
+**Why:** The diff hides the `/metrics` endpoint from the v1 OpenAPI spec, which is used for observability. This change could affect how metrics are observed and monitored.
 
 **Covered by:** k6 performance gate
 
-**Action:** Verify that the /metrics endpoint still functions correctly and is properly exposed for monitoring purposes.
-
-### 2. R-018 — _plausible_
-
-**Why:** The diff modifies the OpenAPI spec to exclude the `/metrics` endpoint. Although this change does not directly affect functional tests, it could indirectly impact observability and thus the reliability of test results.
-
-**Covered by:** Playwright functional suite
-
-**Action:** Run a full suite of functional tests to ensure that all endpoints are functioning as expected.
-
-### 3. R-019 — _plausible_
-
-**Why:** The diff modifies the OpenAPI spec to exclude the `/metrics` endpoint. Although this change does not directly affect memory usage, it could indirectly impact observability and thus the reliability of test results.
-
-**Covered by:** Playwright functional suite
-
-**Action:** Monitor the CI runs for any OOM-kills or flaky behavior after merging this PR.
+**Action:** Manually verify that the `/metrics` endpoint still functions correctly and is being scraped by Prometheus.
 
 ## Exploratory probes
 
-- Manually verify that the `/metrics` endpoint is still accessible and returns expected data.
-- Check if the OpenAPI spec at `/api/v1/openapi.json` no longer includes the `/metrics` endpoint.
-- Run a local instance of the application and manually test the `/metrics` endpoint to ensure it functions correctly.
-- Verify that the observability stack (Prometheus/Grafana) still scrapes metrics from the `/metrics` endpoint.
+- Check if the `/api/v1/openapi.json` spec no longer includes the `/metrics` endpoint.
+- Verify that the `/metrics` endpoint still returns metrics data when accessed directly.
+- Ensure that the Grafana dashboard is still receiving and displaying metrics from the `/metrics` endpoint.
+- Run a manual test to confirm that the unit test `test_metrics_endpoint_not_in_openapi_spec` passes.
 
 ---
 

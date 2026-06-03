@@ -1,28 +1,36 @@
 {
-  "summary": "This PR changes CSS and JavaScript to fix WCAG 2.1 AA accessibility violations on the dark theme.",
+  "summary": "This PR changes CSS and JavaScript to improve WCAG 2.1 AA accessibility violations on the dark theme.",
   "ranked_risks": [
     {
       "id": "R-008",
       "relevance": 3,
       "rationale": "The diff directly addresses WCAG 2.1 AA colour contrast issues in the dark theme by modifying CSS and JavaScript to ensure better accessibility.",
-      "action": "Re-run the axe-core WCAG 2.1 A/AA sweep over key pages to verify that the changes have resolved the violations.",
+      "action": "Verify that the changes resolve all identified WCAG violations using axe-core.",
       "covered_by": "axe-core sweep",
       "is_gap": false
     },
     {
       "id": "R-018",
       "relevance": 2,
-      "rationale": "The diff modifies JavaScript related to date input and accessibility labels, which could potentially affect functional tests that rely on Playwright's interaction with client-side behavior.",
-      "action": "Run the functional test suite to ensure that changes do not introduce new flakiness or issues in the Playwright layer.",
+      "rationale": "The diff modifies client-side behavior with new CSS and JavaScript, which could potentially affect functional tests' timing and interaction with Playwright.",
+      "action": "Run the functional test suite to ensure that no flakiness is introduced due to these changes.",
+      "covered_by": "Playwright functional suite",
+      "is_gap": false
+    },
+    {
+      "id": "R-019",
+      "relevance": 2,
+      "rationale": "The diff introduces new CSS and JavaScript which could potentially increase memory usage during browser navigation in CI tests.",
+      "action": "Monitor the CI runs for any OOM errors or increased memory usage due to these changes.",
       "covered_by": "Playwright functional suite",
       "is_gap": false
     }
   ],
   "exploratory_probes": [
-    "Manually verify the dark theme's contrast ratios for success and danger buttons using a color contrast checker tool.",
-    "Check if the date input fields have proper accessible names by inspecting their `aria-label` attributes in the browser developer tools.",
-    "Test the accessibility of the dark theme on different screen readers to ensure that all elements are properly labeled and navigable.",
-    "Run the axe-core WCAG 2.1 A/AA sweep manually against the key pages affected by this PR."
+    "Manually test the dark theme on different browsers to ensure that all accessibility improvements are visible and functional.",
+    "Use axe-core to run an accessibility audit on the dark theme in a local environment.",
+    "Check if the new CSS and JavaScript changes affect any existing automated tests by running them locally.",
+    "Verify that the alt input for date pickers is correctly labeled with `aria-label`."
   ],
   "model": "qwen2.5:32b-instruct-q4_K_M"
 }

@@ -20,41 +20,41 @@ This PR changes the booking assistant to include time-of-day constraints for tee
 
 ### 1. R-011 — _direct_
 
-**Why:** The diff modifies the BookingIntent schema and parsing logic to handle new time-of-day constraints (not_before and not_after). This directly affects the AI booking feature's ability to correctly interpret and propose tee times.
+**Why:** The diff modifies the BookingIntent schema and parsing logic to handle new 'not_before' and 'not_after' fields. This directly affects how the booking assistant interprets time-of-day constraints.
 
 **Covered by:** ai_evaluation/
 
-**Action:** Add golden-set cases for various time-of-day scenarios to ensure correct interpretation.
+**Action:** Add golden-set cases for various time-of-day scenarios (e.g., morning by 11am, between 9 and 11) to ensure correct interpretation.
 
 ### 2. R-012 — _direct_
 
-**Why:** The diff introduces new parsing logic for time-of-day constraints. This could potentially introduce a surface for prompt injection if the input handling is not robust.
+**Why:** The diff introduces new parsing logic for time-of-day constraints. This could potentially introduce prompt injection vulnerabilities if the input handling is not robust.
 
 **Covered by:** ai_evaluation/
 
-**Action:** Review and test the new _parse_clock_token function to ensure it handles unexpected inputs safely.
+**Action:** Review and test the new parsing functions (_parse_clock_token, _coerce_intent) to ensure they handle unexpected inputs safely.
 
-### 3. R-018 — _plausible_
+### 3. R-010 — _plausible_
 
-**Why:** The diff modifies the booking assistant's logic for interpreting time-of-day constraints. This could affect functional tests that rely on the booking assistant's output.
+**Why:** The diff modifies the BookingIntent schema and parsing logic. While not directly related to container images or deployment, changes in input handling could indirectly affect security if not properly validated.
 
-**Covered by:** Playwright functional suite
+**Covered by:** accepted (out of scope)
 
-**Action:** Re-run functional tests to ensure they still pass and do not flake due to changes in the booking assistant.
+**Action:** Ensure that all new fields are properly sanitized and validated before processing.
 
-### 4. R-019 — _plausible_
+### 4. R-011 — _plausible_
 
-**Why:** The diff introduces new logic for handling time-of-day constraints. This could potentially increase memory usage during test runs if additional contexts or navigations are added.
+**Why:** The diff modifies the BookingIntent schema and parsing logic to handle new 'not_before' and 'not_after' fields. This could introduce errors in slot matching if not correctly implemented.
 
-**Covered by:** Playwright functional suite
+**Covered by:** ai_evaluation/
 
-**Action:** Monitor CI runs to ensure the Playwright/accessibility tests do not exceed memory limits.
+**Action:** Run additional unit tests for find_candidate_slots with various time-of-day constraints.
 
 ## Exploratory probes
 
-- Test the booking assistant with various time-of-day inputs, including edge cases and malformed times.
-- Verify that the new constraints correctly filter tee-time slots in both morning and afternoon periods.
-- Check if the UI updates to reflect the new time-of-day constraints accurately.
+- Test the booking assistant's response to ambiguous or malformed time inputs (e.g., 'noon', 'midday', invalid formats).
+- Verify that the new time-of-day constraints are correctly displayed on the frontend in book_tee_time.html.
+- Check for any potential race conditions when applying time-of-day constraints during slot matching.
 
 ---
 

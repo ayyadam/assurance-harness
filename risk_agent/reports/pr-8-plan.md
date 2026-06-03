@@ -15,28 +15,28 @@ This PR changes the relationship loading strategy in `app/models/booking.py` to 
 
 ## Ranked risks
 
-### 1. R-007 — _direct_
+### 1. R-007 — _plausible_
 
-**Why:** The diff addresses an N+1 query issue which directly impacts performance and latency. The change aims to improve the read-path API's efficiency by batch-loading bookings for tee times.
+**Why:** The diff modifies the relationship loading strategy from dynamic to selectin, which could impact performance metrics such as latency and throughput. The change aims to reduce N+1 queries, but it's important to ensure that this modification does not introduce any unintended performance regressions.
 
 **Covered by:** k6 performance gate
 
-**Action:** Re-run the k6 load test in CI (nonfunctional/performance/api_load.js) to ensure that the p95 latency remains below 500ms.
+**Action:** Re-run the k6 load test in CI (nonfunctional/performance/api_load.js) to confirm that p95 latency remains below 500ms and error rate is less than 1%.
 
 ### 2. R-017 — _plausible_
 
-**Why:** Although the diff is focused on improving query performance, it indirectly affects the overall system behavior. The risk of deprecated Node.js actions breaking CI could impact the reliability of automated tests that verify this change.
+**Why:** Although the diff does not directly touch CI actions or scripts, it modifies a core model file (`app/models/booking.py`). Any changes to this file could indirectly affect the performance and reliability of the CI pipeline. Given that the risk is partially mitigated by action version bumps, it's important to ensure that the change doesn't introduce any new issues.
 
 **Covered by:** CI workflow configuration
 
-**Action:** Ensure all relevant CI jobs are running smoothly and consider bumping any remaining deprecated action versions.
+**Action:** Verify that the CI pipeline runs smoothly without any unexpected failures or timeouts.
 
 ## Exploratory probes
 
-- Manually test the listing endpoint for tee times to observe if the N+1 query issue has been resolved.
-- Check the database queries in a local development environment with logging enabled to verify that bookings are batch-loaded efficiently.
-- Run a load test locally using k6 or similar tool to simulate multiple users accessing the tee time listing and monitor performance metrics.
-- Verify that the change does not introduce any new issues by manually testing related endpoints such as booking creation.
+- Manually list tee times in a browser and measure the response time before and after applying this diff.
+- Use `curl` to fetch the tee times endpoint (`/tee_times`) multiple times and observe the latency.
+- Check the database query logs to ensure that the N+1 queries are no longer present after the change.
+- Run a local load test using tools like `ab` or `wrk` to simulate concurrent requests for listing tee times.
 
 ---
 
