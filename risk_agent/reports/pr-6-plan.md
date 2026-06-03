@@ -7,7 +7,7 @@ _Repo: ayyadam/golf-web-app_
 
 ## Summary
 
-This PR changes input validation to reject null bytes in API string inputs, preventing potential server errors.
+This PR changes input validation in API schemas to reject null bytes, updating both schema definitions and unit tests.
 
 ## Changed files
 
@@ -16,28 +16,28 @@ This PR changes input validation to reject null bytes in API string inputs, prev
 
 ## Ranked risks
 
-### 1. R-006 — _plausible_
+### 1. R-003 — _plausible_ — **COVERAGE GAP**
 
-**Why:** The diff modifies the schema validation functions used by the API endpoints. Although it does not change the OpenAPI spec or endpoint definitions directly, changes to input validation could affect how clients interact with the contract.
+**Why:** The diff modifies input validation for `username` and `password`, which are critical fields in authentication. Rejecting null bytes could prevent certain types of injection attacks or malformed inputs that might bypass security checks.
+
+**Covered by:** none (open, no layer)
+
+**Action:** Manually test the authentication endpoints with edge-case inputs to ensure no bypass is possible.
+
+### 2. R-006 — _plausible_
+
+**Why:** The diff modifies the `safe_text` function used for validating string inputs, which could affect how the API contract behaves with certain input values. Although it does not directly change the OpenAPI spec or endpoint definitions, it alters validation behavior that clients rely on.
 
 **Covered by:** Schemathesis contract suite
 
-**Action:** Re-run the Schemathesis property-based contract tests in `contract/` against the live API in CI.
-
-### 2. R-011 — _plausible_
-
-**Why:** The diff modifies input validation for strings used in various parts of the system, including booking features. Although it does not directly touch AI-related code, changes to input handling could indirectly affect how inputs are processed by the AI feature.
-
-**Covered by:** ai_evaluation/
-
-**Action:** Add a golden-set case for null byte and lone surrogate input rejection in `ai_evaluation/`.
+**Action:** Re-run the Schemathesis property-based contract tests to ensure no drift from the published contract.
 
 ## Exploratory probes
 
-- Manually test POST /api/v1/auth/token with a username containing a NUL byte to ensure it returns 422.
-- Test the same endpoint with a username containing a lone surrogate character to verify it also returns 422.
-- Check if other endpoints that use `safe_text` validation (e.g., booking features) handle null bytes and lone surrogates correctly.
-- Verify that no internal server errors occur when invalid inputs are provided.
+- Use curl to send a POST request to `/api/v1/auth/token` with a username containing null bytes and verify it returns 422.
+- Send a POST request to `/api/v1/auth/token` with a password containing null bytes and ensure it also returns 422.
+- Test the `PlayerInputSchema` by sending a POST request to an endpoint that uses this schema (e.g., `/api/v1/bookings`) with a name field containing null bytes.
+- Verify that the contract tests (`contract/` directory) pass after applying these changes.
 
 ## Pre-filter
 
@@ -50,6 +50,7 @@ _Filtered out by the deterministic pre-filter before the LLM saw the register (n
 - R-008
 - R-009
 - R-010
+- R-011
 - R-012
 - R-013
 - R-014

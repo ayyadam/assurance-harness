@@ -18,18 +18,18 @@ This PR changes CSS styles and JavaScript to fix WCAG 2.1 AA accessibility viola
 
 ### 1. R-008 — _direct_
 
-**Why:** The diff modifies CSS styles and JavaScript to address specific WCAG 2.1 AA contrast issues and adds aria-label attributes for better accessibility. These changes directly impact the mechanisms described in R-008.
+**Why:** The diff modifies `style.css` and `main.js` to address specific WCAG 2.1 AA contrast issues and ensure accessible names for input elements. These changes directly impact the accessibility validation mechanism.
 
 **Covered by:** axe-core sweep
 
-**Action:** Re-run the axe-core WCAG 2.1 A/AA sweep over six key pages in CI to ensure no new violations are introduced.
+**Action:** Re-run the axe-core WCAG 2.1 A/AA sweep over six key pages in CI to validate that no new violations have been introduced.
 
 ## Exploratory probes
 
-- Manually test the dark theme on different browsers to verify that contrast issues have been resolved.
-- Use a screen reader to navigate the application and check if aria-label attributes are correctly read out.
-- Verify that form elements with alt inputs now have accessible names in both light and dark themes.
-- Check the visual appearance of buttons and text colors in the dark theme to ensure they meet WCAG 2.1 AA standards.
+- Manually test the dark theme on different browsers to ensure all text and button colors meet the required contrast ratios.
+- Use a screen reader to navigate the date picker input and verify that the `aria-label` is correctly set and announced.
+- Check if the changes in `style.css` affect any other elements beyond those explicitly mentioned, ensuring no unintended accessibility issues arise.
+- Validate that the updated styles do not break existing functionality or introduce new visual inconsistencies.
 
 ## Pre-filter
 

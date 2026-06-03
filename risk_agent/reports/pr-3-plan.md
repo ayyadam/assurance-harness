@@ -7,7 +7,7 @@ _Repo: ayyadam/golf-web-app_
 
 ## Summary
 
-This PR refactors and extracts general booking logic into a service layer, affecting both member and visitor routes.
+This PR refactors and extracts general booking logic into a service layer, centralizing validation and creation functions for tee time bookings.
 
 ## Changed files
 
@@ -20,26 +20,26 @@ This PR refactors and extracts general booking logic into a service layer, affec
 
 ### 1. R-002 — _direct_ — **COVERAGE GAP**
 
-**Why:** The diff modifies the creation path for bookings by extracting validation and creation logic into `booking_service.py`. This directly touches the concurrency control mechanism at the POST /book transaction boundary.
+**Why:** The diff modifies the core booking creation logic in `app/services/booking_service.py`, which directly affects how concurrent booking requests are handled. The new service layer could introduce concurrency issues if not properly tested.
 
 **Covered by:** none (open, no layer)
 
-**Action:** Re-run the contract suite to ensure that the uniqueness check is still correctly enforced.
+**Action:** Re-run the contract suite to ensure that the concurrency control at the POST /book transaction boundary is still intact.
 
-### 2. R-018 — _plausible_
+### 2. R-007 — _plausible_
 
-**Why:** The diff changes how booking logic is handled in both member and visitor routes. Although it does not directly touch Playwright tests or client-side behavior, these changes could indirectly affect the functional test layer's interaction with post-click client-side behavior.
+**Why:** The diff introduces new service layer functions and changes how bookings are created. This could potentially impact performance if not optimized correctly.
 
-**Covered by:** Playwright functional suite
+**Covered by:** k6 performance gate
 
-**Action:** Add a golden-set case for the new service-layer booking creation to ensure that functional tests cover this refactored logic.
+**Action:** Run a load test using k6 to ensure that the performance baseline is maintained after this refactoring.
 
 ## Exploratory probes
 
-- Manually trigger concurrent booking requests via browser or curl to check if overbooking occurs.
-- Check the performance impact of the changes by running load tests against the `/book` endpoint.
-- Verify that the new service layer functions correctly under different handicap inputs using manual test cases.
-- Ensure that the functional tests still pass after this refactoring, especially those related to booking creation.
+- Manually trigger concurrent booking requests for the same tee slot via curl or Postman and observe the system's behavior.
+- Check the database logs for any constraint violations during concurrent booking attempts.
+- Monitor the application's response time before and after applying the PR to identify any performance regressions.
+- Test edge cases such as booking with minimum and maximum group sizes to ensure validation logic works correctly.
 
 ## Pre-filter
 
@@ -60,6 +60,7 @@ _Filtered out by the deterministic pre-filter before the LLM saw the register (n
 - R-015
 - R-016
 - R-017
+- R-018
 - R-019
 
 ---
