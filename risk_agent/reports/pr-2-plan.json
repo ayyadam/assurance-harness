@@ -1,36 +1,44 @@
 {
-  "summary": "This PR changes the GitHub Actions configuration to use Node.js 24 compatible versions, updating action versions and adding an environment variable for compatibility.",
+  "summary": "This PR updates GitHub Actions to be compatible with Node.js 24, including bumping action versions and setting an environment variable to force JavaScript actions to use Node.js 24.",
   "ranked_risks": [
     {
       "id": "R-017",
       "relevance": 3,
-      "rationale": "The diff directly updates the version of several actions (actions/checkout@v5, actions/setup-python@v6, actions/upload-artifact@v5) to be compatible with Node.js 24.",
-      "action": "Verify that all updated actions are functioning correctly in CI by running a test pipeline.",
+      "rationale": "The diff explicitly bumps the version of several GitHub Actions (actions/checkout, actions/setup-python, and actions/upload-artifact) to versions compatible with Node.js 24. This directly addresses the risk that deprecated Node.js 20 actions will break when GitHub forces the Node.js 24 default.",
+      "action": "Verify that all updated action versions are indeed compatible with Node.js 24 by running the CI pipeline.",
       "covered_by": "CI workflow configuration",
-      "is_gap": false
-    },
-    {
-      "id": "R-018",
-      "relevance": 2,
-      "rationale": "The diff updates the version of `actions/checkout` and `actions/setup-python`, which could indirectly affect the functional tests if there are compatibility issues with Playwright or other dependencies.",
-      "action": "Run the functional test suite to ensure that all tests pass without flaking.",
-      "covered_by": "Playwright functional suite",
       "is_gap": false
     },
     {
       "id": "R-019",
       "relevance": 2,
-      "rationale": "The diff updates the version of `actions/checkout` and `actions/setup-python`, which could indirectly affect memory usage if there are changes in how these actions initialize or run.",
-      "action": "Monitor the CI runs for any OOM-kills or unexpected failures after merging this PR.",
+      "rationale": "The diff introduces an environment variable `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` to force JavaScript actions to use Node.js 24. While this change does not directly modify the Playwright/accessibility job, it could indirectly affect memory usage if any of the updated actions have higher memory requirements under Node.js 24.",
+      "action": "Monitor the CI pipeline for OOM-kills (exit code 137) in the Playwright/accessibility job after merging this PR.",
       "covered_by": "Playwright functional suite",
       "is_gap": false
     }
   ],
   "exploratory_probes": [
-    "Run a full CI pipeline to ensure all jobs complete successfully with the new Node.js 24 compatible versions.",
-    "Check the logs of the functional test job for any flaky behavior that might indicate timing issues.",
-    "Verify that the memory usage of the Playwright/accessibility job does not exceed the runner's limits after updating the actions.",
-    "Manually trigger a rerun of the CI pipeline to ensure consistency in passing tests."
+    "Run the CI pipeline locally to ensure all actions are compatible with Node.js 24.",
+    "Check the memory usage of the updated actions during a cold run of the Playwright/accessibility job.",
+    "Verify that the `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` environment variable is correctly set and applied in the CI pipeline.",
+    "Manually trigger the Playwright/accessibility job to observe any changes in behavior or memory usage."
   ],
-  "model": "qwen2.5:32b-instruct-q4_K_M"
+  "model": "qwen2.5:32b-instruct-q4_K_M",
+  "filtered_out_ids": [
+    "R-001",
+    "R-002",
+    "R-003",
+    "R-004",
+    "R-006",
+    "R-007",
+    "R-008",
+    "R-009",
+    "R-011",
+    "R-012",
+    "R-013",
+    "R-015",
+    "R-018"
+  ],
+  "prefilter_fallback_used": false
 }

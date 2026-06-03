@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-02T22:39:35.384436+00:00",
+  "generated_at": "2026-06-03T21:37:50.584648+00:00",
   "cases": [
     {
       "case_id": "r-018-timeout-flake",
@@ -9,35 +9,35 @@
       "runs": [
         {
           "n": 1,
-          "elapsed_s": 9.12,
+          "elapsed_s": 8.64,
           "error": null,
           "output": {
             "category": "flake",
             "candidate_risk_id": "R-018",
-            "rationale": "The TimeoutError occurs during navigation after a click action, which is consistent with the symptoms described in R-018. The error message indicates that the test is waiting for navigation to '/member/dashboard', and this timeout can be attributed to the cold-container runner issue where navigation assertions race against container startup delays.",
-            "suggested_action": "Rerun the failed job to see if it passes on a subsequent attempt, as this is likely a flake due to timing issues in the CI environment."
+            "rationale": "The error is a `playwright._impl._errors.TimeoutError` occurring during navigation to `/member/dashboard`. This matches the symptom described in R-018, where functional tests flake on CI due to timing issues after clicking and navigating.",
+            "suggested_action": "Rerun the failed job. If it fails again, investigate further by examining the Playwright trace to identify any client-side races or animations that might be causing the timeout."
           }
         },
         {
           "n": 2,
-          "elapsed_s": 5.34,
+          "elapsed_s": 5.93,
           "error": null,
           "output": {
             "category": "flake",
             "candidate_risk_id": "R-018",
-            "rationale": "The error is a TimeoutError occurring during navigation after a click action, which matches the symptom described in R-018 where functional tests flake due to timing issues on CI runners.",
-            "suggested_action": "Rerun the failed job and monitor for recurrence. If it persists, investigate further using Playwright traces to identify any new client-side races or delays."
+            "rationale": "The error is a `playwright._impl._errors.TimeoutError` occurring during navigation to `/member/dashboard`. This matches the symptom described in R-018, where functional tests flake on CI due to timing issues after clicking and navigating.",
+            "suggested_action": "Rerun the failed job. If it fails again, investigate further by examining the Playwright trace to identify any client-side races or animations that might be causing the timeout."
           }
         },
         {
           "n": 3,
-          "elapsed_s": 12.52,
+          "elapsed_s": 5.9,
           "error": null,
           "output": {
             "category": "flake",
             "candidate_risk_id": "R-018",
-            "rationale": "The TimeoutError occurs during navigation after a click action, which is consistent with the symptoms described in R-018. The error message indicates that the test is waiting for navigation to '/member/dashboard', and this timeout can be attributed to the cold-container runner issue where navigation assertions race against container startup delays.",
-            "suggested_action": "Rerun the failed job to confirm if it passes on a subsequent attempt, as this is likely a flake due to timing issues in the CI environment.",
+            "rationale": "The error is a `playwright._impl._errors.TimeoutError` occurring during navigation to `/member/dashboard`. This matches the symptom described in R-018, where functional tests flake on CI due to timing issues after clicking and navigating.",
+            "suggested_action": "Rerun the failed job. If it fails again, investigate further by examining the Playwright trace to identify any client-side races or animations that might be causing the timeout.",
             "_metrics": {
               "category_mode": "flake",
               "category_stability": 1.0,
@@ -61,35 +61,35 @@
       "runs": [
         {
           "n": 1,
-          "elapsed_s": 9.74,
+          "elapsed_s": 8.84,
           "error": null,
           "output": {
             "category": "defect",
             "candidate_risk_id": "R-007",
-            "rationale": "The error message indicates a threshold breach on `http_req_duration p95` in the k6 load test, which aligns with R-007. This risk is about having no performance baseline and undetected regressions in latency or throughput. The failure suggests that there has been a regression beyond the defined budget (p95 < 500ms), indicating a real bug in the system under test.",
-            "suggested_action": "Investigate the performance of the tee-times list endpoint to identify any recent changes or issues causing the threshold breach. Consider running additional profiling and monitoring to pinpoint the root cause."
+            "rationale": "The error message indicates a threshold breach on `http_req_duration p95` in the k6 load test, which aligns with R-007. This risk is about having no performance baseline and regressions landing undetected. The failure suggests that there has been a regression in latency or throughput.",
+            "suggested_action": "Investigate the root cause of the performance regression on the tee-times list endpoint by reviewing recent code changes and analyzing the k6 test results to identify any potential bottlenecks."
           }
         },
         {
           "n": 2,
-          "elapsed_s": 5.65,
+          "elapsed_s": 6.51,
           "error": null,
           "output": {
             "category": "defect",
             "candidate_risk_id": "R-007",
-            "rationale": "The error message indicates a threshold breach on `http_req_duration p95` in the k6 load test, which aligns with R-007's risk of no performance baseline leading to undetected regressions. The failure is reproducible from the code at that commit.",
-            "suggested_action": "Investigate the performance regression in the tee-times list endpoint and adjust the threshold or optimize the endpoint as needed."
+            "rationale": "The error message indicates a threshold breach on `http_req_duration p95` in the k6 load test, which aligns with R-007. This risk is about having no performance baseline and regressions landing undetected. The failure suggests that there has been a regression in latency or throughput.",
+            "suggested_action": "Investigate the performance of the tee-times list endpoint to identify any recent changes or issues causing the threshold breach. Consider running additional load tests locally to reproduce and diagnose the issue."
           }
         },
         {
           "n": 3,
-          "elapsed_s": 5.64,
+          "elapsed_s": 6.52,
           "error": null,
           "output": {
             "category": "defect",
             "candidate_risk_id": "R-007",
-            "rationale": "The error message indicates a threshold breach on `http_req_duration p95` in the k6 load test, which aligns with R-007's risk of no performance baseline leading to undetected regressions. The failure is reproducible from the code at that commit.",
-            "suggested_action": "Investigate the performance regression in the tee-times list endpoint and adjust the threshold or optimize the endpoint as needed.",
+            "rationale": "The error message indicates a threshold breach on `http_req_duration p95` in the k6 load test, which aligns with R-007. This risk is about having no performance baseline and regressions landing undetected. The failure suggests that there has been a regression in latency or throughput.",
+            "suggested_action": "Investigate the performance of the tee-times list endpoint to identify any recent changes or issues causing the threshold breach. Consider running additional load tests locally to reproduce and diagnose the issue.",
             "_metrics": {
               "category_mode": "defect",
               "category_stability": 1.0,

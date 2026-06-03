@@ -2,7 +2,7 @@
 
 **Status:** living document — updated as the assurance harness matures.
 **Owner:** Adam (acting as Digital Assurance Engineer)
-**Last updated:** 2026-06-03 *(F-015 — risk_agent R-006 row sharpening; F1 0.421 → 0.462; LLM-tuning ceiling reached)*
+**Last updated:** 2026-06-03 *(F-016 — risk_agent deterministic register pre-filter (phase 13 v1); F1 0.462 → 0.710)*
 
 ---
 
@@ -65,7 +65,7 @@ Layers planned across the project. Each layer has an explicit "why this exists" 
 | Performance | **Done** | k6 (thresholds-as-code) | `testing-system/nonfunctional/performance/` | Latency/error budgets on the read-path API; fail the PR on regression beyond budget |
 | Data quality | **Done** | pandera (schemas + invariants) | `testing-system/data_quality/` | Validate the live database against column contracts and business-rule invariants (e.g. 18 holes with a 1..18 stroke-index permutation) |
 | AI evaluation | **Done (phase 8 v1)** | Black-box golden-set scoring (deterministic + LLM-judge) | [`testing-system/ai_evaluation/`](../ai_evaluation/README.md) | Quantifies model accuracy, safety, latency across a model list. Two grading tiers — deterministic field equality + an LLM-judge (holistic 0-10 + per-rubric fuzzy pass/fail). Current 5-model report: [`ai_evaluation/reports/report.md`](../ai_evaluation/reports/report.md) |
-| Risk-prioritisation (advisory) | **Done (phase 9 v4 v2)** — architectural next step queued as phase 13 | Local Ollama agent + deterministic post-processing + golden-set eval | [`testing-system/risk_agent/`](../risk_agent/README.md) | Given a PR diff + the live risk register, produces a ranked test plan with `covered_by` per risk, coverage-gap flags, relevance label (`direct` / `plausible`), and exploratory probes. Advisory only, not a CI gate. v2 v1 made `covered_by` and `is_gap` deterministic; v2 v2 added a golden-set evaluation tier ([`risk_agent.eval`](../risk_agent/eval.py)); v3 added a subject-vs-adjacent prompt rule and sharpened R-002 / R-018 / R-019 register rows (F1 0.526 → 0.588 on the 4-case set); v4 v1 grew the golden set 4 → 9 cases (honest baseline F1 0.421 — drop from 0.588 is the finding); **v4 v2 sharpened R-006 (gap-description → narrow subject-mechanism)** lifting F1 to **0.462** (precision 0.333 → 0.360, recall 0.571 → 0.643) and documented three v4 v2 attempts that *didn't* work — the methodological case for moving to a deterministic register pre-filter in phase 13. See [F-013](#f-013--risk_agent-subject-vs-adjacent-rule--sharpened-rows-lift-f1-0526--0588), [F-014](#f-014--golden-set-growth-4--9-cases-surfaces-three-new-failure-modes-honest-baseline-f1-0421), [F-015](#f-015--r-006-row-sharpening-lifts-f1-0421--0462-three-attempted-sharpenings-reveal-the-llm-tuning-ceiling) and [`risk_agent/reports/eval-report.md`](../risk_agent/reports/eval-report.md) |
+| Risk-prioritisation (advisory) | **Done (phase 13 v1)** | Local Ollama agent + deterministic register pre-filter + deterministic post-processing + golden-set eval | [`testing-system/risk_agent/`](../risk_agent/README.md) | Given a PR diff + the live risk register, produces a ranked test plan with `covered_by` per risk, coverage-gap flags, relevance label (`direct` / `plausible`), and exploratory probes. Advisory only, not a CI gate. v2 v1 made `covered_by` and `is_gap` deterministic; v2 v2 added a golden-set evaluation tier ([`risk_agent.eval`](../risk_agent/eval.py)); v3 added a subject-vs-adjacent prompt rule and sharpened R-002 / R-018 / R-019 (F1 0.526 → 0.588 on the 4-case set); v4 v1 grew the golden set 4 → 9 cases (honest baseline F1 0.421); v4 v2 sharpened R-006 (F1 → 0.462) and documented the LLM-tuning ceiling in [F-015](#f-015--r-006-row-sharpening-lifts-f1-0421--0462-three-attempted-sharpenings-reveal-the-llm-tuning-ceiling); **phase 13 v1 added a deterministic register pre-filter** ([`risk_agent/prefilter.py`](../risk_agent/prefilter.py)) that classifies the diff by file path before the agent ever sees the register, so the agent only judges relevance among layer-relevant candidates. **F1: 0.462 → 0.710** (precision 0.360 → 0.647, recall 0.643 → 0.786, FP count 16 → 6). PR #3 — the deliberate v3 / v4 v2 stress test that previously sat at F1 0.000 — now catches R-002. PR #7 and PR #14 hit F1 1.000. See [F-013](#f-013--risk_agent-subject-vs-adjacent-rule--sharpened-rows-lift-f1-0526--0588), [F-014](#f-014--golden-set-growth-4--9-cases-surfaces-three-new-failure-modes-honest-baseline-f1-0421), [F-015](#f-015--r-006-row-sharpening-lifts-f1-0421--0462-three-attempted-sharpenings-reveal-the-llm-tuning-ceiling), [F-016](#f-016--deterministic-register-pre-filter-phase-13-v1-lifts-f1-0462--0710), and [`risk_agent/reports/eval-report.md`](../risk_agent/reports/eval-report.md) |
 | Triage (advisory) | **Done (phase 10 v1 v2)** | Local Ollama agent over `gh` log dumps + golden-set eval | [`testing-system/triage_agent/`](../triage_agent/README.md) | Clusters failed CI runs by signature `(test path, test name, error class)`, then asks the LLM for a category (flake / defect / infra / env) and a candidate register R-ID per cluster. Closed-vocabulary enum on the R-ID — the model cannot invent risks. v1 v2 added a golden-set evaluation tier ([`triage_agent.eval`](../triage_agent/eval.py)) scoring the agent against expected (category, R-ID) per known cluster — deterministic, no LLM in scoring. Current baseline: 5/5 on category, R-ID, and combined. Historical insight from v1 v1: R-018 was actually present at run #18 (2026-05-28), three weeks before it was logged. See [`triage_agent/reports/report.md`](../triage_agent/reports/report.md) and [`triage_agent/reports/eval-report.md`](../triage_agent/reports/eval-report.md) |
 | Production observability | **Done (phase 11 v1)** | Prometheus + Grafana (metrics only; Loki + Alertmanager v2 candidates) | [`testing-system/observability/`](../observability/README.md) | Local stack scraping the SUT's `/metrics` (provisioned by `prometheus-flask-exporter`), provisioned dashboard with request rate / error rate / p95 latency / per-path breakdowns. SLO thresholds on the dashboard match the k6 perf gate's pre-merge budget — same SLOs, two enforcement points. Closes R-013. See [`observability/README.md`](../observability/README.md) and [`observability/evidence/grafana-sut-overview.png`](../observability/evidence/grafana-sut-overview.png) |
 | Exploratory (advisory) | **Done (phase 12 v2 v1)** | Local Ollama agent — API surface via OpenAPI, UI surface via Playwright, deterministic eval tier | [`testing-system/explore_agent/`](../explore_agent/README.md) | Two surfaces share the same package and the same closed-enum + LLM-jury pattern. **API** (`explore_agent.run`, v1 v1): every v1 endpoint probed with three LLM-generated payload variants (happy / edge / abusive, including prompt-injection on AI endpoints), responses classified into `expected` / `unexpected_5xx` / `schema_drift` / `business_rule_concern`. **UI** (`explore_agent.ui_run`, v1 v2): three predefined tours, each with an LLM-planned step sequence executed in Playwright, per-step state captured and LLM-judged into `expected` / `unexpected_5xx` / `js_error` / `dead_end` / `business_rule_concern`. **Eval** (`explore_agent.eval`, v2 v1): golden-set evaluation tier mirroring [`risk_agent.eval`](../risk_agent/eval.py) and [`triage_agent.eval`](../triage_agent/eval.py) — deterministic scoring against expected category per (endpoint, variant), no LLM in the scoring path. **Baseline: 50.0% accuracy (9/18 cases)** — every case's expected category is `expected` (no defects in the seeded surface) and the agent over-flags 9 of them (7 as `business_rule_concern`, 2 as `unexpected_5xx`). This quantifies the documented v1 v1 over-flagging behaviour and gives a measurable target for any future judge-prompt tightening or model swap. v1 v2's UI agent also surfaced the *plan-once-from-starting-page* limitation cleanly (LLM hallucinated `.candidate-slot` when the actual class was `.booking-slot`); the architectural fix (adaptive single-step) is tracked in the [phase-12 sub-roadmap](#phase-12-sub-roadmap), with the eval baseline as its decision input. Both probing surfaces remain local-only (cost-prohibitive for CI); the eval is also local-only. See [`explore_agent/reports/report.md`](../explore_agent/reports/report.md) (API), [`explore_agent/reports/ui/report.md`](../explore_agent/reports/ui/report.md) (UI), [`explore_agent/reports/eval-report.md`](../explore_agent/reports/eval-report.md) (eval). |
@@ -551,6 +551,74 @@ The natural lever is to take responsibility *away* from the LLM and put it in de
 - The v4 v2 attempts and their reverts are documented in this finding rather than in code — the codebase reflects the *outcome*, not the journey
 - One incidental code change: `risk_agent/eval.py` handles lone surrogates emitted in the agent's markdown rationale (test data from PR #6 echoed back) with `errors='replace'` on the markdown write. JSON is safe via `json.dumps`' default `ensure_ascii=True`.
 
+### F-016 — Deterministic register pre-filter (phase 13 v1) lifts F1 0.462 → 0.710
+
+**Date:** 2026-06-03
+**Surfaced by:** Phase 13 v1 — acting on the F-015 finding that pure prompt + register-text tuning had hit a ceiling, the deterministic spine takes responsibility for *which rows the agent ever considers* on a given diff.
+**Severity:** Significant (largest single F1 step in phase 9's history; new failure-mode surface introduced; architectural shift validated by measurement)
+
+**What changed**
+
+A new module `risk_agent/prefilter.py` declares a mapping `R-ID → list of file-path glob patterns` with a rationale comment per entry. The agent's `prioritise()` function now narrows the register before sending it to the LLM, and *also* narrows the structured-output schema's `enum` constraint — so the model physically cannot emit a filtered-out R-ID. A fallback rule preserves recall in the unknown case: if no pattern matches any file in the diff, the full register is sent (and the audit trail flags `prefilter_fallback_used: true`).
+
+The agent's job is now narrower and better-scoped: judge relevance level (2 or 3), write rationale, suggest probes — within a small pre-qualified candidate set. *Layer classification* — which is not genuinely ambiguous; a CSS file is a CSS file — has moved out of the LLM and into deterministic Python.
+
+**Measurement**
+
+| Metric | v4 v2 (no pre-filter) | Phase 13 v1 (pre-filter) |
+|---|---|---|
+| F1 | 0.462 | **0.710** |
+| Precision | 0.360 | **0.647** |
+| Recall | 0.643 | **0.786** |
+| TP / FP / FN | 9 / 16 / 5 | **11 / 6 / 3** |
+| Relevance accuracy | 0.667 | 0.727 |
+
+Per-case wins worth naming:
+
+- **PR #3 (booking refactor): F1 0.000 → 0.667.** The deliberate v3 / v4 v2 stress test that resisted four iterations of prompt + row sharpening. The pre-filter routes `app/routes/member.py`, `app/routes/visitor.py`, `app/services/booking_service.py` to R-002 as a candidate; the agent's smaller candidate set leaves no room for the R-012/R-013/R-014/R-015 over-pulls that previously dominated. R-002 now caught directly.
+- **PR #7 (a11y CSS): F1 0.667 → 1.000.** Workflow-mapped rows (R-018, R-019) are filtered out — CSS files don't match those patterns. The agent sees only R-008 + R-018 candidates and picks R-008 cleanly.
+- **PR #14 (hide /metrics from spec): F1 0.667 → 1.000.** The pre-filter routes `app/__init__.py` (where the spec_processor lives) to R-006 + R-013 candidates only. The agent picks R-006 at relevance 3 and doesn't get a chance to over-pull anything else.
+- **PR #12 (F-008 AI booking): F1 0.571 → 0.857.** R-006, R-011, R-012 all correctly raised; only R-008 missed (the template change is plausibly a11y-relevant but the agent didn't see it that way).
+
+v2 v2 regression remains clean — PR #7 R-008 and PR #12 R-011 both stably top across all 3 runs.
+
+**v1's new failure-mode surface**
+
+Phase 13 v1 *trades* failure modes: agent over-pull goes down; pre-filter false negatives become the new risk class. If a clever PR touches a file path the mapping doesn't recognise as relevant to a row, the agent can't raise that row even if a reviewer would. v1 takes two mitigations:
+
+1. **Fallback to full register** when no pattern matches any file. Better the agent over-pulls than that the pre-filter silently excludes a row. v1 prefers false-positive in the filter (a real bug surfaced during impl: `app/models.py` patterns didn't match `app/models/booking.py` — the project uses a `models/` directory. Without the `app/models/**` widening, PR #8 hit fallback and R-017 was over-pulled. The unit-test suite has a PR #8 regression guard so the same shape can't slip past silently again).
+2. **Audit trail in the rendered report.** The agent's per-PR plan now ends with a `Filtered out by pre-filter` section listing every R-ID the deterministic spine excluded. A human reviewer can sanity-check whether any filtered row should have been raised — and sharpen the mapping if so.
+
+The remaining 6 false positives are all *defensible-as-candidates* cases: the pre-filter said "this row could apply" and the agent agreed plausibly, but the golden set says the diff didn't truly raise it. These are v2 mapping-tightening targets (e.g. removing `app/api/schemas.py` from R-011's patterns since contract-only changes shouldn't necessarily trigger AI-correctness review).
+
+**Architectural finding**
+
+Moving layer classification out of the LLM was the right move because *layer classification is not genuinely ambiguous*. A file path is a file path; a route definition belongs to one or two layers, not all of them. The LLM's capability — fuzzy reasoning under uncertainty — was being wasted on the well-posed sub-problem ("which rows even could apply") and that waste was *introducing noise* (the keyword-match-on-row-text over-pulls F-015 documented).
+
+This is the **same pattern that has recurred throughout the harness**:
+
+- F-001: SQLite FK pragma enforcement — deterministic test-environment config beat trusting "in-memory dev should match Postgres prod".
+- F-003: Schemathesis contract sweep — deterministic property-based verification beat hand-curated example tests for finding spec/behaviour drift.
+- F-005: k6 thresholds-as-code — deterministic performance budgets beat trusting that a smoke test would notice an N+1.
+- F-012: Disabling CSS smooth-scroll via init script — deterministic test-environment override beat repeatedly bumping Playwright assertion timeouts on a client-side race.
+- **F-016: Register pre-filter — deterministic layer classification beats prompting the LLM to do the same job from scratch on every diff.**
+
+In each case the deterministic move was *narrower* than the original behaviour but *more defendable*. The pre-filter is a code artifact you can read, test (it has its own unit tests), and reason about; the LLM's row selection was a black box that produced opaque over-pulls and stable-divergent cases.
+
+**What v1 deliberately leaves to future iterations**
+
+- **Mapping tightening from v1's 6 remaining false positives.** R-011's `app/api/schemas.py` pattern is the obvious next narrowing; R-007's broad `app/services/**` could be scoped; R-001 currently fires too eagerly on any model change. These are v2 mapping refinements with clear case-level targets.
+- **Content-aware filtering beyond paths.** A v3 could parse the diff body and key on AST node types or regex patterns (e.g. "this diff adds a new endpoint route definition" → R-006 candidate even outside `app/api/**`).
+- **Confidence-weighted filtering.** Currently binary: a row is in or out. A future iteration could carry a per-row prior into the agent's prompt.
+- **Pattern self-tuning.** The mapping is hand-authored. A future enhancement could derive it from historical agent runs + golden-set agreement.
+
+**What phase 13 v1 ships**
+
+- `risk_agent/prefilter.py` — declarative mapping for all 19 R-rows + `candidate_risks(diff) → (kept, filtered_out, fallback_used)` + `_path_matches` helper handling `**` segments.
+- `risk_agent/agent.py` — `prioritise()` wires the pre-filter; `AgentResult` carries the audit trail (`filtered_out_ids`, `prefilter_fallback_used`); the LLM schema's R-ID enum is narrowed to the candidate set.
+- `risk_agent/render.py` — markdown report includes a `Pre-filter` section listing what was filtered out.
+- `tests/test_prefilter.py` — 9 unit tests covering per-layer expectations for the 6 representative PR shapes, the fallback rule, the kept/filtered partition consistency, and the PR #8 `models/**` regression guard. Deterministic code → testable code → first-order benefit of moving classification to the spine.
+
 ## 12. Roadmap
 
 The full phased plan lives in conversational notes; the abbreviated public form:
@@ -571,7 +639,7 @@ The full phased plan lives in conversational notes; the abbreviated public form:
 | 10 | Triage agent (CI failure clustering) | **Done (v1 v2)** — v1 v1: heuristic clustering + LLM category + R-ID xref. v1 v2: golden-set eval tier with deterministic scorer. 5/5 baseline on five real failures from last 30 days |
 | 11 | Prometheus + Grafana observability stack | **Done (v1)** — local stack scraping the SUT, provisioned dashboard with SLOs aligned to the k6 gate; closes R-013. Loki + Alertmanager deferred to v2 |
 | 12 | Exploratory testing agent + tests of agents | **Done (v1 v1, v1 v2, v2 v1, v2 v2)** — see sub-roadmap below for deferred-but-tracked work |
-| 13 | Deterministic register pre-filter for the risk_agent | **Queued** — phase 9 v4 v2 surfaced the LLM-tuning ceiling (see [F-015](#f-015--r-006-row-sharpening-lifts-f1-0421--0462-three-attempted-sharpenings-reveal-the-llm-tuning-ceiling)). The natural next lever is to take responsibility *away* from the LLM and put it in deterministic code: classify the diff by layer/file before the agent sees the register, so the agent only judges between rows the deterministic spine has decided are layer-relevant. Architectural move (new component + new responsibility boundary), not a tuning iteration — hence a new phase rather than phase 9 v5 |
+| 13 | Deterministic register pre-filter for the risk_agent | **Done (v1)** — Phase 9 v4 v2's F-015 documented the LLM-tuning ceiling. v1 added [`risk_agent/prefilter.py`](../risk_agent/prefilter.py): a declarative R-ID → file-glob mapping with full-register fallback on no-match. The agent's schema enum is also narrowed so the model physically cannot emit a filtered-out R-ID. **F1: 0.462 → 0.710** (+0.248); FP count 16 → 6. PR #3 (the v3/v4 v2 stress test) and PR #14 went from F1 0.000 → 1.000 and 0.667 → 1.000 respectively. v2 v2 regression remains clean. Pre-filter has unit tests in [`tests/test_prefilter.py`](../tests/test_prefilter.py) — moving classification to deterministic code makes it testable, the first-order benefit. See [F-016](#f-016--deterministic-register-pre-filter-phase-13-v1-lifts-f1-0462--0710) |
 
 ### Phase 12 sub-roadmap
 

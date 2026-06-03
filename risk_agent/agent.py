@@ -8,12 +8,13 @@ known risk IDs and the shape the renderer expects.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import ollama
 
 from risk_agent.diff import DiffBundle
+from risk_agent.prefilter import candidate_risks
 from risk_agent.register import Risk
 
 DEFAULT_MODEL = "qwen2.5:32b-instruct-q4_K_M"
@@ -102,6 +103,15 @@ class AgentResult:
     ranked_risks: list[dict]
     exploratory_probes: list[str]
     model: str
+    # Phase 13 v1: pre-filter audit trail. The agent only judged relevance
+    # for rows in ``ranked_risks``' candidate set; ``filtered_out_ids`` is
+    # what the deterministic pre-filter excluded before the LLM saw the
+    # register. A human reviewer can sanity-check whether any filtered row
+    # should plausibly have been raised. ``prefilter_fallback_used`` is
+    # True iff no pattern matched any file in the diff, in which case the
+    # full register was sent to the agent.
+    filtered_out_ids: list[str] = field(default_factory=list)
+    prefilter_fallback_used: bool = False
 
     def to_json(self) -> dict:
         return {
@@ -109,6 +119,8 @@ class AgentResult:
             "ranked_risks": self.ranked_risks,
             "exploratory_probes": self.exploratory_probes,
             "model": self.model,
+            "filtered_out_ids": self.filtered_out_ids,
+            "prefilter_fallback_used": self.prefilter_fallback_used,
         }
 
 
@@ -144,14 +156,22 @@ def prioritise(
     parsed register (the source of truth), not the model. Ranking is sorted by
     descending relevance so the reviewer reads top-down without re-checking
     score order. The model still drives summary, rationale, action, probes.
+
+    Phase 13 v1: a deterministic pre-filter narrows the register to rows whose
+    layer/file mapping intersects the diff. The agent only judges relevance
+    among the candidate set; the schema enum is also narrowed so the model
+    physically cannot emit a filtered-out R-ID. Fallback: if no pattern
+    matches any file in the diff, the full register is used (recall preserved
+    in the unknown case).
     """
+    candidates, filtered_out, fallback_used = candidate_risks(risks, diff)
     client = ollama.Client(host=host) if host else ollama
-    schema = _schema([r.id for r in risks])
+    schema = _schema([r.id for r in candidates])
     kwargs: dict[str, Any] = {
         "model": model,
         "messages": [
             {"role": "system", "content": _SYSTEM},
-            {"role": "user", "content": _user_message(risks, diff)},
+            {"role": "user", "content": _user_message(candidates, diff)},
         ],
         "format": schema,
         "options": {"temperature": 0},
@@ -185,4 +205,6 @@ def prioritise(
         ranked_risks=enriched,
         exploratory_probes=parsed["exploratory_probes"],
         model=model,
+        filtered_out_ids=sorted(r.id for r in filtered_out),
+        prefilter_fallback_used=fallback_used,
     )
