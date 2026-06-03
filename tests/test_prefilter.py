@@ -25,9 +25,7 @@ class _StubDiff:
 
 def _risks(*ids: str) -> list[Risk]:
     """Build a thin Risk list with only `id` set — the rest isn't read here."""
-    return [
-        Risk(id=rid, description="", likelihood="", impact="", score="", status="", mitigation="") for rid in ids
-    ]
+    return [Risk(id=rid, description="", likelihood="", impact="", score="", status="", mitigation="") for rid in ids]
 
 
 # ── per-layer expectations ─────────────────────────────────────────────────

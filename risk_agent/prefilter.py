@@ -176,8 +176,7 @@ _MAPPING: list[tuple[str, list[str], str]] = [
     (
         "R-014",
         [".github/workflows/**"],
-        "Self-hosted runner SPOF is a workflow-runner-selection concern. "
-        "Application code cannot raise this risk.",
+        "Self-hosted runner SPOF is a workflow-runner-selection concern. Application code cannot raise this risk.",
     ),
     (
         "R-015",
@@ -194,8 +193,7 @@ _MAPPING: list[tuple[str, list[str], str]] = [
     (
         "R-016",
         [".github/workflows/**"],
-        "Free-tier minute exhaustion is a workflow-runtime concern. "
-        "Application code cannot raise this risk.",
+        "Free-tier minute exhaustion is a workflow-runtime concern. Application code cannot raise this risk.",
     ),
     (
         "R-017",
