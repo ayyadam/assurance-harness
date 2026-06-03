@@ -1,42 +1,47 @@
 {
-  "summary": "The diff introduces a new service module for booking validation and creation logic, refactors existing form handling in `book_tee_time` routes, and adds unit tests.",
+  "summary": "This PR refactors and extracts general booking logic into a service layer, affecting both member and visitor routes.",
   "ranked_risks": [
     {
-      "id": "R-012",
+      "id": "R-002",
       "relevance": 3,
-      "rationale": "The introduction of the `create_general_booking` function centralizes booking logic but requires callers to manage session commits. This could lead to inconsistent state if not handled correctly.",
-      "action": "Ensure all call sites properly commit or rollback transactions after calling this service method.",
-      "covered_by": "ai_evaluation/",
-      "is_gap": false
+      "rationale": "The diff modifies the creation path for bookings by extracting validation and creation logic into `booking_service.py`. This directly touches the concurrency control mechanism at the POST /book transaction boundary.",
+      "action": "Re-run the contract suite to ensure that the uniqueness check is still correctly enforced.",
+      "covered_by": "none (open, no layer)",
+      "is_gap": true
     },
     {
-      "id": "R-013",
+      "id": "R-018",
       "relevance": 2,
-      "rationale": "The `validate_general_booking` and `validate_player_handicaps` functions return errors but do not enforce them. The caller must handle these appropriately.",
-      "action": "Review all call sites to ensure they properly handle validation errors.",
-      "covered_by": "k6 performance gate",
-      "is_gap": false
-    },
-    {
-      "id": "R-014",
-      "relevance": 2,
-      "rationale": "The new `BookingValidationError` class introduces a new error handling mechanism that may not be consistently used across the application.",
-      "action": "Ensure consistent use of this error type and update documentation accordingly.",
-      "covered_by": "CI workflow configuration",
-      "is_gap": false
-    },
-    {
-      "id": "R-015",
-      "relevance": 2,
-      "rationale": "Refactoring form handling in `book_tee_time` routes could introduce subtle bugs if not thoroughly tested.",
-      "action": "Add integration tests to cover all paths through the refactored code.",
-      "covered_by": "Synthetic seed data",
+      "rationale": "The diff changes how booking logic is handled in both member and visitor routes. Although it does not directly touch Playwright tests or client-side behavior, these changes could indirectly affect the functional test layer's interaction with post-click client-side behavior.",
+      "action": "Add a golden-set case for the new service-layer booking creation to ensure that functional tests cover this refactored logic.",
+      "covered_by": "Playwright functional suite",
       "is_gap": false
     }
   ],
   "exploratory_probes": [
-    "Are there any existing call sites that do not properly handle session commits or validation errors?",
-    "Do other parts of the application use similar error handling mechanisms, and if so, should they be updated for consistency?"
+    "Manually trigger concurrent booking requests via browser or curl to check if overbooking occurs.",
+    "Check the performance impact of the changes by running load tests against the `/book` endpoint.",
+    "Verify that the new service layer functions correctly under different handicap inputs using manual test cases.",
+    "Ensure that the functional tests still pass after this refactoring, especially those related to booking creation."
   ],
-  "model": "qwen2.5:32b-instruct-q4_K_M"
+  "model": "qwen2.5:32b-instruct-q4_K_M",
+  "filtered_out_ids": [
+    "R-001",
+    "R-003",
+    "R-004",
+    "R-005",
+    "R-006",
+    "R-008",
+    "R-009",
+    "R-010",
+    "R-011",
+    "R-012",
+    "R-013",
+    "R-014",
+    "R-015",
+    "R-016",
+    "R-017",
+    "R-019"
+  ],
+  "prefilter_fallback_used": false
 }

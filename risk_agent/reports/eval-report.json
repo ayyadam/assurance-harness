@@ -1,14 +1,14 @@
 {
   "totals": {
     "cases": 9,
-    "true_positives": 9,
-    "false_positives": 16,
-    "false_negatives": 5,
-    "precision": 0.36,
-    "recall": 0.643,
-    "f1": 0.462,
-    "relevance_correct": 6,
-    "relevance_accuracy": 0.667
+    "true_positives": 11,
+    "false_positives": 6,
+    "false_negatives": 3,
+    "precision": 0.647,
+    "recall": 0.786,
+    "f1": 0.71,
+    "relevance_correct": 8,
+    "relevance_accuracy": 0.727
   },
   "cases": [
     {
@@ -19,21 +19,16 @@
         "R-008": 3
       },
       "actual": {
-        "R-008": 3,
-        "R-018": 2,
-        "R-019": 2
+        "R-008": 3
       },
       "true_positives": [
         "R-008"
       ],
-      "false_positives": [
-        "R-018",
-        "R-019"
-      ],
+      "false_positives": [],
       "false_negatives": [],
-      "precision": 0.333,
+      "precision": 1.0,
       "recall": 1.0,
-      "f1": 0.5,
+      "f1": 1.0,
       "relevance_correct": 1,
       "relevance_accuracy": 1.0
     },
@@ -45,21 +40,21 @@
         "R-007": 3
       },
       "actual": {
-        "R-007": 2,
-        "R-017": 2
+        "R-007": 3,
+        "R-001": 2
       },
       "true_positives": [
         "R-007"
       ],
       "false_positives": [
-        "R-017"
+        "R-001"
       ],
       "false_negatives": [],
       "precision": 0.5,
       "recall": 1.0,
       "f1": 0.667,
-      "relevance_correct": 0,
-      "relevance_accuracy": 0.0
+      "relevance_correct": 1,
+      "relevance_accuracy": 1.0
     },
     {
       "case_id": "pr-11-f007",
@@ -69,25 +64,21 @@
         "R-011": 3
       },
       "actual": {
-        "R-011": 3,
-        "R-012": 3,
-        "R-018": 2,
-        "R-019": 2
+        "R-011": 2,
+        "R-012": 2
       },
       "true_positives": [
         "R-011"
       ],
       "false_positives": [
-        "R-012",
-        "R-018",
-        "R-019"
+        "R-012"
       ],
       "false_negatives": [],
-      "precision": 0.25,
+      "precision": 0.5,
       "recall": 1.0,
-      "f1": 0.4,
-      "relevance_correct": 1,
-      "relevance_accuracy": 1.0
+      "f1": 0.667,
+      "relevance_correct": 0,
+      "relevance_accuracy": 0.0
     },
     {
       "case_id": "pr-12-f008",
@@ -100,26 +91,24 @@
         "R-012": 2
       },
       "actual": {
-        "R-011": 2,
+        "R-011": 3,
         "R-012": 3,
-        "R-010": 2
+        "R-006": 2
       },
       "true_positives": [
+        "R-006",
         "R-011",
         "R-012"
       ],
-      "false_positives": [
-        "R-010"
-      ],
+      "false_positives": [],
       "false_negatives": [
-        "R-006",
         "R-008"
       ],
-      "precision": 0.667,
-      "recall": 0.5,
-      "f1": 0.571,
-      "relevance_correct": 0,
-      "relevance_accuracy": 0.0
+      "precision": 1.0,
+      "recall": 0.75,
+      "f1": 0.857,
+      "relevance_correct": 2,
+      "relevance_accuracy": 0.667
     },
     {
       "case_id": "pr-2-actions-bump",
@@ -130,20 +119,18 @@
       },
       "actual": {
         "R-017": 3,
-        "R-018": 2,
         "R-019": 2
       },
       "true_positives": [
         "R-017"
       ],
       "false_positives": [
-        "R-018",
         "R-019"
       ],
       "false_negatives": [],
-      "precision": 0.333,
+      "precision": 0.5,
       "recall": 1.0,
-      "f1": 0.5,
+      "f1": 0.667,
       "relevance_correct": 1,
       "relevance_accuracy": 1.0
     },
@@ -155,26 +142,21 @@
         "R-002": 3
       },
       "actual": {
-        "R-012": 3,
-        "R-013": 2,
-        "R-014": 2,
-        "R-015": 2
+        "R-002": 3,
+        "R-018": 2
       },
-      "true_positives": [],
-      "false_positives": [
-        "R-012",
-        "R-013",
-        "R-014",
-        "R-015"
-      ],
-      "false_negatives": [
+      "true_positives": [
         "R-002"
       ],
-      "precision": 0.0,
-      "recall": 0.0,
-      "f1": 0.0,
-      "relevance_correct": 0,
-      "relevance_accuracy": 0.0
+      "false_positives": [
+        "R-018"
+      ],
+      "false_negatives": [],
+      "precision": 0.5,
+      "recall": 1.0,
+      "f1": 0.667,
+      "relevance_correct": 1,
+      "relevance_accuracy": 1.0
     },
     {
       "case_id": "pr-5-api-error-contract",
@@ -186,13 +168,13 @@
       },
       "actual": {
         "R-006": 3,
-        "R-012": 2
+        "R-011": 2
       },
       "true_positives": [
         "R-006"
       ],
       "false_positives": [
-        "R-012"
+        "R-011"
       ],
       "false_negatives": [
         "R-003"
@@ -212,14 +194,14 @@
         "R-003": 2
       },
       "actual": {
-        "R-006": 3,
-        "R-012": 2
+        "R-006": 2,
+        "R-011": 2
       },
       "true_positives": [
         "R-006"
       ],
       "false_positives": [
-        "R-012"
+        "R-011"
       ],
       "false_negatives": [
         "R-003"
@@ -227,8 +209,8 @@
       "precision": 0.5,
       "recall": 0.5,
       "f1": 0.5,
-      "relevance_correct": 1,
-      "relevance_accuracy": 1.0
+      "relevance_correct": 0,
+      "relevance_accuracy": 0.0
     },
     {
       "case_id": "pr-14-hide-metrics",
@@ -238,19 +220,16 @@
         "R-006": 3
       },
       "actual": {
-        "R-006": 3,
-        "R-013": 2
+        "R-006": 3
       },
       "true_positives": [
         "R-006"
       ],
-      "false_positives": [
-        "R-013"
-      ],
+      "false_positives": [],
       "false_negatives": [],
-      "precision": 0.5,
+      "precision": 1.0,
       "recall": 1.0,
-      "f1": 0.667,
+      "f1": 1.0,
       "relevance_correct": 1,
       "relevance_accuracy": 1.0
     }

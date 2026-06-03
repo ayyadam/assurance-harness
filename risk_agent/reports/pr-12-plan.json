@@ -1,43 +1,51 @@
 {
-  "summary": "This PR changes the booking assistant to include time-of-day constraints for tee-time bookings.",
+  "summary": "This PR changes the booking assistant to include time-of-day constraints in its intent parsing and schema definitions.",
   "ranked_risks": [
     {
       "id": "R-011",
       "relevance": 3,
-      "rationale": "The diff modifies the BookingIntent schema and parsing logic to handle new 'not_before' and 'not_after' fields. This directly affects how the booking assistant interprets time-of-day constraints.",
-      "action": "Add golden-set cases for various time-of-day scenarios (e.g., morning by 11am, between 9 and 11) to ensure correct interpretation.",
+      "rationale": "The diff modifies the BookingIntent class and related functions to handle new time-of-day constraints (`not_before` and `not_after`). This directly affects how the booking assistant interprets and proposes tee times.",
+      "action": "Add golden-set cases for various time-of-day constraints (e.g., 'from 9am', 'before noon') to ensure correct parsing and slot proposal.",
       "covered_by": "ai_evaluation/",
       "is_gap": false
     },
     {
       "id": "R-012",
       "relevance": 3,
-      "rationale": "The diff introduces new parsing logic for time-of-day constraints. This could potentially introduce prompt injection vulnerabilities if the input handling is not robust.",
-      "action": "Review and test the new parsing functions (_parse_clock_token, _coerce_intent) to ensure they handle unexpected inputs safely.",
+      "rationale": "The diff introduces new input fields (`not_before` and `not_after`) that could potentially be exploited for prompt injection. The mitigation relies on the structured-output boundary, but this needs to be verified with the new inputs.",
+      "action": "Run additional adversarial tests targeting the new time-of-day constraints to ensure no unauthorized actions can be injected.",
       "covered_by": "ai_evaluation/",
       "is_gap": false
     },
     {
-      "id": "R-010",
+      "id": "R-006",
       "relevance": 2,
-      "rationale": "The diff modifies the BookingIntent schema and parsing logic. While not directly related to container images or deployment, changes in input handling could indirectly affect security if not properly validated.",
-      "action": "Ensure that all new fields are properly sanitized and validated before processing.",
-      "covered_by": "accepted (out of scope)",
-      "is_gap": false
-    },
-    {
-      "id": "R-011",
-      "relevance": 2,
-      "rationale": "The diff modifies the BookingIntent schema and parsing logic to handle new 'not_before' and 'not_after' fields. This could introduce errors in slot matching if not correctly implemented.",
-      "action": "Run additional unit tests for find_candidate_slots with various time-of-day constraints.",
-      "covered_by": "ai_evaluation/",
+      "rationale": "The diff modifies the schema definitions in `app/api/schemas.py`, which could affect the published API contract. The changes include adding new fields (`not_before` and `not_after`).",
+      "action": "Re-run the Schemathesis property-based contract tests to ensure the OpenAPI spec and endpoint behaviors align with client expectations.",
+      "covered_by": "Schemathesis contract suite",
       "is_gap": false
     }
   ],
   "exploratory_probes": [
-    "Test the booking assistant's response to ambiguous or malformed time inputs (e.g., 'noon', 'midday', invalid formats).",
-    "Verify that the new time-of-day constraints are correctly displayed on the frontend in book_tee_time.html.",
-    "Check for any potential race conditions when applying time-of-day constraints during slot matching."
+    "Test the booking assistant's response to various time-of-day constraints (e.g., 'from 9am', 'before noon') using curl or a browser.",
+    "Manually verify that the new `not_before` and `not_after` fields are correctly displayed in the UI (`app/templates/member/book_tee_time.html`).",
+    "Check if the booking assistant handles malformed time-of-day inputs gracefully (e.g., invalid formats like '9:61').",
+    "Ensure that the functional tests (`tests/unit/test_booking_assistant.py`) cover edge cases for the new time constraints."
   ],
-  "model": "qwen2.5:32b-instruct-q4_K_M"
+  "model": "qwen2.5:32b-instruct-q4_K_M",
+  "filtered_out_ids": [
+    "R-001",
+    "R-002",
+    "R-004",
+    "R-005",
+    "R-009",
+    "R-010",
+    "R-013",
+    "R-014",
+    "R-015",
+    "R-016",
+    "R-017",
+    "R-019"
+  ],
+  "prefilter_fallback_used": false
 }

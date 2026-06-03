@@ -1,28 +1,40 @@
 {
-  "summary": "This PR changes the `app/__init__.py` file to hide the `/metrics` endpoint from the v1 OpenAPI spec and adds a unit test in `tests/unit/test_metrics.py` to ensure that `/metrics` is not included in the published spec.",
+  "summary": "This PR modifies the OpenAPI specification to hide the `/metrics` endpoint, ensuring that it does not appear in the published v1 API contract.",
   "ranked_risks": [
     {
       "id": "R-006",
       "relevance": 3,
-      "rationale": "The diff directly modifies the OpenAPI specification by removing the `/metrics` endpoint from it, which affects the published v1 API contract.",
-      "action": "Re-run the Schemathesis property-based contract tests to ensure that the modified spec aligns with the actual behavior of the endpoints.",
+      "rationale": "The diff directly modifies the OpenAPI spec by removing the `/metrics` endpoint from the `paths` section, which affects the published API contract. This change ensures that the v1 API contract accurately describes only the intended JSON endpoints and not operational ones.",
+      "action": "Re-run the Schemathesis property-based contract tests in `contract/` to verify that the spec now matches the live API behavior.",
       "covered_by": "Schemathesis contract suite",
-      "is_gap": false
-    },
-    {
-      "id": "R-013",
-      "relevance": 2,
-      "rationale": "The diff hides the `/metrics` endpoint from the v1 OpenAPI spec, which is used for observability. This change could affect how metrics are observed and monitored.",
-      "action": "Manually verify that the `/metrics` endpoint still functions correctly and is being scraped by Prometheus.",
-      "covered_by": "k6 performance gate",
       "is_gap": false
     }
   ],
   "exploratory_probes": [
-    "Check if the `/api/v1/openapi.json` spec no longer includes the `/metrics` endpoint.",
-    "Verify that the `/metrics` endpoint still returns metrics data when accessed directly.",
-    "Ensure that the Grafana dashboard is still receiving and displaying metrics from the `/metrics` endpoint.",
-    "Run a manual test to confirm that the unit test `test_metrics_endpoint_not_in_openapi_spec` passes."
+    "Manually check the OpenAPI spec at `/api/v1/openapi.json` to ensure `/metrics` is not listed under paths.",
+    "Verify that the `/metrics` endpoint still functions correctly by accessing it directly (e.g., `curl http://localhost/metrics`). Ensure it returns text/plain content as expected.",
+    "Run the unit test `test_metrics_endpoint_not_in_openapi_spec` in `tests/unit/test_metrics.py` to confirm that the spec processor is working as intended.",
+    "Check if any other operational endpoints are inadvertently included in the OpenAPI spec by reviewing the generated JSON at `/api/v1/openapi.json` for unexpected paths."
   ],
-  "model": "qwen2.5:32b-instruct-q4_K_M"
+  "model": "qwen2.5:32b-instruct-q4_K_M",
+  "filtered_out_ids": [
+    "R-001",
+    "R-002",
+    "R-003",
+    "R-004",
+    "R-005",
+    "R-007",
+    "R-008",
+    "R-009",
+    "R-010",
+    "R-011",
+    "R-012",
+    "R-014",
+    "R-015",
+    "R-016",
+    "R-017",
+    "R-018",
+    "R-019"
+  ],
+  "prefilter_fallback_used": false
 }

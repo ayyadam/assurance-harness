@@ -1,44 +1,47 @@
 {
-  "summary": "This PR changes the booking assistant's behavior to return all matching tee-time slots instead of a capped subset.",
+  "summary": "This PR changes the booking assistant to return all matching tee-time slots instead of a capped subset, ensuring full availability is shown.",
   "ranked_risks": [
     {
       "id": "R-011",
-      "relevance": 3,
-      "rationale": "The diff modifies `find_candidate_slots` in `app/services/booking_assistant.py`, which directly affects how the booking assistant proposes tee-time slots. This change could introduce new errors or inconsistencies in slot selection.",
-      "action": "Add a golden-set case for different date and time scenarios to ensure correct slot proposals.",
+      "relevance": 2,
+      "rationale": "The diff modifies how the booking assistant handles slot proposals by changing the limit on returned slots. This could indirectly affect the correctness of slot selection if the new behavior introduces edge cases not covered in previous testing.",
+      "action": "Add a golden-set case for full availability scenarios to ensure all matching slots are correctly proposed.",
       "covered_by": "ai_evaluation/",
       "is_gap": false
     },
     {
       "id": "R-012",
-      "relevance": 3,
-      "rationale": "The diff modifies the booking assistant's logic in `app/services/booking_assistant.py`, which could potentially introduce new vulnerabilities if input handling is not robust. The change affects how slots are proposed based on user intent.",
-      "action": "Re-run the contract suite to ensure that the structured-output boundary holds and no unauthorised actions can be injected via inputs.",
+      "relevance": 2,
+      "rationale": "The diff modifies the booking assistant's slot proposal logic. Although it does not directly touch input handling, changes in how slots are selected could indirectly affect safety if new edge cases allow unauthorized actions through crafted inputs.",
+      "action": "Re-run the contract suite to ensure that the structured-output boundary still holds and no unauthorised actions can be triggered.",
       "covered_by": "ai_evaluation/",
-      "is_gap": false
-    },
-    {
-      "id": "R-018",
-      "relevance": 2,
-      "rationale": "The diff changes how slots are returned in `app/services/booking_assistant.py`, which could affect functional tests if the timing of slot proposals impacts test assertions.",
-      "action": "Re-run functional tests to ensure that Playwright interactions with the booking assistant still behave as expected.",
-      "covered_by": "Playwright functional suite",
-      "is_gap": false
-    },
-    {
-      "id": "R-019",
-      "relevance": 2,
-      "rationale": "The diff modifies `app/services/booking_assistant.py`, which could indirectly affect memory usage if the number of slots returned increases significantly. This might impact CI runner performance.",
-      "action": "Monitor CI runs for any OOM-kills or increased memory usage during Playwright tests.",
-      "covered_by": "Playwright functional suite",
       "is_gap": false
     }
   ],
   "exploratory_probes": [
-    "Manually test the booking assistant with a variety of date and time inputs to ensure all matching slots are correctly returned.",
-    "Check if the booking assistant's slot proposals are consistent across multiple requests.",
-    "Verify that the booking assistant excludes slots already booked by the member.",
-    "Test the booking assistant with an explicit limit to confirm it still caps the list as expected."
+    "Manually test the booking assistant with a date having more than 6 available slots to verify it returns all matching slots.",
+    "Use curl to simulate API requests for different group sizes and periods, ensuring the full availability is shown without truncation.",
+    "Test the booking assistant with edge cases like minimum and maximum group sizes to ensure correct slot proposals.",
+    "Verify that the booking assistant excludes already booked slots correctly when a member is provided."
   ],
-  "model": "qwen2.5:32b-instruct-q4_K_M"
+  "model": "qwen2.5:32b-instruct-q4_K_M",
+  "filtered_out_ids": [
+    "R-001",
+    "R-002",
+    "R-003",
+    "R-004",
+    "R-005",
+    "R-006",
+    "R-008",
+    "R-009",
+    "R-010",
+    "R-013",
+    "R-014",
+    "R-015",
+    "R-016",
+    "R-017",
+    "R-018",
+    "R-019"
+  ],
+  "prefilter_fallback_used": false
 }

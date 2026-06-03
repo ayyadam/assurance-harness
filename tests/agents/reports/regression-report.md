@@ -1,6 +1,6 @@
 # Agent regression — risk_agent + triage_agent
 
-_Run: 2026-06-02_
+_Run: 2026-06-03_
 
 Treats `risk_agent` and `triage_agent` as software under test. For each cached fixture, runs the agent N times against the same input and asserts invariants that should hold regardless of LLM jitter:
 
@@ -30,26 +30,26 @@ Top-value stability = how often the highest-ranked R-ID was the same across runs
 ### `pr-7-a11y`
 
 - **Runs:** 3 / 3 successful
-- **Elapsed (total):** 60.4 s
+- **Elapsed (total):** 37.6 s
 - **Metrics:** `top_value_mode=R-008` • `top_value_stability=1.000` • `expected_top_presence_rate=1.000` • `expected_top_match_rate=1.000` • `stable_divergent=False`
 
 | Run | Elapsed (s) | Result |
 |---|---|---|
-| 1 | 25.5 | `R-008`(3), `R-018`(2), `R-019`(2) |
-| 2 | 17.2 | `R-008`(3), `R-018`(2), `R-019`(2) |
-| 3 | 17.6 | `R-008`(3), `R-018`(2), `R-019`(2) |
+| 1 | 16.3 | `R-008`(3) |
+| 2 | 10.7 | `R-008`(3) |
+| 3 | 10.6 | `R-008`(3) |
 
 ### `pr-12-f008`
 
 - **Runs:** 3 / 3 successful
-- **Elapsed (total):** 93.3 s
+- **Elapsed (total):** 64.0 s
 - **Metrics:** `top_value_mode=R-011` • `top_value_stability=1.000` • `expected_top_presence_rate=1.000` • `expected_top_match_rate=1.000` • `stable_divergent=False`
 
 | Run | Elapsed (s) | Result |
 |---|---|---|
-| 1 | 32.5 | `R-011`(3), `R-012`(3), `R-006`(2), `R-008`(2) |
-| 2 | 30.5 | `R-011`(3), `R-012`(3), `R-018`(2), `R-019`(2) |
-| 3 | 30.3 | `R-011`(3), `R-012`(3), `R-018`(2), `R-019`(2) |
+| 1 | 27.2 | `R-011`(3), `R-012`(3), `R-006`(2), `R-018`(2) |
+| 2 | 18.4 | `R-011`(3), `R-012`(3), `R-006`(2) |
+| 3 | 18.4 | `R-011`(3), `R-012`(3), `R-006`(2) |
 
 ## `triage_agent` — detail
 
@@ -58,26 +58,26 @@ Stability of the emitted category and candidate R-ID across runs. Triage outputs
 ### `r-018-timeout-flake`
 
 - **Runs:** 3 / 3 successful
-- **Elapsed (total):** 27.0 s
+- **Elapsed (total):** 20.5 s
 - **Metrics:** `category_mode=flake` • `category_stability=1.000` • `category_match_rate=1.000` • `rid_mode=R-018` • `rid_stability=1.000` • `rid_match_rate=1.000` • `expected_category_match=True` • `expected_rid_match=True` • `stable_divergent=False`
 
 | Run | Elapsed (s) | Result |
 |---|---|---|
-| 1 | 9.1 | cat=`flake` rid=`R-018` |
-| 2 | 5.3 | cat=`flake` rid=`R-018` |
-| 3 | 12.5 | cat=`flake` rid=`R-018` |
+| 1 | 8.6 | cat=`flake` rid=`R-018` |
+| 2 | 5.9 | cat=`flake` rid=`R-018` |
+| 3 | 5.9 | cat=`flake` rid=`R-018` |
 
 ### `k6-threshold-defect`
 
 - **Runs:** 3 / 3 successful
-- **Elapsed (total):** 21.0 s
+- **Elapsed (total):** 21.9 s
 - **Metrics:** `category_mode=defect` • `category_stability=1.000` • `category_match_rate=1.000` • `rid_mode=R-007` • `rid_stability=1.000` • `rid_match_rate=1.000` • `expected_category_match=True` • `expected_rid_match=True` • `stable_divergent=False`
 
 | Run | Elapsed (s) | Result |
 |---|---|---|
-| 1 | 9.7 | cat=`defect` rid=`R-007` |
-| 2 | 5.7 | cat=`defect` rid=`R-007` |
-| 3 | 5.6 | cat=`defect` rid=`R-007` |
+| 1 | 8.8 | cat=`defect` rid=`R-007` |
+| 2 | 6.5 | cat=`defect` rid=`R-007` |
+| 3 | 6.5 | cat=`defect` rid=`R-007` |
 
 ---
 
