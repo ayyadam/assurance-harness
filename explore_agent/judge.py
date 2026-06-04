@@ -28,6 +28,7 @@ CATEGORIES = (
     "schema_drift",
     "business_rule_concern",
     "auth_boundary_concern",
+    "documented_public_endpoint",
 )
 SEVERITIES = ("low", "med", "high")
 
@@ -65,7 +66,11 @@ _SYSTEM = (
     "                           member's token on an owner-restricted resource), and the "
     "                           response indicates the boundary failed to hold (2xx where "
     "                           a 401/403 was expected, or another member's data returned "
-    "                           when ownership should restrict it).\n\n"
+    "                           when ownership should restrict it).\n"
+    "  documented_public_endpoint — The spec documents this endpoint as accepting "
+    "                           unauthenticated traffic and the response is consistent "
+    "                           with that. Informational: surfaces a documented design "
+    "                           choice for reviewer confirmation, NOT a finding.\n\n"
     "Severity: low | med | high. Use 'low' for 'expected' (it's a placeholder there).\n"
     "Do NOT use this output to speculate about exploits — categorise, ground the "
     "rationale in the evidence, stop."
@@ -127,12 +132,20 @@ def _user_message(probe: Probe) -> str:
 
 
 def deterministic_auth_finding(probe: Probe) -> Finding:
-    """Mechanical classification for unauth / wrong_creds probes.
+    """Mechanical classification for unauth / wrong_creds probes — spec-aware.
 
-    The rule is unambiguous: 401/403 means the auth boundary held; 2xx means it
-    failed; 5xx means an unhandled case. No LLM judgement needed — and using one
-    would just add latency and a risk of mis-classification.
+    The rule is unambiguous when the endpoint's documented security stance
+    is known: a 2xx response on an *unauth/wrong_creds* probe is only an
+    ``auth_boundary_concern`` when the spec says auth was required. If the
+    spec documents the endpoint as public, a 2xx is what the contract
+    promises — surfaced as ``documented_public_endpoint`` (informational,
+    not a finding) so a reviewer can still confirm intent.
+
+    The semantic shift introduced in F-020: "the agent flags spec/impl
+    auth drift" rather than "the agent flags any anonymous 2xx".
     """
+    is_auth_required = probe.endpoint.is_auth_required
+
     if probe.status in (401, 403):
         return Finding(
             category="expected",
@@ -140,12 +153,25 @@ def deterministic_auth_finding(probe: Probe) -> Finding:
             rationale=(f"Endpoint correctly rejected the {probe.auth_mode} probe with {probe.status}."),
         )
     if 200 <= probe.status < 300:
+        if is_auth_required:
+            return Finding(
+                category="auth_boundary_concern",
+                severity="high",
+                rationale=(
+                    f"Spec/impl auth drift: the OpenAPI spec marks this endpoint as "
+                    f"requiring auth, but it accepted a {probe.auth_mode} request and "
+                    f"returned {probe.status}. Either the impl is missing an auth check "
+                    "or the spec's security stanza is wrong."
+                ),
+            )
         return Finding(
-            category="auth_boundary_concern",
-            severity="high",
+            category="documented_public_endpoint",
+            severity="low",
             rationale=(
-                f"Endpoint accepted a {probe.auth_mode} request and returned "
-                f"{probe.status} where 401/403 was expected — auth boundary did not hold."
+                f"Spec documents this endpoint as accepting unauthenticated traffic "
+                f"and it returned {probe.status} on the {probe.auth_mode} probe — "
+                "consistent with the documented contract. Surfaced for reviewer "
+                "confirmation that public access is the intended design."
             ),
         )
     if probe.status >= 500:

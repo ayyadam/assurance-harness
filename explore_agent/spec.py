@@ -29,6 +29,7 @@ class Endpoint:
     summary: str
     operation: dict[str, Any] = field(repr=False)  # raw operation object from the spec
     components: dict[str, Any] = field(repr=False)  # full components.schemas for $ref resolution
+    global_security: list[dict[str, list[str]]] | None = field(default=None, repr=False)
 
     @property
     def signature(self) -> str:
@@ -44,6 +45,20 @@ class Endpoint:
     def path_params(self) -> list[str]:
         return [p["name"] for p in self.operation.get("parameters", []) if p.get("in") == "path"]
 
+    @property
+    def is_auth_required(self) -> bool:
+        """Resolve the OpenAPI security inheritance rule.
+
+        The operation-level ``security`` key overrides the global one. A
+        present-but-empty ``[]`` is an explicit "no security required" and
+        overrides global. An absent operation-level key inherits global.
+        We treat any non-empty list with at least one scheme as "auth
+        required" — the specific scheme doesn't change the conclusion.
+        """
+        if "security" in self.operation:
+            return bool(self.operation["security"])
+        return bool(self.global_security)
+
 
 def fetch_spec(base_url: str, timeout: float = 15.0) -> dict[str, Any]:
     """Fetch the OpenAPI document from the live SUT."""
@@ -56,6 +71,7 @@ def fetch_spec(base_url: str, timeout: float = 15.0) -> dict[str, Any]:
 def parse_endpoints(spec: dict[str, Any]) -> list[Endpoint]:
     """Flatten ``paths`` × methods into ``Endpoint`` records, minus exclusions."""
     components = (spec.get("components") or {}).get("schemas", {})
+    global_security = spec.get("security")
     endpoints: list[Endpoint] = []
     for path, path_item in (spec.get("paths") or {}).items():
         if path in EXCLUDED_PATHS:
@@ -70,6 +86,7 @@ def parse_endpoints(spec: dict[str, Any]) -> list[Endpoint]:
                     summary=operation.get("summary", ""),
                     operation=operation,
                     components=components,
+                    global_security=global_security,
                 )
             )
     return endpoints

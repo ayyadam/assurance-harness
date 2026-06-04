@@ -16,13 +16,14 @@
       "method": "POST",
       "url": "http://localhost:5000/api/v1/booking-assistant",
       "status": 200,
-      "latency_ms": 5015.15,
-      "response_text_truncated": "{\"candidates\":[{\"date\":\"2026-06-06\",\"id\":329,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:00:00\"},{\"date\":\"2026-06-06\",\"id\":330,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:10:00\"},{\"date\":\"2026-06-06\",\"id\":331,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:20:00\"},{\"date\":\"2026-06-06\",\"id\":332,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:30:00\"},{\"date\":\"2026-06-06\",\"id\":333,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:40:00\"},{\"date\":\"2026-06-06\",\"id\":334,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:50:00\"},{\"date\":\"2026-06-06\",\"id\":335,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"08:00:00\"},{\"date\":\"2026-06-06\",\"id\":336,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"08:10:00\"},{\"date\":\"2026-06-06\",\"id\":337,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"08:20:00\"},{\"date\":\"2026-06-06\",\"id\":338,\"is_availa"
+      "latency_ms": 5217.28,
+      "response_text_truncated": "{\"candidates\":[],\"intent\":{\"date\":\"2026-06-13\",\"group_size\":4,\"not_after\":null,\"not_before\":null,\"period\":\"morning\",\"players\":[]}}\n"
     },
+    "auth_mode": "default",
     "finding": {
-      "category": "expected",
-      "severity": "low",
-      "rationale": "The response status is 200 and the body matches the documented schema for a successful response, providing a list of candidate tee-times that align with the request."
+      "category": "business_rule_concern",
+      "severity": "med",
+      "rationale": "The response indicates a future date ('2026-06-13') which is technically valid per the schema, but it suggests a business-rule weakness as booking too far in advance might not be allowed by policy. The absence of candidate slots also implies an issue with the booking assistant's ability to propose realistic tee-times."
     }
   },
   {
@@ -42,13 +43,14 @@
       "method": "POST",
       "url": "http://localhost:5000/api/v1/booking-assistant",
       "status": 200,
-      "latency_ms": 5168.69,
+      "latency_ms": 5336.55,
       "response_text_truncated": "{\"candidates\":[],\"intent\":{\"date\":\"2024-01-01\",\"group_size\":1,\"not_after\":null,\"not_before\":\"09:00\",\"period\":\"morning\",\"players\":[]}}\n"
     },
+    "auth_mode": "default",
     "finding": {
       "category": "business_rule_concern",
       "severity": "med",
-      "rationale": "The response indicates no candidate slots ('candidates': []) for a 1-person booking at 09:00 on January 1, 2024, despite the request being technically valid. This suggests that the system does not handle or propose single-player bookings, which may be an unintended business rule limitation."
+      "rationale": "The response indicates that no booking candidates were found for a 1-person booking at 09:00 on January 1, 2024, despite the request being technically valid. This suggests a business rule issue where the system does not propose any available slots even though the input is within acceptable parameters."
     }
   },
   {
@@ -68,13 +70,95 @@
       "method": "POST",
       "url": "http://localhost:5000/api/v1/booking-assistant",
       "status": 200,
-      "latency_ms": 4940.34,
-      "response_text_truncated": "{\"candidates\":[{\"date\":\"2026-06-06\",\"id\":329,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:00:00\"},{\"date\":\"2026-06-06\",\"id\":330,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:10:00\"},{\"date\":\"2026-06-06\",\"id\":331,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:20:00\"},{\"date\":\"2026-06-06\",\"id\":332,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:30:00\"},{\"date\":\"2026-06-06\",\"id\":333,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:40:00\"},{\"date\":\"2026-06-06\",\"id\":334,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:50:00\"},{\"date\":\"2026-06-06\",\"id\":335,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"08:00:00\"},{\"date\":\"2026-06-06\",\"id\":336,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"08:10:00\"},{\"date\":\"2026-06-06\",\"id\":337,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"08:20:00\"},{\"date\":\"2026-06-06\",\"id\":338,\"is_availa"
+      "latency_ms": 5086.27,
+      "response_text_truncated": "{\"candidates\":[{\"date\":\"2026-06-06\",\"id\":165,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:00:00\"},{\"date\":\"2026-06-06\",\"id\":166,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:10:00\"},{\"date\":\"2026-06-06\",\"id\":167,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:20:00\"},{\"date\":\"2026-06-06\",\"id\":168,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:30:00\"},{\"date\":\"2026-06-06\",\"id\":169,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:40:00\"},{\"date\":\"2026-06-06\",\"id\":170,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:50:00\"},{\"date\":\"2026-06-06\",\"id\":171,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"08:00:00\"},{\"date\":\"2026-06-06\",\"id\":172,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"08:10:00\"},{\"date\":\"2026-06-06\",\"id\":173,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"08:20:00\"},{\"date\":\"2026-06-06\",\"id\":174,\"is_availa"
     },
+    "auth_mode": "default",
     "finding": {
       "category": "business_rule_concern",
       "severity": "high",
-      "rationale": "The API responded with a 200 status and provided booking candidates despite receiving an abusive request containing SQL injection and XSS attack patterns. This indicates the system may be vulnerable to such attacks or is not properly sanitizing input, which poses a significant security risk."
+      "rationale": "The response status is 200, and the body contains a list of booking candidates despite an abusive input containing SQL injection and XSS attempts. The system should have rejected this malformed request with a 4xx error instead of processing it."
+    }
+  },
+  {
+    "endpoint": {
+      "method": "POST",
+      "path": "/api/v1/booking-assistant",
+      "summary": "Interpret a natural-language tee-time request and propose slots"
+    },
+    "variant": {
+      "label": "happy",
+      "body": {
+        "text": "a 4-ball Saturday morning"
+      },
+      "rationale": "Probes the typical use case with a minimal valid request."
+    },
+    "http": {
+      "method": "POST",
+      "url": "http://localhost:5000/api/v1/booking-assistant",
+      "status": 401,
+      "latency_ms": 26.13,
+      "response_text_truncated": "{\"detail\":{},\"message\":\"Unauthorized\"}\n"
+    },
+    "auth_mode": "unauth",
+    "finding": {
+      "category": "expected",
+      "severity": "low",
+      "rationale": "Endpoint correctly rejected the unauth probe with 401."
+    }
+  },
+  {
+    "endpoint": {
+      "method": "POST",
+      "path": "/api/v1/booking-assistant",
+      "summary": "Interpret a natural-language tee-time request and propose slots"
+    },
+    "variant": {
+      "label": "happy",
+      "body": {
+        "text": "a 4-ball Saturday morning"
+      },
+      "rationale": "Probes the typical use case with a minimal valid request."
+    },
+    "http": {
+      "method": "POST",
+      "url": "http://localhost:5000/api/v1/booking-assistant",
+      "status": 401,
+      "latency_ms": 15.27,
+      "response_text_truncated": "{\"detail\":{},\"message\":\"Unauthorized\"}\n"
+    },
+    "auth_mode": "wrong_creds",
+    "finding": {
+      "category": "expected",
+      "severity": "low",
+      "rationale": "Endpoint correctly rejected the wrong_creds probe with 401."
+    }
+  },
+  {
+    "endpoint": {
+      "method": "POST",
+      "path": "/api/v1/booking-assistant",
+      "summary": "Interpret a natural-language tee-time request and propose slots"
+    },
+    "variant": {
+      "label": "happy",
+      "body": {
+        "text": "a 4-ball Saturday morning"
+      },
+      "rationale": "Probes the typical use case with a minimal valid request."
+    },
+    "http": {
+      "method": "POST",
+      "url": "http://localhost:5000/api/v1/booking-assistant",
+      "status": 200,
+      "latency_ms": 5223.0,
+      "response_text_truncated": "{\"candidates\":[],\"intent\":{\"date\":\"2026-06-13\",\"group_size\":4,\"not_after\":null,\"not_before\":null,\"period\":\"morning\",\"players\":[]}}\n"
+    },
+    "auth_mode": "other_member",
+    "finding": {
+      "category": "auth_boundary_concern",
+      "severity": "med",
+      "rationale": "The response returned a 200 status with booking assistant data, even though the request was made using another member's valid token. This suggests that the endpoint is not properly restricting access to resources based on ownership, which could lead to unauthorized access."
     }
   },
   {
@@ -92,13 +176,14 @@
       "method": "GET",
       "url": "http://localhost:5000/api/v1/competitions",
       "status": 200,
-      "latency_ms": 15.02,
-      "response_text_truncated": "[{\"date\":\"2026-06-16\",\"format\":\"Stableford\",\"id\":1,\"is_active\":true,\"name\":\"Monthly Stableford\"}]\n"
+      "latency_ms": 29.51,
+      "response_text_truncated": "[{\"date\":\"2026-06-18\",\"format\":\"Stableford\",\"id\":1,\"is_active\":true,\"name\":\"Monthly Stableford\"}]\n"
     },
+    "auth_mode": "default",
     "finding": {
       "category": "expected",
       "severity": "low",
-      "rationale": "The response status is 200 and the body matches the documented schema for a successful response, containing an array of competition objects with expected fields."
+      "rationale": "The response status is 200, and the body is an array of competition objects matching the documented schema for a successful response."
     }
   },
   {
@@ -116,13 +201,14 @@
       "method": "GET",
       "url": "http://localhost:5000/api/v1/competitions",
       "status": 200,
-      "latency_ms": 22.01,
-      "response_text_truncated": "[{\"date\":\"2026-06-16\",\"format\":\"Stableford\",\"id\":1,\"is_active\":true,\"name\":\"Monthly Stableford\"}]\n"
+      "latency_ms": 36.47,
+      "response_text_truncated": "[{\"date\":\"2026-06-18\",\"format\":\"Stableford\",\"id\":1,\"is_active\":true,\"name\":\"Monthly Stableford\"}]\n"
     },
+    "auth_mode": "default",
     "finding": {
       "category": "expected",
       "severity": "low",
-      "rationale": "The response status is 200 and the body matches the documented schema for a list of competitions, with each competition having the expected fields."
+      "rationale": "The response status is 200, and the body is an array of competition objects matching the documented schema for a successful response."
     }
   },
   {
@@ -140,13 +226,89 @@
       "method": "GET",
       "url": "http://localhost:5000/api/v1/competitions",
       "status": 200,
-      "latency_ms": 22.3,
-      "response_text_truncated": "[{\"date\":\"2026-06-16\",\"format\":\"Stableford\",\"id\":1,\"is_active\":true,\"name\":\"Monthly Stableford\"}]\n"
+      "latency_ms": 16.86,
+      "response_text_truncated": "[{\"date\":\"2026-06-18\",\"format\":\"Stableford\",\"id\":1,\"is_active\":true,\"name\":\"Monthly Stableford\"}]\n"
     },
+    "auth_mode": "default",
     "finding": {
-      "category": "unexpected_5xx",
+      "category": "expected",
+      "severity": "low",
+      "rationale": "The response status is 200 and the body matches the documented schema for a successful response, listing competitions with expected fields."
+    }
+  },
+  {
+    "endpoint": {
+      "method": "GET",
+      "path": "/api/v1/competitions",
+      "summary": "List upcoming competitions"
+    },
+    "variant": {
+      "label": "happy",
+      "body": null,
+      "rationale": "Probes the typical use case where no body is expected."
+    },
+    "http": {
+      "method": "GET",
+      "url": "http://localhost:5000/api/v1/competitions",
+      "status": 401,
+      "latency_ms": 25.96,
+      "response_text_truncated": "{\"detail\":{},\"message\":\"Unauthorized\"}\n"
+    },
+    "auth_mode": "unauth",
+    "finding": {
+      "category": "expected",
+      "severity": "low",
+      "rationale": "Endpoint correctly rejected the unauth probe with 401."
+    }
+  },
+  {
+    "endpoint": {
+      "method": "GET",
+      "path": "/api/v1/competitions",
+      "summary": "List upcoming competitions"
+    },
+    "variant": {
+      "label": "happy",
+      "body": null,
+      "rationale": "Probes the typical use case where no body is expected."
+    },
+    "http": {
+      "method": "GET",
+      "url": "http://localhost:5000/api/v1/competitions",
+      "status": 401,
+      "latency_ms": 14.17,
+      "response_text_truncated": "{\"detail\":{},\"message\":\"Unauthorized\"}\n"
+    },
+    "auth_mode": "wrong_creds",
+    "finding": {
+      "category": "expected",
+      "severity": "low",
+      "rationale": "Endpoint correctly rejected the wrong_creds probe with 401."
+    }
+  },
+  {
+    "endpoint": {
+      "method": "GET",
+      "path": "/api/v1/competitions",
+      "summary": "List upcoming competitions"
+    },
+    "variant": {
+      "label": "happy",
+      "body": null,
+      "rationale": "Probes the typical use case where no body is expected."
+    },
+    "http": {
+      "method": "GET",
+      "url": "http://localhost:5000/api/v1/competitions",
+      "status": 200,
+      "latency_ms": 4.34,
+      "response_text_truncated": "[{\"date\":\"2026-06-18\",\"format\":\"Stableford\",\"id\":1,\"is_active\":true,\"name\":\"Monthly Stableford\"}]\n"
+    },
+    "auth_mode": "other_member",
+    "finding": {
+      "category": "auth_boundary_concern",
       "severity": "high",
-      "rationale": "The response status is 200, but the documented behaviour does not specify a successful response for an abusive input such as sending an empty body in a GET request. The system should have handled this case with a validation rejection (4xx) rather than returning a 200 OK."
+      "rationale": "The response returned a 200 status code and competition data, even though the request was made with another member's valid token. This suggests that the endpoint is leaking resource information without proper authorization checks."
     }
   },
   {
@@ -164,13 +326,14 @@
       "method": "GET",
       "url": "http://localhost:5000/api/v1/members/me",
       "status": 200,
-      "latency_ms": 22.02,
+      "latency_ms": 20.94,
       "response_text_truncated": "{\"email\":\"john.smith@example.com\",\"first_name\":\"John\",\"handicap\":12.3,\"id\":2,\"last_name\":\"Smith\",\"membership_type\":\"Full Year\",\"username\":\"john.smith\"}\n"
     },
+    "auth_mode": "default",
     "finding": {
       "category": "expected",
       "severity": "low",
-      "rationale": "The response status is 200 and the body matches the documented schema for a successful authenticated request, containing all required fields such as 'email', 'first_name', 'handicap', etc."
+      "rationale": "The response status is 200 and the body matches the documented schema for a successful authenticated request, containing all required fields without any unexpected elements."
     }
   },
   {
@@ -188,13 +351,14 @@
       "method": "GET",
       "url": "http://localhost:5000/api/v1/members/me",
       "status": 200,
-      "latency_ms": 18.34,
+      "latency_ms": 27.31,
       "response_text_truncated": "{\"email\":\"john.smith@example.com\",\"first_name\":\"John\",\"handicap\":12.3,\"id\":2,\"last_name\":\"Smith\",\"membership_type\":\"Full Year\",\"username\":\"john.smith\"}\n"
     },
+    "auth_mode": "default",
     "finding": {
       "category": "expected",
       "severity": "low",
-      "rationale": "The response status is 200 and the body matches the documented schema for a successful response, containing all required fields such as 'email', 'first_name', 'handicap', etc."
+      "rationale": "The response status is 200 and the body matches the documented schema for a successful response, including all required fields such as 'email', 'first_name', 'handicap', etc."
     }
   },
   {
@@ -212,13 +376,89 @@
       "method": "GET",
       "url": "http://localhost:5000/api/v1/members/me",
       "status": 200,
-      "latency_ms": 16.47,
+      "latency_ms": 26.05,
       "response_text_truncated": "{\"email\":\"john.smith@example.com\",\"first_name\":\"John\",\"handicap\":12.3,\"id\":2,\"last_name\":\"Smith\",\"membership_type\":\"Full Year\",\"username\":\"john.smith\"}\n"
     },
+    "auth_mode": "default",
     "finding": {
       "category": "expected",
       "severity": "low",
-      "rationale": "The response status is 200 and the body matches the documented schema for a successful response, containing all required fields without any unexpected elements."
+      "rationale": "The response status is 200 and the body matches the documented schema for a successful response, containing all required fields for a MemberOut object."
+    }
+  },
+  {
+    "endpoint": {
+      "method": "GET",
+      "path": "/api/v1/members/me",
+      "summary": "Return the profile of the authenticated member"
+    },
+    "variant": {
+      "label": "happy",
+      "body": null,
+      "rationale": "Probes the typical successful authenticated request."
+    },
+    "http": {
+      "method": "GET",
+      "url": "http://localhost:5000/api/v1/members/me",
+      "status": 401,
+      "latency_ms": 21.41,
+      "response_text_truncated": "{\"detail\":{},\"message\":\"Unauthorized\"}\n"
+    },
+    "auth_mode": "unauth",
+    "finding": {
+      "category": "expected",
+      "severity": "low",
+      "rationale": "Endpoint correctly rejected the unauth probe with 401."
+    }
+  },
+  {
+    "endpoint": {
+      "method": "GET",
+      "path": "/api/v1/members/me",
+      "summary": "Return the profile of the authenticated member"
+    },
+    "variant": {
+      "label": "happy",
+      "body": null,
+      "rationale": "Probes the typical successful authenticated request."
+    },
+    "http": {
+      "method": "GET",
+      "url": "http://localhost:5000/api/v1/members/me",
+      "status": 401,
+      "latency_ms": 2.44,
+      "response_text_truncated": "{\"detail\":{},\"message\":\"Unauthorized\"}\n"
+    },
+    "auth_mode": "wrong_creds",
+    "finding": {
+      "category": "expected",
+      "severity": "low",
+      "rationale": "Endpoint correctly rejected the wrong_creds probe with 401."
+    }
+  },
+  {
+    "endpoint": {
+      "method": "GET",
+      "path": "/api/v1/members/me",
+      "summary": "Return the profile of the authenticated member"
+    },
+    "variant": {
+      "label": "happy",
+      "body": null,
+      "rationale": "Probes the typical successful authenticated request."
+    },
+    "http": {
+      "method": "GET",
+      "url": "http://localhost:5000/api/v1/members/me",
+      "status": 200,
+      "latency_ms": 3.42,
+      "response_text_truncated": "{\"email\":\"emma.white@example.com\",\"first_name\":\"Emma\",\"handicap\":8.7,\"id\":3,\"last_name\":\"White\",\"membership_type\":\"Full Year\",\"username\":\"emma.white\"}\n"
+    },
+    "auth_mode": "other_member",
+    "finding": {
+      "category": "auth_boundary_concern",
+      "severity": "high",
+      "rationale": "The response returned the profile of a different member (ID: 3) when an authenticated token for another member was used, indicating that the endpoint does not enforce ownership restrictions as expected."
     }
   },
   {
@@ -236,13 +476,14 @@
       "method": "GET",
       "url": "http://localhost:5000/api/v1/tee-times",
       "status": 200,
-      "latency_ms": 29.37,
-      "response_text_truncated": "[{\"date\":\"2026-06-02\",\"id\":38,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:10:00\"},{\"date\":\"2026-06-02\",\"id\":39,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:20:00\"},{\"date\":\"2026-06-02\",\"id\":40,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:30:00\"},{\"date\":\"2026-06-02\",\"id\":41,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:40:00\"},{\"date\":\"2026-06-02\",\"id\":42,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:50:00\"},{\"date\":\"2026-06-02\",\"id\":43,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:00:00\"},{\"date\":\"2026-06-02\",\"id\":44,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:10:00\"},{\"date\":\"2026-06-02\",\"id\":45,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:20:00\"},{\"date\":\"2026-06-02\",\"id\":46,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:30:00\"},{\"date\":\"2026-06-02\",\"id\":47,\"is_available\":true,\"max_players\":"
+      "latency_ms": 94.66,
+      "response_text_truncated": "[{\"date\":\"2026-06-04\",\"id\":81,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"20:20:00\"},{\"date\":\"2026-06-04\",\"id\":82,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"20:30:00\"},{\"date\":\"2026-06-05\",\"id\":83,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:00:00\"},{\"date\":\"2026-06-05\",\"id\":84,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:10:00\"},{\"date\":\"2026-06-05\",\"id\":85,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:20:00\"},{\"date\":\"2026-06-05\",\"id\":86,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:30:00\"},{\"date\":\"2026-06-05\",\"id\":87,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:40:00\"},{\"date\":\"2026-06-05\",\"id\":88,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:50:00\"},{\"date\":\"2026-06-05\",\"id\":89,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"08:00:00\"},{\"date\":\"2026-06-05\",\"id\":90,\"is_available\":true,\"max_players\":"
     },
+    "auth_mode": "default",
     "finding": {
       "category": "expected",
       "severity": "low",
-      "rationale": "The response status is 200 and the body matches the documented schema for a successful response, listing tee times with all required fields present."
+      "rationale": "The response status is 200 and the body contains an array of tee times, each with fields matching the documented schema for TeeTimeOut. This aligns with the expected behavior for listing available tee times."
     }
   },
   {
@@ -260,13 +501,14 @@
       "method": "GET",
       "url": "http://localhost:5000/api/v1/tee-times",
       "status": 200,
-      "latency_ms": 29.96,
-      "response_text_truncated": "[{\"date\":\"2026-06-02\",\"id\":38,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:10:00\"},{\"date\":\"2026-06-02\",\"id\":39,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:20:00\"},{\"date\":\"2026-06-02\",\"id\":40,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:30:00\"},{\"date\":\"2026-06-02\",\"id\":41,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:40:00\"},{\"date\":\"2026-06-02\",\"id\":42,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:50:00\"},{\"date\":\"2026-06-02\",\"id\":43,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:00:00\"},{\"date\":\"2026-06-02\",\"id\":44,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:10:00\"},{\"date\":\"2026-06-02\",\"id\":45,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:20:00\"},{\"date\":\"2026-06-02\",\"id\":46,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:30:00\"},{\"date\":\"2026-06-02\",\"id\":47,\"is_available\":true,\"max_players\":"
+      "latency_ms": 36.82,
+      "response_text_truncated": "[{\"date\":\"2026-06-04\",\"id\":81,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"20:20:00\"},{\"date\":\"2026-06-04\",\"id\":82,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"20:30:00\"},{\"date\":\"2026-06-05\",\"id\":83,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:00:00\"},{\"date\":\"2026-06-05\",\"id\":84,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:10:00\"},{\"date\":\"2026-06-05\",\"id\":85,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:20:00\"},{\"date\":\"2026-06-05\",\"id\":86,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:30:00\"},{\"date\":\"2026-06-05\",\"id\":87,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:40:00\"},{\"date\":\"2026-06-05\",\"id\":88,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:50:00\"},{\"date\":\"2026-06-05\",\"id\":89,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"08:00:00\"},{\"date\":\"2026-06-05\",\"id\":90,\"is_available\":true,\"max_players\":"
     },
+    "auth_mode": "default",
     "finding": {
       "category": "business_rule_concern",
       "severity": "med",
-      "rationale": "The response returns tee times for a future date (2026-06-02), which may indicate that the endpoint does not enforce any temporal constraints on the availability of tee times. This could lead to issues with booking or displaying tee times well into the future, suggesting a potential business rule weakness."
+      "rationale": "The response includes tee times for a future date (2026-06-04 and 2026-06-05), which suggests that the endpoint is returning data for dates far in advance. This could indicate a business rule weakness, as it may not be practical or desirable to offer bookings so far ahead of time."
     }
   },
   {
@@ -284,13 +526,89 @@
       "method": "GET",
       "url": "http://localhost:5000/api/v1/tee-times",
       "status": 200,
-      "latency_ms": 24.86,
-      "response_text_truncated": "[{\"date\":\"2026-06-02\",\"id\":38,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:10:00\"},{\"date\":\"2026-06-02\",\"id\":39,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:20:00\"},{\"date\":\"2026-06-02\",\"id\":40,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:30:00\"},{\"date\":\"2026-06-02\",\"id\":41,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:40:00\"},{\"date\":\"2026-06-02\",\"id\":42,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:50:00\"},{\"date\":\"2026-06-02\",\"id\":43,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:00:00\"},{\"date\":\"2026-06-02\",\"id\":44,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:10:00\"},{\"date\":\"2026-06-02\",\"id\":45,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:20:00\"},{\"date\":\"2026-06-02\",\"id\":46,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"14:30:00\"},{\"date\":\"2026-06-02\",\"id\":47,\"is_available\":true,\"max_players\":"
+      "latency_ms": 30.9,
+      "response_text_truncated": "[{\"date\":\"2026-06-04\",\"id\":81,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"20:20:00\"},{\"date\":\"2026-06-04\",\"id\":82,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"20:30:00\"},{\"date\":\"2026-06-05\",\"id\":83,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:00:00\"},{\"date\":\"2026-06-05\",\"id\":84,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:10:00\"},{\"date\":\"2026-06-05\",\"id\":85,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:20:00\"},{\"date\":\"2026-06-05\",\"id\":86,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:30:00\"},{\"date\":\"2026-06-05\",\"id\":87,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:40:00\"},{\"date\":\"2026-06-05\",\"id\":88,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:50:00\"},{\"date\":\"2026-06-05\",\"id\":89,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"08:00:00\"},{\"date\":\"2026-06-05\",\"id\":90,\"is_available\":true,\"max_players\":"
     },
+    "auth_mode": "default",
     "finding": {
       "category": "business_rule_concern",
       "severity": "med",
-      "rationale": "The response returns tee times for a future date (2026-06-02) when the endpoint was probed with abusive input, suggesting that the API does not properly handle or reject malformed inputs. This could indicate a weakness in filtering or validation logic."
+      "rationale": "The response returns tee times for a future date (2026), which suggests the endpoint does not enforce any temporal restrictions on the data it retrieves, potentially exposing availability information far in advance. This could lead to issues with overbooking or unfair advantage if users start booking years ahead."
+    }
+  },
+  {
+    "endpoint": {
+      "method": "GET",
+      "path": "/api/v1/tee-times",
+      "summary": "List available tee times (optionally filtered by date)"
+    },
+    "variant": {
+      "label": "happy",
+      "body": null,
+      "rationale": "Probes the basic functionality of listing tee times without any filters."
+    },
+    "http": {
+      "method": "GET",
+      "url": "http://localhost:5000/api/v1/tee-times",
+      "status": 401,
+      "latency_ms": 12.26,
+      "response_text_truncated": "{\"detail\":{},\"message\":\"Unauthorized\"}\n"
+    },
+    "auth_mode": "unauth",
+    "finding": {
+      "category": "expected",
+      "severity": "low",
+      "rationale": "Endpoint correctly rejected the unauth probe with 401."
+    }
+  },
+  {
+    "endpoint": {
+      "method": "GET",
+      "path": "/api/v1/tee-times",
+      "summary": "List available tee times (optionally filtered by date)"
+    },
+    "variant": {
+      "label": "happy",
+      "body": null,
+      "rationale": "Probes the basic functionality of listing tee times without any filters."
+    },
+    "http": {
+      "method": "GET",
+      "url": "http://localhost:5000/api/v1/tee-times",
+      "status": 401,
+      "latency_ms": 2.38,
+      "response_text_truncated": "{\"detail\":{},\"message\":\"Unauthorized\"}\n"
+    },
+    "auth_mode": "wrong_creds",
+    "finding": {
+      "category": "expected",
+      "severity": "low",
+      "rationale": "Endpoint correctly rejected the wrong_creds probe with 401."
+    }
+  },
+  {
+    "endpoint": {
+      "method": "GET",
+      "path": "/api/v1/tee-times",
+      "summary": "List available tee times (optionally filtered by date)"
+    },
+    "variant": {
+      "label": "happy",
+      "body": null,
+      "rationale": "Probes the basic functionality of listing tee times without any filters."
+    },
+    "http": {
+      "method": "GET",
+      "url": "http://localhost:5000/api/v1/tee-times",
+      "status": 200,
+      "latency_ms": 23.84,
+      "response_text_truncated": "[{\"date\":\"2026-06-04\",\"id\":81,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"20:20:00\"},{\"date\":\"2026-06-04\",\"id\":82,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"20:30:00\"},{\"date\":\"2026-06-05\",\"id\":83,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:00:00\"},{\"date\":\"2026-06-05\",\"id\":84,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:10:00\"},{\"date\":\"2026-06-05\",\"id\":85,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:20:00\"},{\"date\":\"2026-06-05\",\"id\":86,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:30:00\"},{\"date\":\"2026-06-05\",\"id\":87,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:40:00\"},{\"date\":\"2026-06-05\",\"id\":88,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"07:50:00\"},{\"date\":\"2026-06-05\",\"id\":89,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"08:00:00\"},{\"date\":\"2026-06-05\",\"id\":90,\"is_available\":true,\"max_players\":"
+    },
+    "auth_mode": "other_member",
+    "finding": {
+      "category": "auth_boundary_concern",
+      "severity": "med",
+      "rationale": "The response returned a 200 status code with tee time data, even though the request was made using another member's valid token. This suggests that the endpoint is leaking tee times without proper authorization checks, which should have resulted in a 401 or 403 status code."
     }
   },
   {
@@ -306,15 +624,16 @@
     },
     "http": {
       "method": "GET",
-      "url": "http://localhost:5000/api/v1/tee-times/38",
+      "url": "http://localhost:5000/api/v1/tee-times/81",
       "status": 200,
-      "latency_ms": 27.01,
-      "response_text_truncated": "{\"date\":\"2026-06-02\",\"id\":38,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:10:00\"}\n"
+      "latency_ms": 21.88,
+      "response_text_truncated": "{\"date\":\"2026-06-04\",\"id\":81,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"20:20:00\"}\n"
     },
+    "auth_mode": "default",
     "finding": {
       "category": "expected",
       "severity": "low",
-      "rationale": "The response status is 200 and the body matches the documented schema for a successful response, including all required fields with appropriate types."
+      "rationale": "The response status is 200 and the body matches the documented schema for a successful tee time retrieval, including all required fields with appropriate types."
     }
   },
   {
@@ -330,15 +649,16 @@
     },
     "http": {
       "method": "GET",
-      "url": "http://localhost:5000/api/v1/tee-times/38",
+      "url": "http://localhost:5000/api/v1/tee-times/81",
       "status": 200,
-      "latency_ms": 14.89,
-      "response_text_truncated": "{\"date\":\"2026-06-02\",\"id\":38,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:10:00\"}\n"
+      "latency_ms": 15.43,
+      "response_text_truncated": "{\"date\":\"2026-06-04\",\"id\":81,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"20:20:00\"}\n"
     },
+    "auth_mode": "default",
     "finding": {
       "category": "business_rule_concern",
       "severity": "med",
-      "rationale": "The response indicates that a tee time with ID 38 is available, but the probe was intended to check the edge case of using the minimum allowed tee time ID (expected to be 1). This suggests a potential issue in how tee times are assigned or queried, possibly leading to confusion or mismanagement of bookings."
+      "rationale": "The response indicates that a tee time with an ID of 81 was returned, despite the probe using the minimum allowed tee time ID (expected to be 1). This suggests a potential issue in how IDs are handled or assigned, possibly leading to unexpected data retrieval."
     }
   },
   {
@@ -354,15 +674,91 @@
     },
     "http": {
       "method": "GET",
-      "url": "http://localhost:5000/api/v1/tee-times/38",
+      "url": "http://localhost:5000/api/v1/tee-times/81",
       "status": 200,
-      "latency_ms": 21.5,
-      "response_text_truncated": "{\"date\":\"2026-06-02\",\"id\":38,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"13:10:00\"}\n"
+      "latency_ms": 27.67,
+      "response_text_truncated": "{\"date\":\"2026-06-04\",\"id\":81,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"20:20:00\"}\n"
     },
+    "auth_mode": "default",
     "finding": {
       "category": "business_rule_concern",
       "severity": "med",
-      "rationale": "The API returned a 200 status and a valid tee time even though the input was expected to be an integer ID but was likely a string, indicating that the input validation is weak. This could allow unintended access or behavior."
+      "rationale": "The response indicates a successful retrieval of a tee time with ID 81 despite the abusive input (string instead of integer for tee time ID), suggesting a weakness in handling malformed or malicious inputs. This could potentially allow injection attacks or other unintended behaviors."
+    }
+  },
+  {
+    "endpoint": {
+      "method": "GET",
+      "path": "/api/v1/tee-times/{tee_time_id}",
+      "summary": "Get a single tee time by id"
+    },
+    "variant": {
+      "label": "happy",
+      "body": null,
+      "rationale": "Probes the typical valid request with a plausible tee time ID."
+    },
+    "http": {
+      "method": "GET",
+      "url": "http://localhost:5000/api/v1/tee-times/81",
+      "status": 401,
+      "latency_ms": 26.15,
+      "response_text_truncated": "{\"detail\":{},\"message\":\"Unauthorized\"}\n"
+    },
+    "auth_mode": "unauth",
+    "finding": {
+      "category": "expected",
+      "severity": "low",
+      "rationale": "Endpoint correctly rejected the unauth probe with 401."
+    }
+  },
+  {
+    "endpoint": {
+      "method": "GET",
+      "path": "/api/v1/tee-times/{tee_time_id}",
+      "summary": "Get a single tee time by id"
+    },
+    "variant": {
+      "label": "happy",
+      "body": null,
+      "rationale": "Probes the typical valid request with a plausible tee time ID."
+    },
+    "http": {
+      "method": "GET",
+      "url": "http://localhost:5000/api/v1/tee-times/81",
+      "status": 401,
+      "latency_ms": 2.2,
+      "response_text_truncated": "{\"detail\":{},\"message\":\"Unauthorized\"}\n"
+    },
+    "auth_mode": "wrong_creds",
+    "finding": {
+      "category": "expected",
+      "severity": "low",
+      "rationale": "Endpoint correctly rejected the wrong_creds probe with 401."
+    }
+  },
+  {
+    "endpoint": {
+      "method": "GET",
+      "path": "/api/v1/tee-times/{tee_time_id}",
+      "summary": "Get a single tee time by id"
+    },
+    "variant": {
+      "label": "happy",
+      "body": null,
+      "rationale": "Probes the typical valid request with a plausible tee time ID."
+    },
+    "http": {
+      "method": "GET",
+      "url": "http://localhost:5000/api/v1/tee-times/81",
+      "status": 200,
+      "latency_ms": 15.09,
+      "response_text_truncated": "{\"date\":\"2026-06-04\",\"id\":81,\"is_available\":true,\"max_players\":4,\"slots_remaining\":4,\"time\":\"20:20:00\"}\n"
+    },
+    "auth_mode": "other_member",
+    "finding": {
+      "category": "auth_boundary_concern",
+      "severity": "high",
+      "rationale": "The response returned a 200 status code with the tee time details, even though an authenticated token from a different member was used. This indicates that the endpoint is leaking resource data owned by one user to another without proper authorization checks."
     }
   },
   {
@@ -398,15 +794,16 @@
     },
     "http": {
       "method": "POST",
-      "url": "http://localhost:5000/api/v1/tee-times/38/bookings",
+      "url": "http://localhost:5000/api/v1/tee-times/81/bookings",
       "status": 201,
-      "latency_ms": 32.96,
-      "response_text_truncated": "{\"booked_at\":\"2026-06-02T13:08:52.432878Z\",\"group_size\":4,\"id\":1,\"member_id\":2,\"tee_time_id\":38,\"visitor_id\":null}\n"
+      "latency_ms": 35.16,
+      "response_text_truncated": "{\"booked_at\":\"2026-06-04T20:18:03.959679Z\",\"group_size\":4,\"id\":6,\"member_id\":2,\"tee_time_id\":81,\"visitor_id\":null}\n"
     },
+    "auth_mode": "default",
     "finding": {
       "category": "expected",
       "severity": "low",
-      "rationale": "The response status code is 201, and the body matches the documented schema for a successful booking response, including all required fields."
+      "rationale": "The response status code is 201, and the body matches the documented schema for a successful booking (BookingOut). All required fields are present and correctly typed."
     }
   },
   {
@@ -434,15 +831,16 @@
     },
     "http": {
       "method": "POST",
-      "url": "http://localhost:5000/api/v1/tee-times/38/bookings",
+      "url": "http://localhost:5000/api/v1/tee-times/81/bookings",
       "status": 409,
-      "latency_ms": 28.53,
+      "latency_ms": 26.63,
       "response_text_truncated": "{\"code\":\"not_enough_slots\",\"message\":\"Not enough slots available for your group size.\"}\n"
     },
+    "auth_mode": "default",
     "finding": {
       "category": "business_rule_concern",
       "severity": "med",
-      "rationale": "The response indicates a 409 Conflict with the message 'Not enough slots available for your group size,' but the request body specifies a minimal group size of 1, which should not typically result in a slot availability issue. This suggests a potential business rule weakness or misconfiguration."
+      "rationale": "The response indicates a conflict due to insufficient slots, but the request specified a minimal group size of 1, which should not trigger this error unless there's an underlying issue with slot management or availability. This suggests a potential business rule weakness in how group sizes and available slots are handled."
     }
   },
   {
@@ -474,15 +872,151 @@
     },
     "http": {
       "method": "POST",
-      "url": "http://localhost:5000/api/v1/tee-times/38/bookings",
+      "url": "http://localhost:5000/api/v1/tee-times/81/bookings",
       "status": 409,
-      "latency_ms": 26.91,
+      "latency_ms": 20.18,
       "response_text_truncated": "{\"code\":\"not_enough_slots\",\"message\":\"Not enough slots available for your group size.\"}\n"
     },
+    "auth_mode": "default",
     "finding": {
       "category": "unexpected_5xx",
       "severity": "high",
-      "rationale": "The response status is 409, which indicates a conflict, but the documented reason for this status code does not match the provided body message 'Not enough slots available for your group size.' This suggests an internal misconfiguration or logic error in handling abusive input. However, given that the actual issue seems to be around slot availability rather than an outright server crash, it's more accurately classified as a business rule concern."
+      "rationale": "The response status is 409, which indicates a conflict with the current state (past tee time, full, or already booked), but the provided request body contains abusive input designed to test input sanitization. The documented behavior for such abusive inputs should be either a validation error (422) or malformed request body (400). The 409 response suggests an unhandled case or unexpected conflict that is not aligned with expected robustness against abusive inputs."
+    }
+  },
+  {
+    "endpoint": {
+      "method": "POST",
+      "path": "/api/v1/tee-times/{tee_time_id}/bookings",
+      "summary": "Book a tee time for the authenticated member"
+    },
+    "variant": {
+      "label": "happy",
+      "body": {
+        "group_size": 4,
+        "players": [
+          {
+            "name": "John Doe",
+            "handicap": 12.3
+          },
+          {
+            "name": "Jane Smith",
+            "handicap": 15.0
+          },
+          {
+            "name": "Alice Johnson",
+            "handicap": null
+          },
+          {
+            "name": "Bob Brown",
+            "handicap": 8.5
+          }
+        ]
+      },
+      "rationale": "A minimal valid body with realistic values to ensure basic functionality."
+    },
+    "http": {
+      "method": "POST",
+      "url": "http://localhost:5000/api/v1/tee-times/81/bookings",
+      "status": 401,
+      "latency_ms": 26.42,
+      "response_text_truncated": "{\"detail\":{},\"message\":\"Unauthorized\"}\n"
+    },
+    "auth_mode": "unauth",
+    "finding": {
+      "category": "expected",
+      "severity": "low",
+      "rationale": "Endpoint correctly rejected the unauth probe with 401."
+    }
+  },
+  {
+    "endpoint": {
+      "method": "POST",
+      "path": "/api/v1/tee-times/{tee_time_id}/bookings",
+      "summary": "Book a tee time for the authenticated member"
+    },
+    "variant": {
+      "label": "happy",
+      "body": {
+        "group_size": 4,
+        "players": [
+          {
+            "name": "John Doe",
+            "handicap": 12.3
+          },
+          {
+            "name": "Jane Smith",
+            "handicap": 15.0
+          },
+          {
+            "name": "Alice Johnson",
+            "handicap": null
+          },
+          {
+            "name": "Bob Brown",
+            "handicap": 8.5
+          }
+        ]
+      },
+      "rationale": "A minimal valid body with realistic values to ensure basic functionality."
+    },
+    "http": {
+      "method": "POST",
+      "url": "http://localhost:5000/api/v1/tee-times/81/bookings",
+      "status": 401,
+      "latency_ms": 2.64,
+      "response_text_truncated": "{\"detail\":{},\"message\":\"Unauthorized\"}\n"
+    },
+    "auth_mode": "wrong_creds",
+    "finding": {
+      "category": "expected",
+      "severity": "low",
+      "rationale": "Endpoint correctly rejected the wrong_creds probe with 401."
+    }
+  },
+  {
+    "endpoint": {
+      "method": "POST",
+      "path": "/api/v1/tee-times/{tee_time_id}/bookings",
+      "summary": "Book a tee time for the authenticated member"
+    },
+    "variant": {
+      "label": "happy",
+      "body": {
+        "group_size": 4,
+        "players": [
+          {
+            "name": "John Doe",
+            "handicap": 12.3
+          },
+          {
+            "name": "Jane Smith",
+            "handicap": 15.0
+          },
+          {
+            "name": "Alice Johnson",
+            "handicap": null
+          },
+          {
+            "name": "Bob Brown",
+            "handicap": 8.5
+          }
+        ]
+      },
+      "rationale": "A minimal valid body with realistic values to ensure basic functionality."
+    },
+    "http": {
+      "method": "POST",
+      "url": "http://localhost:5000/api/v1/tee-times/81/bookings",
+      "status": 409,
+      "latency_ms": 15.33,
+      "response_text_truncated": "{\"code\":\"not_enough_slots\",\"message\":\"Not enough slots available for your group size.\"}\n"
+    },
+    "auth_mode": "other_member",
+    "finding": {
+      "category": "expected",
+      "severity": "low",
+      "rationale": "The response status code is 409, and the body matches the documented schema for a 409 Conflict error, indicating that there are not enough slots available for the requested group size."
     }
   }
 ]
