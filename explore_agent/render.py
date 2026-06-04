@@ -18,10 +18,11 @@ class Result:
 
 _SEVERITY_RANK = {"high": 0, "med": 1, "low": 2}
 _CATEGORY_RANK = {
-    "unexpected_5xx": 0,
-    "business_rule_concern": 1,
-    "schema_drift": 2,
-    "expected": 3,
+    "auth_boundary_concern": 0,
+    "unexpected_5xx": 1,
+    "business_rule_concern": 2,
+    "schema_drift": 3,
+    "expected": 4,
 }
 
 
@@ -64,7 +65,13 @@ def render_markdown(
     lines.append("")
     lines.append("| Category | Count |")
     lines.append("|---|---|")
-    for cat in ("unexpected_5xx", "business_rule_concern", "schema_drift", "expected"):
+    for cat in (
+        "auth_boundary_concern",
+        "unexpected_5xx",
+        "business_rule_concern",
+        "schema_drift",
+        "expected",
+    ):
         if cat in by_cat:
             lines.append(f"| `{cat}` | {by_cat[cat]} |")
     lines.append("")
@@ -73,12 +80,13 @@ def render_markdown(
 
     lines.append("## Findings")
     lines.append("")
-    lines.append("| # | Endpoint | Variant | Status | Category | Severity |")
-    lines.append("|---|---|---|---|---|---|")
+    lines.append("| # | Endpoint | Variant | Auth | Status | Category | Severity |")
+    lines.append("|---|---|---|---|---|---|---|")
     for i, r in enumerate(sorted_results, start=1):
         sev = r.finding.severity if r.finding.category != "expected" else "—"
         lines.append(
             f"| {i} | `{r.probe.endpoint.signature}` | `{r.probe.variant.label}` | "
+            f"`{r.probe.auth_mode}` | "
             f"{r.probe.status} | `{r.finding.category}` | {sev} |"
         )
     lines.append("")
@@ -92,6 +100,8 @@ def render_markdown(
         lines.append(f"**Category:** `{r.finding.category}`")
         if r.finding.category != "expected":
             lines.append(f"  **Severity:** `{r.finding.severity}`")
+        lines.append("")
+        lines.append(f"**Auth mode:** `{r.probe.auth_mode}`")
         lines.append("")
         lines.append(f"**Variant rationale:** {r.probe.variant.rationale}")
         lines.append("")
@@ -154,6 +164,7 @@ def to_json(results: list[Result]) -> str:
                     "latency_ms": round(r.probe.latency_ms, 2),
                     "response_text_truncated": r.probe.response_text[:1000],
                 },
+                "auth_mode": r.probe.auth_mode,
                 "finding": {
                     "category": r.finding.category,
                     "severity": r.finding.severity,
