@@ -1,14 +1,14 @@
 {
   "totals": {
     "cases": 9,
-    "true_positives": 11,
-    "false_positives": 5,
-    "false_negatives": 3,
-    "precision": 0.688,
-    "recall": 0.786,
-    "f1": 0.733,
-    "relevance_correct": 8,
-    "relevance_accuracy": 0.727
+    "true_positives": 13,
+    "false_positives": 1,
+    "false_negatives": 1,
+    "precision": 0.929,
+    "recall": 0.929,
+    "f1": 0.929,
+    "relevance_correct": 10,
+    "relevance_accuracy": 0.769
   },
   "cases": [
     {
@@ -40,19 +40,16 @@
         "R-007": 3
       },
       "actual": {
-        "R-007": 3,
-        "R-009": 2
+        "R-007": 3
       },
       "true_positives": [
         "R-007"
       ],
-      "false_positives": [
-        "R-009"
-      ],
+      "false_positives": [],
       "false_negatives": [],
-      "precision": 0.5,
+      "precision": 1.0,
       "recall": 1.0,
-      "f1": 0.667,
+      "f1": 1.0,
       "relevance_correct": 1,
       "relevance_accuracy": 1.0
     },
@@ -64,19 +61,16 @@
         "R-011": 3
       },
       "actual": {
-        "R-011": 2,
-        "R-012": 2
+        "R-011": 2
       },
       "true_positives": [
         "R-011"
       ],
-      "false_positives": [
-        "R-012"
-      ],
+      "false_positives": [],
       "false_negatives": [],
-      "precision": 0.5,
+      "precision": 1.0,
       "recall": 1.0,
-      "f1": 0.667,
+      "f1": 1.0,
       "relevance_correct": 0,
       "relevance_accuracy": 0.0
     },
@@ -92,22 +86,23 @@
       },
       "actual": {
         "R-011": 3,
-        "R-012": 3
+        "R-012": 3,
+        "R-006": 2
       },
       "true_positives": [
+        "R-006",
         "R-011",
         "R-012"
       ],
       "false_positives": [],
       "false_negatives": [
-        "R-006",
         "R-008"
       ],
       "precision": 1.0,
-      "recall": 0.5,
-      "f1": 0.667,
-      "relevance_correct": 1,
-      "relevance_accuracy": 0.5
+      "recall": 0.75,
+      "f1": 0.857,
+      "relevance_correct": 2,
+      "relevance_accuracy": 0.667
     },
     {
       "case_id": "pr-2-actions-bump",
@@ -118,13 +113,13 @@
       },
       "actual": {
         "R-017": 3,
-        "R-019": 2
+        "R-005": 2
       },
       "true_positives": [
         "R-017"
       ],
       "false_positives": [
-        "R-019"
+        "R-005"
       ],
       "false_negatives": [],
       "precision": 0.5,
@@ -141,19 +136,16 @@
         "R-002": 3
       },
       "actual": {
-        "R-002": 3,
-        "R-007": 2
+        "R-002": 3
       },
       "true_positives": [
         "R-002"
       ],
-      "false_positives": [
-        "R-007"
-      ],
+      "false_positives": [],
       "false_negatives": [],
-      "precision": 0.5,
+      "precision": 1.0,
       "recall": 1.0,
-      "f1": 0.667,
+      "f1": 1.0,
       "relevance_correct": 1,
       "relevance_accuracy": 1.0
     },
@@ -167,21 +159,18 @@
       },
       "actual": {
         "R-006": 3,
-        "R-007": 2
+        "R-003": 2
       },
       "true_positives": [
+        "R-003",
         "R-006"
       ],
-      "false_positives": [
-        "R-007"
-      ],
-      "false_negatives": [
-        "R-003"
-      ],
-      "precision": 0.5,
-      "recall": 0.5,
-      "f1": 0.5,
-      "relevance_correct": 1,
+      "false_positives": [],
+      "false_negatives": [],
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "relevance_correct": 2,
       "relevance_accuracy": 1.0
     },
     {

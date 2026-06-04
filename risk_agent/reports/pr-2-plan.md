@@ -2,12 +2,12 @@
 
 **Bump GitHub Actions to Node.js 24 compatible versions**
 
-_Run: 2026-06-03 • model: `qwen2.5:32b-instruct-q4_K_M`_  
+_Run: 2026-06-04 • model: `qwen2.5:32b-instruct-q4_K_M`_  
 _Repo: ayyadam/golf-web-app_
 
 ## Summary
 
-This PR updates GitHub Actions to be compatible with Node.js 24, including bumping action versions and setting an environment variable to force JavaScript actions to use Node.js 24.
+This PR changes the CI configuration to use Node.js 24 compatible versions of GitHub Actions.
 
 ## Changed files
 
@@ -17,26 +17,26 @@ This PR updates GitHub Actions to be compatible with Node.js 24, including bumpi
 
 ### 1. R-017 — _direct_
 
-**Why:** The diff explicitly bumps the version of several GitHub Actions (actions/checkout, actions/setup-python, and actions/upload-artifact) to versions compatible with Node.js 24. This directly addresses the risk that deprecated Node.js 20 actions will break when GitHub forces the Node.js 24 default.
+**Why:** The diff updates several actions to their latest versions and adds an environment variable to force JavaScript actions to use Node.js 24, directly addressing the risk of using deprecated Node.js 20 actions.
 
 **Covered by:** CI workflow configuration
 
-**Action:** Verify that all updated action versions are indeed compatible with Node.js 24 by running the CI pipeline.
+**Action:** Verify that all updated actions are compatible with Node.js 24 by re-running the CI pipeline.
 
-### 2. R-019 — _plausible_
+### 2. R-005 — _plausible_
 
-**Why:** The diff introduces an environment variable `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` to force JavaScript actions to use Node.js 24. While this change does not directly modify the Playwright/accessibility job, it could indirectly affect memory usage if any of the updated actions have higher memory requirements under Node.js 24.
+**Why:** The diff modifies the CI workflow file, which could potentially affect how linting is enforced. Although the risk was previously mitigated, changes to the workflow might introduce new issues.
 
-**Covered by:** Playwright functional suite
+**Covered by:** CI workflow configuration
 
-**Action:** Monitor the CI pipeline for OOM-kills (exit code 137) in the Playwright/accessibility job after merging this PR.
+**Action:** Manually check that the lint gate is still enforced by triggering a test build.
 
 ## Exploratory probes
 
-- Run the CI pipeline locally to ensure all actions are compatible with Node.js 24.
-- Check the memory usage of the updated actions during a cold run of the Playwright/accessibility job.
-- Verify that the `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` environment variable is correctly set and applied in the CI pipeline.
-- Manually trigger the Playwright/accessibility job to observe any changes in behavior or memory usage.
+- Trigger a CI run and verify that all jobs complete successfully with Node.js 24.
+- Check the artifact upload step to ensure it works correctly with the updated actions.
+- Manually trigger a lint job to confirm that the lint gate is enforced as expected.
+- Verify that the unit tests pass without any issues after the action updates.
 
 ## Pre-filter
 
@@ -50,11 +50,13 @@ _Filtered out by the deterministic pre-filter before the LLM saw the register (n
 - R-007
 - R-008
 - R-009
+- R-010
 - R-011
 - R-012
 - R-013
 - R-015
 - R-018
+- R-019
 
 ---
 

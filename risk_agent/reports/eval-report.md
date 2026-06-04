@@ -1,6 +1,6 @@
 # risk_agent v2 v2 — golden-set evaluation
 
-_Run: 2026-06-03_
+_Run: 2026-06-04_
 
 Compares the agent's emitted ranking (cached under `reports/pr-N-plan.json`) against the expected ranking per historic PR in [`golden_set.yaml`](../golden_set.yaml). Scoring is deterministic — no LLM in the scoring path.
 
@@ -9,13 +9,13 @@ Compares the agent's emitted ranking (cached under `reports/pr-N-plan.json`) aga
 | Metric | Value |
 |---|---|
 | Cases scored | 9 |
-| True positives | 11 |
-| False positives (over-pull) | 5 |
-| False negatives (missed) | 3 |
-| **Precision** | **0.688** |
-| **Recall** | **0.786** |
-| **F1** | **0.733** |
-| Relevance accuracy (matching `direct`/`plausible` on TPs) | 0.727 (8/11) |
+| True positives | 13 |
+| False positives (over-pull) | 1 |
+| False negatives (missed) | 1 |
+| **Precision** | **0.929** |
+| **Recall** | **0.929** |
+| **F1** | **0.929** |
+| Relevance accuracy (matching `direct`/`plausible` on TPs) | 0.769 (10/13) |
 
 ## Per-case
 
@@ -30,64 +30,59 @@ Compares the agent's emitted ranking (cached under `reports/pr-N-plan.json`) aga
 
 ### pr-8-nplus1 — Fix N+1 query when listing tee times
 
-**PR #8** | precision: `0.500` | recall: `1.000` | F1: `0.667`
+**PR #8** | precision: `1.000` | recall: `1.000` | F1: `1.000`
 
 - Expected: `R-007(3)`
-- Actual:   `R-007(3)`, `R-009(2)`
+- Actual:   `R-007(3)`
 
 - ✓ TP: R-007 (expected 3, got 3)
-- ✗ FP (over-pull): R-009
 
 ### pr-11-f007 — Show all matching tee-time slots, not a silent 6 (F-007)
 
-**PR #11** | precision: `0.500` | recall: `1.000` | F1: `0.667`
+**PR #11** | precision: `1.000` | recall: `1.000` | F1: `1.000`
 
 - Expected: `R-011(3)`
-- Actual:   `R-011(2)`, `R-012(2)`
+- Actual:   `R-011(2)`
 
 - ✓ TP: R-011 (expected 3, got 2)
-- ✗ FP (over-pull): R-012
 
 ### pr-12-f008 — Add time-of-day constraints to the booking assistant (F-008)
 
-**PR #12** | precision: `1.000` | recall: `0.500` | F1: `0.667`
+**PR #12** | precision: `1.000` | recall: `0.750` | F1: `0.857`
 
 - Expected: `R-006(2)`, `R-008(2)`, `R-011(3)`, `R-012(2)`
-- Actual:   `R-011(3)`, `R-012(3)`
+- Actual:   `R-006(2)`, `R-011(3)`, `R-012(3)`
 
-- ✓ TP: R-011 (expected 3, got 3), R-012 (expected 2, got 3)
-- ✗ FN (missed): R-006, R-008
+- ✓ TP: R-006 (expected 2, got 2), R-011 (expected 3, got 3), R-012 (expected 2, got 3)
+- ✗ FN (missed): R-008
 
 ### pr-2-actions-bump — Bump GitHub Actions to Node.js 24 compatible versions
 
 **PR #2** | precision: `0.500` | recall: `1.000` | F1: `0.667`
 
 - Expected: `R-017(3)`
-- Actual:   `R-017(3)`, `R-019(2)`
+- Actual:   `R-005(2)`, `R-017(3)`
 
 - ✓ TP: R-017 (expected 3, got 3)
-- ✗ FP (over-pull): R-019
+- ✗ FP (over-pull): R-005
 
 ### pr-3-booking-service — Refactor: extract general booking logic into a service layer
 
-**PR #3** | precision: `0.500` | recall: `1.000` | F1: `0.667`
+**PR #3** | precision: `1.000` | recall: `1.000` | F1: `1.000`
 
 - Expected: `R-002(3)`
-- Actual:   `R-002(3)`, `R-007(2)`
+- Actual:   `R-002(3)`
 
 - ✓ TP: R-002 (expected 3, got 3)
-- ✗ FP (over-pull): R-007
 
 ### pr-5-api-error-contract — Correct and complete the v1 API error contract
 
-**PR #5** | precision: `0.500` | recall: `0.500` | F1: `0.500`
+**PR #5** | precision: `1.000` | recall: `1.000` | F1: `1.000`
 
 - Expected: `R-003(2)`, `R-006(3)`
-- Actual:   `R-006(3)`, `R-007(2)`
+- Actual:   `R-003(2)`, `R-006(3)`
 
-- ✓ TP: R-006 (expected 3, got 3)
-- ✗ FP (over-pull): R-007
-- ✗ FN (missed): R-003
+- ✓ TP: R-003 (expected 2, got 2), R-006 (expected 3, got 3)
 
 ### pr-6-null-bytes — Reject null bytes in API string inputs (prevent 500)
 

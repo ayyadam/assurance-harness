@@ -2,7 +2,7 @@
 
 **Reject null bytes in API string inputs (prevent 500)**
 
-_Run: 2026-06-03 • model: `qwen2.5:32b-instruct-q4_K_M`_  
+_Run: 2026-06-04 • model: `qwen2.5:32b-instruct-q4_K_M`_  
 _Repo: ayyadam/golf-web-app_
 
 ## Summary
@@ -18,26 +18,26 @@ This PR changes input validation in API schemas to reject null bytes, updating b
 
 ### 1. R-003 — _plausible_ — **COVERAGE GAP**
 
-**Why:** The diff modifies input validation for `username` and `password`, which are critical fields in authentication. Rejecting null bytes could prevent certain types of injection attacks or malformed inputs that might bypass security checks.
+**Why:** The diff modifies validation functions used for `username` and `password` fields in authentication requests. Although it does not directly address session/cookie manipulation or weak password handling, changes to input validation could indirectly affect the security of these inputs.
 
 **Covered by:** none (open, no layer)
 
-**Action:** Manually test the authentication endpoints with edge-case inputs to ensure no bypass is possible.
+**Action:** Manually probe the `/api/v1/auth/token` endpoint with various edge-case inputs (e.g., null bytes, lone surrogates) to ensure they are correctly rejected.
 
 ### 2. R-006 — _plausible_
 
-**Why:** The diff modifies the `safe_text` function used for validating string inputs, which could affect how the API contract behaves with certain input values. Although it does not directly change the OpenAPI spec or endpoint definitions, it alters validation behavior that clients rely on.
+**Why:** The diff modifies the `safe_text` function used for validating string inputs in the API schemas. Although it does not add/remove/modify endpoints or schema fields directly, changes to input validation could indirectly affect how clients interact with the contract.
 
 **Covered by:** Schemathesis contract suite
 
-**Action:** Re-run the Schemathesis property-based contract tests to ensure no drift from the published contract.
+**Action:** Re-run the Schemathesis property-based contract tests against the live API to ensure no drift from the published v1 API contract.
 
 ## Exploratory probes
 
-- Use curl to send a POST request to `/api/v1/auth/token` with a username containing null bytes and verify it returns 422.
-- Send a POST request to `/api/v1/auth/token` with a password containing null bytes and ensure it also returns 422.
-- Test the `PlayerInputSchema` by sending a POST request to an endpoint that uses this schema (e.g., `/api/v1/bookings`) with a name field containing null bytes.
-- Verify that the contract tests (`contract/` directory) pass after applying these changes.
+- Use `curl` to send a POST request to `/api/v1/auth/token` with a username containing a null byte and verify the response status code is 422.
+- Send a POST request to `/api/v1/auth/token` with a password containing a lone surrogate and ensure it returns a 422 status code.
+- Test the `/api/v1/bookings/create` endpoint with a player name containing a null byte to confirm it is rejected with a 422 status code.
+- Verify that the `safe_text` function correctly raises a ValidationError for both null bytes and lone surrogates in unit tests.
 
 ## Pre-filter
 
@@ -47,6 +47,7 @@ _Filtered out by the deterministic pre-filter before the LLM saw the register (n
 - R-002
 - R-004
 - R-005
+- R-007
 - R-008
 - R-009
 - R-010

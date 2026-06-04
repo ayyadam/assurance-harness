@@ -2,7 +2,7 @@
 
 **Show all matching tee-time slots, not a silent 6 (F-007)**
 
-_Run: 2026-06-03 • model: `qwen2.5:32b-instruct-q4_K_M`_  
+_Run: 2026-06-04 • model: `qwen2.5:32b-instruct-q4_K_M`_  
 _Repo: ayyadam/golf-web-app_
 
 ## Summary
@@ -18,26 +18,18 @@ This PR changes the booking assistant to return all matching tee-time slots inst
 
 ### 1. R-011 — _plausible_
 
-**Why:** The diff modifies how the booking assistant handles slot proposals by changing the limit on returned slots. This could indirectly affect the correctness of slot selection if the new behavior introduces edge cases not covered in previous testing.
+**Why:** The diff modifies the `find_candidate_slots` function in `app/services/booking_assistant.py`, which directly affects how tee-time slots are proposed to members. Although it does not change the AI model's output, it alters the deterministic code that proposes genuinely bookable slots.
 
 **Covered by:** ai_evaluation/
 
-**Action:** Add a golden-set case for full availability scenarios to ensure all matching slots are correctly proposed.
-
-### 2. R-012 — _plausible_
-
-**Why:** The diff modifies the booking assistant's slot proposal logic. Although it does not directly touch input handling, changes in how slots are selected could indirectly affect safety if new edge cases allow unauthorized actions through crafted inputs.
-
-**Covered by:** ai_evaluation/
-
-**Action:** Re-run the contract suite to ensure that the structured-output boundary still holds and no unauthorised actions can be triggered.
+**Action:** Add a golden-set case for F-007 to ensure all matching slots are returned and no truncation occurs.
 
 ## Exploratory probes
 
-- Manually test the booking assistant with a date having more than 6 available slots to verify it returns all matching slots.
-- Use curl to simulate API requests for different group sizes and periods, ensuring the full availability is shown without truncation.
-- Test the booking assistant with edge cases like minimum and maximum group sizes to ensure correct slot proposals.
-- Verify that the booking assistant excludes already booked slots correctly when a member is provided.
+- Manually test the booking assistant with a date having more than 6 available tee-time slots to verify that all slots are shown.
+- Check if the member can successfully book any of the additional slots beyond the old limit of 6.
+- Verify that the ordering of the returned slots is still earliest first.
+- Test the function with an explicit limit to ensure it correctly caps the number of slots.
 
 ## Pre-filter
 
@@ -49,9 +41,11 @@ _Filtered out by the deterministic pre-filter before the LLM saw the register (n
 - R-004
 - R-005
 - R-006
+- R-007
 - R-008
 - R-009
 - R-010
+- R-012
 - R-013
 - R-014
 - R-015
