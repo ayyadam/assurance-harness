@@ -53,6 +53,28 @@ def _added_lines(diff_body: str) -> list[str]:
     return [line for line in diff_body.splitlines() if line.startswith("+") and not line.startswith("+++")]
 
 
+def _added_code_lines(diff_body: str) -> list[str]:
+    """Like :func:`_added_lines` but skip pure-comment lines.
+
+    Discovered during phase 13 v3: PR #2's workflow diff contains an
+    explanatory comment mentioning ``docker/login-action`` and
+    ``docker/build-push-action`` — the comment text matched R-010's
+    ``docker`` marker even though no actual docker step was added. Stripping
+    lines whose trimmed content starts with ``#`` (YAML/Python comment
+    syntax — covers .yml and .py, the two main file kinds in this SUT's
+    diffs) keeps the markers honest. Inline comments at end of a line are
+    not stripped because the meaningful code is still on that line.
+    """
+    out: list[str] = []
+    for line in _added_lines(diff_body):
+        # Strip leading '+' then leading whitespace; check for '#' comment.
+        stripped = line[1:].lstrip()
+        if stripped.startswith("#"):
+            continue
+        out.append(line)
+    return out
+
+
 def _r007_query_pattern_change(diff_body: str) -> bool:
     """R-007 fires when a diff adds or modifies query/loading patterns.
 
@@ -109,6 +131,69 @@ def _r012_prompt_or_schema_change(diff_body: str) -> bool:
     return any(any(m in line for m in markers) for line in added)
 
 
+def _r009_schema_or_constraint_change(diff_body: str) -> bool:
+    """R-009 fires when a diff adds or modifies schema/constraint definitions.
+
+    Subject mechanism is data quality — column types, nullability, uniqueness,
+    value constraints, FK relations, and seed-side data. Query-strategy
+    changes on existing relationships (PR #8's lazy='dynamic' → 'selectin')
+    don't touch any of those and won't match: ``relationship(`` is
+    deliberately NOT a marker because PR #8's modified line contains it.
+    Adding a *new* relationship would typically accompany a Column() or FK
+    addition that does match.
+    """
+    added = _added_lines(diff_body)
+    markers = (
+        "Column(",
+        "ForeignKey(",
+        "nullable=",
+        "unique=",
+        "index=",
+        "default=",
+        "server_default=",
+        "CheckConstraint",
+        "UniqueConstraint",
+        "Integer",
+        "String(",
+        "Float",
+        "Numeric",
+        "Decimal",
+        "Boolean",
+        "Date",
+        "Time",
+        "DateTime",
+        "Text",
+        "JSON",
+    )
+    return any(any(m in line for m in markers) for line in added)
+
+
+def _r010_image_signing_change(diff_body: str) -> bool:
+    """R-010 fires when a workflow diff plausibly affects image build/push/signing.
+
+    Subject mechanism is supply-chain integrity for container images. Pure
+    action-version bumps (PR #2's actions/checkout@v4 → v5) and env-var
+    toggles don't change how images are built or signed and won't match.
+    Adding/modifying docker steps, cosign signing, registry pushes, or
+    image-tag computation does.
+    """
+    added = _added_code_lines(diff_body)
+    markers = (
+        "docker",
+        "cosign",
+        "ghcr",
+        "build-push-action",
+        "docker/login-action",
+        "docker/setup-buildx",
+        "Dockerfile",
+        "image:",
+        "registry",
+        "crane",
+        "syft",
+    )
+    return any(any(m.lower() in line.lower() for m in markers) for line in added)
+
+
 def _r019_runner_memory_change(diff_body: str) -> bool:
     """R-019 fires when a workflow diff plausibly affects the Playwright/a11y job's memory footprint.
 
@@ -118,7 +203,7 @@ def _r019_runner_memory_change(diff_body: str) -> bool:
     Playwright/Chromium/axe job steps, parallelisation flags, and matrix
     configurations do.
     """
-    added = _added_lines(diff_body)
+    added = _added_code_lines(diff_body)
     markers = (
         "playwright",
         "chromium",
@@ -178,12 +263,15 @@ _MAPPING: list[_Rule] = [
             "app/routes/member.py",
             "app/routes/visitor.py",
             "app/services/booking_service.py",
-            "app/models/**",
         ],
         "Booking-create check-then-create pattern lives in the route "
-        "handlers that own /book POSTs, the service module those handlers "
-        "delegate to, and the models that define uniqueness constraints. "
-        "Refactors that relocate the pattern still touch one of these.",
+        "handlers that own /book POSTs and the service module those "
+        "handlers delegate to. Phase 13 v1/v2 also mapped app/models/** "
+        "here on the theory that uniqueness-constraint changes could raise "
+        "R-002, but in v3's eval PR #8 demonstrated the displaced-FP shape: "
+        "a query-strategy change in a model file isn't a uniqueness-"
+        "constraint change. A genuine new UniqueConstraint would in "
+        "practice arrive with route/service changes that already match.",
     ),
     _Rule(
         "R-003",
@@ -256,15 +344,23 @@ _MAPPING: list[_Rule] = [
         "R-009",
         ["seed.py", "app/models/**"],
         "Seed data quality risk: the seed script itself, and the models "
-        "whose schema the seed satisfies. A type/constraint change in "
-        "models without a matching seed update would surface here.",
+        "whose schema the seed satisfies. Path-only filtering would fire "
+        "on every model change including query-strategy tweaks (PR #8); "
+        "v3's content filter narrows to diffs that actually add or modify "
+        "column types, nullability, defaults, unique/index constraints, "
+        "or FK relations. See F-018.",
+        content_filter=_r009_schema_or_constraint_change,
     ),
     _Rule(
         "R-010",
         [".github/workflows/**"],
-        "Image signing is a supply-chain CI concern. Application code "
-        "cannot raise this; only the workflow that builds/publishes "
-        "container images.",
+        "Image signing is a supply-chain CI concern; only workflows that "
+        "build or publish container images can raise it. Path-only "
+        "filtering would fire on every workflow change including pure "
+        "action-version bumps (PR #2); v3's content filter narrows to "
+        "diffs that touch docker/cosign/registry/image-tag logic. See "
+        "F-018.",
+        content_filter=_r010_image_signing_change,
     ),
     _Rule(
         "R-011",

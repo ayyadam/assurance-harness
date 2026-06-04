@@ -40,23 +40,23 @@ def _risks(*ids: str) -> list[Risk]:
 
 
 @pytest.mark.parametrize(
-    "diff_files,must_include,must_exclude",
+    "diff_files,body,must_include,must_exclude",
     [
-        # PR #2 shape: workflow-only bump. Empty stub body → R-019's
-        # content filter doesn't fire (no Playwright/Chromium/axe markers).
-        # That's the correct path-only assertion; R-019's positive case
-        # is covered separately in the content-filter tests below.
+        # PR #2 shape: workflow-only bump. Empty body → R-010 and R-019
+        # content filters don't fire (no docker/playwright markers). The
+        # path-only rules R-005/R-014/R-016/R-017 still hit.
         (
             [".github/workflows/ci-cd.yml"],
-            {"R-005", "R-010", "R-014", "R-016", "R-017"},
-            {"R-002", "R-006", "R-008", "R-011", "R-012", "R-013", "R-019"},
+            "",
+            {"R-005", "R-014", "R-016", "R-017"},
+            {"R-002", "R-006", "R-008", "R-010", "R-011", "R-012", "R-013", "R-019"},
         ),
-        # PR #3 shape: booking-service refactor — touches routes + service + models.
-        # The deliberate v3/v4 v2 stress test for R-002.
-        # v3: R-007 has a content filter (query patterns); with empty body
-        # R-007 doesn't fire here, which matches the v3 win on PR #3.
+        # PR #3 shape: booking-service refactor — touches routes + service.
+        # The deliberate v3/v4 v2 stress test for R-002. Empty body → R-007
+        # doesn't fire, matching the v3 win on PR #3.
         (
             ["app/routes/member.py", "app/routes/visitor.py", "app/services/booking_service.py"],
+            "",
             {"R-002"},
             {"R-005", "R-007", "R-008", "R-010", "R-014", "R-017", "R-018", "R-019"},
         ),
@@ -64,19 +64,20 @@ def _risks(*ids: str) -> list[Risk]:
         # rules apply at these paths so v3 behaves identically to v2.
         (
             ["app/static/css/style.css", "app/static/js/main.js"],
+            "",
             {"R-008", "R-018"},
             {"R-002", "R-005", "R-006", "R-010", "R-014", "R-017"},
         ),
-        # PR #12 shape: AI feature schema + template + assistant.
-        # v3: R-012 has a content filter; with empty body R-012 doesn't
-        # fire on the per-layer stub. Real PR #12 diff content does fire
-        # R-012 (covered in the content-filter tests below).
+        # PR #12 shape: AI feature schema + template + assistant. Empty body
+        # → R-012 content filter doesn't fire on the per-layer stub. Real
+        # PR #12 content does fire R-012 (covered in content-filter tests).
         (
             [
                 "app/api/schemas.py",
                 "app/services/booking_assistant.py",
                 "app/templates/member/book_tee_time.html",
             ],
+            "",
             {"R-006", "R-008", "R-011", "R-018"},
             {"R-005", "R-010", "R-012", "R-014", "R-017", "R-019"},
         ),
@@ -84,35 +85,49 @@ def _risks(*ids: str) -> list[Risk]:
         # No content-filtered rules apply at this path.
         (
             ["app/__init__.py"],
+            "",
             {"R-006", "R-013"},
             {"R-002", "R-005", "R-008", "R-010", "R-014", "R-017"},
         ),
-        # PR #8 shape: model file under app/models/ directory.
-        # v3: R-007 doesn't fire on empty body (real PR #8 diff content
-        # adds `lazy=` and so DOES fire R-007 — covered separately).
+        # PR #8 shape: model file under app/models/ directory, with the
+        # ``lazy='selectin'`` body that matches R-007's content filter.
+        # Regression guard #1: app/models/booking.py uses a directory layout
+        # (the v1 finding that PR #8 hits fallback without app/models/**).
+        # Regression guard #2: R-002 no longer maps app/models/** (the v3
+        # narrowing that fixed PR #8's R-002 displaced-FP). Only R-007 is
+        # a candidate here, via path match + content filter pass.
         (
             ["app/models/booking.py"],
-            {"R-002", "R-009"},
-            {"R-001", "R-005", "R-007", "R-008", "R-010", "R-014", "R-017", "R-019"},
+            (
+                "@@ -10,1 +10,1 @@\n"
+                "-    bookings = relationship('Booking', lazy='dynamic')\n"
+                "+    bookings = relationship('Booking', lazy='selectin')\n"
+            ),
+            {"R-007"},
+            {"R-001", "R-002", "R-005", "R-008", "R-009", "R-010", "R-014", "R-017", "R-019"},
         ),
         # PR #5 / #6 shape: API schema-only changes (contract corrections,
         # input security). Regression guard for the v2 R-011 narrowing.
         (
             ["app/api/schemas.py", "app/api/views.py"],
+            "",
             {"R-003", "R-006"},
             {"R-005", "R-008", "R-010", "R-011", "R-014", "R-017", "R-018", "R-019"},
         ),
         # Template-only diff — regression guard for the v2 R-018 narrowing.
         (
             ["app/templates/member/book_tee_time.html"],
+            "",
             {"R-008", "R-011", "R-018"},
             {"R-002", "R-005", "R-010", "R-014", "R-017", "R-019"},
         ),
     ],
 )
-def test_candidate_risk_ids_per_layer(diff_files: list[str], must_include: set[str], must_exclude: set[str]) -> None:
+def test_candidate_risk_ids_per_layer(
+    diff_files: list[str], body: str, must_include: set[str], must_exclude: set[str]
+) -> None:
     """For each historical PR shape, assert the candidate set's membership."""
-    diff = _StubDiff(files=diff_files)
+    diff = _StubDiff(files=diff_files, body=body)
     ids, fallback_used = candidate_risk_ids(diff)
     assert not fallback_used, f"unexpected fallback for {diff_files}"
     missing = must_include - ids
@@ -195,6 +210,80 @@ def test_r019_fires_on_playwright_step_addition() -> None:
     )
     ids, _ = candidate_risk_ids(diff)
     assert "R-019" in ids
+
+
+def test_r009_fires_on_column_addition() -> None:
+    """A model diff that adds a Column with a type SHOULD raise R-009."""
+    diff = _StubDiff(
+        files=["app/models/booking.py"],
+        body=(
+            "@@ -10,2 +10,3 @@\n"
+            "     class Booking(Base):\n"
+            "         id = Column(Integer, primary_key=True)\n"
+            "+        notes = Column(Text, nullable=True)\n"
+        ),
+    )
+    ids, _ = candidate_risk_ids(diff)
+    assert "R-009" in ids
+
+
+def test_r009_skips_query_strategy_tweak() -> None:
+    """The PR #8 shape: ``lazy='dynamic' → 'selectin'`` must NOT raise R-009."""
+    diff = _StubDiff(
+        files=["app/models/booking.py"],
+        body=(
+            "@@ -10,1 +10,1 @@\n"
+            "-    bookings = relationship('Booking', lazy='dynamic')\n"
+            "+    bookings = relationship('Booking', lazy='selectin')\n"
+        ),
+    )
+    ids, _ = candidate_risk_ids(diff)
+    assert "R-009" not in ids
+
+
+def test_r010_fires_on_docker_build_step_addition() -> None:
+    """A workflow diff that adds a docker build/push step SHOULD raise R-010."""
+    diff = _StubDiff(
+        files=[".github/workflows/ci-cd.yml"],
+        body=("@@ -50,2 +50,4 @@\n+      - name: Build and push image\n+        uses: docker/build-push-action@v5\n"),
+    )
+    ids, _ = candidate_risk_ids(diff)
+    assert "R-010" in ids
+
+
+def test_r010_skips_pure_action_version_bump() -> None:
+    """The PR #2 shape: ``actions/checkout@v4 → v5`` must NOT raise R-010."""
+    diff = _StubDiff(
+        files=[".github/workflows/ci-cd.yml"],
+        body=("@@ -10,2 +10,2 @@\n-      - uses: actions/checkout@v4\n+      - uses: actions/checkout@v5\n"),
+    )
+    ids, _ = candidate_risk_ids(diff)
+    assert "R-010" not in ids
+
+
+def test_r010_skips_marker_words_appearing_only_in_comments() -> None:
+    """A diff that adds a YAML comment mentioning docker/build-push-action
+    (without actually adding a docker step) must NOT raise R-010.
+
+    This is the PR #2 shape that bit us during phase 13 v3 — the diff added
+    a comment explaining the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 env var
+    *referenced* docker/login-action and docker/build-push-action by name,
+    but no docker step was added. The comment-line filter in
+    ``_added_code_lines`` handles this.
+    """
+    diff = _StubDiff(
+        files=[".github/workflows/ci-cd.yml"],
+        body=(
+            "@@ -5,0 +6,5 @@\n"
+            "+# Opt all jobs into Node.js 24. Some actions we depend on\n"
+            "+# (actions/upload-artifact, docker/login-action,\n"
+            "+# docker/build-push-action) have not yet published Node 24 majors.\n"
+            "+env:\n"
+            "+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'\n"
+        ),
+    )
+    ids, _ = candidate_risk_ids(diff)
+    assert "R-010" not in ids
 
 
 def test_r019_skips_pure_action_version_bump() -> None:

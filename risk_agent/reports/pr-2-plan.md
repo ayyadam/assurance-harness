@@ -17,26 +17,26 @@ This PR changes the CI configuration to use Node.js 24 compatible versions of Gi
 
 ### 1. R-017 — _direct_
 
-**Why:** The diff updates several actions (actions/checkout@v5, actions/setup-python@v6, and actions/upload-artifact@v5) to versions that are compatible with Node.js 24. This directly addresses the risk of using deprecated Node.js 20 actions.
+**Why:** The diff updates several actions to their latest versions and adds an environment variable to force JavaScript actions to use Node.js 24, directly addressing the risk of using deprecated Node.js 20 actions.
 
 **Covered by:** CI workflow configuration
 
-**Action:** Verify that all updated actions work correctly with Node.js 24 by running the CI pipeline.
+**Action:** Verify that all updated actions are compatible with Node.js 24 by re-running the CI pipeline.
 
-### 2. R-010 — _plausible_
+### 2. R-005 — _plausible_
 
-**Why:** Although the diff does not directly address image signing, changing the CI configuration could indirectly affect how images are built and managed. A reasonable reviewer should check if this change impacts supply chain integrity.
+**Why:** The diff modifies the CI workflow file, which could potentially affect how linting is enforced. Although the risk was previously mitigated, changes to the workflow might introduce new issues.
 
-**Covered by:** accepted (out of scope)
+**Covered by:** CI workflow configuration
 
-**Action:** Review the updated actions to ensure they do not introduce any new vulnerabilities or issues related to image signing.
+**Action:** Manually check that the lint gate is still enforced by triggering a test build.
 
 ## Exploratory probes
 
-- Run the CI pipeline manually to ensure all steps execute correctly with Node.js 24.
-- Check the GitHub Actions logs for any warnings or errors related to the updated actions.
-- Verify that the artifact upload step (actions/upload-artifact@v5) works as expected by checking if artifacts are uploaded successfully.
-- Manually trigger a deployment from the CI pipeline to ensure it completes without issues.
+- Trigger a CI run and verify that all jobs complete successfully with Node.js 24.
+- Check the artifact upload step to ensure it works correctly with the updated actions.
+- Manually trigger a lint job to confirm that the lint gate is enforced as expected.
+- Verify that the unit tests pass without any issues after the action updates.
 
 ## Pre-filter
 
@@ -50,6 +50,7 @@ _Filtered out by the deterministic pre-filter before the LLM saw the register (n
 - R-007
 - R-008
 - R-009
+- R-010
 - R-011
 - R-012
 - R-013

@@ -2,11 +2,11 @@
   "totals": {
     "cases": 9,
     "true_positives": 13,
-    "false_positives": 2,
+    "false_positives": 1,
     "false_negatives": 1,
-    "precision": 0.867,
+    "precision": 0.929,
     "recall": 0.929,
-    "f1": 0.897,
+    "f1": 0.929,
     "relevance_correct": 10,
     "relevance_accuracy": 0.769
   },
@@ -40,19 +40,16 @@
         "R-007": 3
       },
       "actual": {
-        "R-007": 3,
-        "R-009": 2
+        "R-007": 3
       },
       "true_positives": [
         "R-007"
       ],
-      "false_positives": [
-        "R-009"
-      ],
+      "false_positives": [],
       "false_negatives": [],
-      "precision": 0.5,
+      "precision": 1.0,
       "recall": 1.0,
-      "f1": 0.667,
+      "f1": 1.0,
       "relevance_correct": 1,
       "relevance_accuracy": 1.0
     },
@@ -116,13 +113,13 @@
       },
       "actual": {
         "R-017": 3,
-        "R-010": 2
+        "R-005": 2
       },
       "true_positives": [
         "R-017"
       ],
       "false_positives": [
-        "R-010"
+        "R-005"
       ],
       "false_negatives": [],
       "precision": 0.5,

@@ -7,7 +7,7 @@ _Repo: ayyadam/golf-web-app_
 
 ## Summary
 
-This PR changes the relationship loading strategy in `TeeTime` model to avoid N+1 queries when listing tee times.
+This PR changes the relationship loading strategy in `TeeTime` model to avoid N+1 query issues when listing tee times.
 
 ## Changed files
 
@@ -17,36 +17,30 @@ This PR changes the relationship loading strategy in `TeeTime` model to avoid N+
 
 ### 1. R-007 — _direct_
 
-**Why:** The diff addresses an N+1 query issue which directly impacts performance. The mitigation for this risk includes a performance baseline that caught a previous N+1 query in the tee-times endpoint.
+**Why:** The diff modifies the `lazy='selectin'` parameter for the `bookings` relationship in `TeeTime`, which directly addresses an N+1 query issue. This change is aimed at improving performance by reducing database queries.
 
 **Covered by:** k6 performance gate
 
-**Action:** Re-run the k6 load test to ensure no new regressions have been introduced.
-
-### 2. R-009 — _plausible_
-
-**Why:** The diff modifies the relationship loading strategy which could potentially affect data quality and consistency. The mitigation for this risk includes pandera schemas and business-rule invariants that validate the live database.
-
-**Covered by:** pandera data quality
-
-**Action:** Run the data quality checks to ensure no drift has occurred due to the change.
+**Action:** Re-run the k6 performance tests to ensure that the p95 latency remains below 500ms and error rate stays under 1%.
 
 ## Exploratory probes
 
-- Use a browser or curl to list tee times and measure the response time before and after applying this diff.
-- Check if the number of queries fired when listing tee times has reduced by using SQL query logs.
-- Verify that the data quality checks in CI pass without any new failures related to this change.
-- Manually inspect the database to ensure no unintended changes have occurred due to the relationship loading strategy change.
+- Use `curl` or a browser to fetch the tee times endpoint and measure the response time before and after applying this PR.
+- Check the database query logs to ensure that the N+1 issue is resolved and only one batch query is executed for listing tee times.
+- Run a load test using k6 against the tee-times endpoint to verify that the performance improvements hold under stress.
+- Manually inspect the application's response time in a real browser session before and after applying this PR.
 
 ## Pre-filter
 
 _Filtered out by the deterministic pre-filter before the LLM saw the register (no file-path mapping intersects the diff). If a reviewer thinks a row below should have been raised, sharpen its patterns in `risk_agent/prefilter.py`._
 
 - R-001
+- R-002
 - R-003
 - R-005
 - R-006
 - R-008
+- R-009
 - R-010
 - R-011
 - R-012

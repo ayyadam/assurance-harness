@@ -28,8 +28,8 @@ This PR changes CSS styles and JavaScript to fix WCAG 2.1 AA accessibility viola
 
 - Manually test the dark theme on different browsers to ensure all text and button colors meet the required contrast ratios.
 - Use a screen reader to navigate the date picker input and verify that the `aria-label` is correctly set and announced.
-- Check if the changes in `style.css` affect any other elements besides buttons and text, ensuring no new accessibility issues arise.
-- Validate that the dark theme's color adjustments do not interfere with existing functional tests.
+- Check if the changes in `style.css` affect any other elements beyond those explicitly mentioned, ensuring no unintended accessibility issues arise.
+- Validate that the updated styles do not break existing functionality or introduce new visual inconsistencies.
 
 ## Pre-filter
 

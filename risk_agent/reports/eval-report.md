@@ -10,11 +10,11 @@ Compares the agent's emitted ranking (cached under `reports/pr-N-plan.json`) aga
 |---|---|
 | Cases scored | 9 |
 | True positives | 13 |
-| False positives (over-pull) | 2 |
+| False positives (over-pull) | 1 |
 | False negatives (missed) | 1 |
-| **Precision** | **0.867** |
+| **Precision** | **0.929** |
 | **Recall** | **0.929** |
-| **F1** | **0.897** |
+| **F1** | **0.929** |
 | Relevance accuracy (matching `direct`/`plausible` on TPs) | 0.769 (10/13) |
 
 ## Per-case
@@ -30,13 +30,12 @@ Compares the agent's emitted ranking (cached under `reports/pr-N-plan.json`) aga
 
 ### pr-8-nplus1 — Fix N+1 query when listing tee times
 
-**PR #8** | precision: `0.500` | recall: `1.000` | F1: `0.667`
+**PR #8** | precision: `1.000` | recall: `1.000` | F1: `1.000`
 
 - Expected: `R-007(3)`
-- Actual:   `R-007(3)`, `R-009(2)`
+- Actual:   `R-007(3)`
 
 - ✓ TP: R-007 (expected 3, got 3)
-- ✗ FP (over-pull): R-009
 
 ### pr-11-f007 — Show all matching tee-time slots, not a silent 6 (F-007)
 
@@ -62,10 +61,10 @@ Compares the agent's emitted ranking (cached under `reports/pr-N-plan.json`) aga
 **PR #2** | precision: `0.500` | recall: `1.000` | F1: `0.667`
 
 - Expected: `R-017(3)`
-- Actual:   `R-010(2)`, `R-017(3)`
+- Actual:   `R-005(2)`, `R-017(3)`
 
 - ✓ TP: R-017 (expected 3, got 3)
-- ✗ FP (over-pull): R-010
+- ✗ FP (over-pull): R-005
 
 ### pr-3-booking-service — Refactor: extract general booking logic into a service layer
 
