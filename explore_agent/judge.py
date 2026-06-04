@@ -22,7 +22,13 @@ from explore_agent.probe import Probe
 
 DEFAULT_MODEL = "qwen2.5:32b-instruct-q4_K_M"
 
-CATEGORIES = ("expected", "unexpected_5xx", "schema_drift", "business_rule_concern")
+CATEGORIES = (
+    "expected",
+    "unexpected_5xx",
+    "schema_drift",
+    "business_rule_concern",
+    "auth_boundary_concern",
+)
 SEVERITIES = ("low", "med", "high")
 
 
@@ -53,7 +59,13 @@ _SYSTEM = (
     "                           outcome suggests a business-rule weakness: accepts a "
     "                           past-date booking, returns sensitive data, allows an "
     "                           action that should be blocked, leaks internals via error "
-    "                           messages, etc.\n\n"
+    "                           messages, etc.\n"
+    "  auth_boundary_concern  — The request used a credential mode the endpoint should "
+    "                           reject or restrict (no token, an invalid token, or another "
+    "                           member's token on an owner-restricted resource), and the "
+    "                           response indicates the boundary failed to hold (2xx where "
+    "                           a 401/403 was expected, or another member's data returned "
+    "                           when ownership should restrict it).\n\n"
     "Severity: low | med | high. Use 'low' for 'expected' (it's a placeholder there).\n"
     "Do NOT use this output to speculate about exploits — categorise, ground the "
     "rationale in the evidence, stop."
@@ -71,12 +83,38 @@ _SCHEMA = {
 }
 
 
+_AUTH_MODE_CONTEXT = {
+    "default": (
+        "Auth mode: default — the seeded member's bearer token was sent. Standard "
+        "happy/edge/abusive classification applies."
+    ),
+    "unauth": (
+        "Auth mode: unauth — NO Authorization header was sent. A correctly-secured "
+        "endpoint must reject this with 401/403. 2xx here is an auth bypass."
+    ),
+    "wrong_creds": (
+        "Auth mode: wrong_creds — an invalid bearer token was sent. A correctly-secured "
+        "endpoint must reject this with 401/403. 2xx here is an auth bypass."
+    ),
+    "other_member": (
+        "Auth mode: other_member — a DIFFERENT seeded member's valid token was sent. "
+        "Endpoints that return data scoped to the caller (e.g. /me) are expected to "
+        "return that other member's data, which is correct behaviour. Endpoints that "
+        "expose a specific resource id should not leak resources owned by a different "
+        "member without an authorisation check. Read carefully and classify based on "
+        "what the response reveals."
+    ),
+}
+
+
 def _user_message(probe: Probe) -> str:
     ep = probe.endpoint
     responses_doc = ep.operation.get("responses", {})
+    auth_note = _AUTH_MODE_CONTEXT.get(probe.auth_mode, "")
     return (
         f"Endpoint: {ep.method} {ep.path}\n"
         f"Summary:  {ep.summary or '(none)'}\n\n"
+        f"{auth_note}\n\n"
         f"Documented responses (status -> shape):\n"
         f"{json.dumps(responses_doc, indent=2)[:3000]}\n\n"
         f"Variant probed: {probe.variant.label} — {probe.variant.rationale}\n"
@@ -88,12 +126,60 @@ def _user_message(probe: Probe) -> str:
     )
 
 
+def deterministic_auth_finding(probe: Probe) -> Finding:
+    """Mechanical classification for unauth / wrong_creds probes.
+
+    The rule is unambiguous: 401/403 means the auth boundary held; 2xx means it
+    failed; 5xx means an unhandled case. No LLM judgement needed — and using one
+    would just add latency and a risk of mis-classification.
+    """
+    if probe.status in (401, 403):
+        return Finding(
+            category="expected",
+            severity="low",
+            rationale=(f"Endpoint correctly rejected the {probe.auth_mode} probe with {probe.status}."),
+        )
+    if 200 <= probe.status < 300:
+        return Finding(
+            category="auth_boundary_concern",
+            severity="high",
+            rationale=(
+                f"Endpoint accepted a {probe.auth_mode} request and returned "
+                f"{probe.status} where 401/403 was expected — auth boundary did not hold."
+            ),
+        )
+    if probe.status >= 500:
+        return Finding(
+            category="unexpected_5xx",
+            severity="high",
+            rationale=(
+                f"Endpoint returned {probe.status} on a {probe.auth_mode} probe; "
+                "auth-rejection paths should return a controlled 4xx, not crash."
+            ),
+        )
+    return Finding(
+        category="expected",
+        severity="low",
+        rationale=(
+            f"Endpoint returned {probe.status} on a {probe.auth_mode} probe — "
+            "non-2xx, non-5xx outcome treated as the documented rejection path."
+        ),
+    )
+
+
 def judge(
     probe: Probe,
     model: str = DEFAULT_MODEL,
     host: str | None = None,
 ) -> Finding:
-    """Classify one probe response."""
+    """Classify one probe response.
+
+    For ``unauth`` and ``wrong_creds`` probes the rule is mechanical and we use
+    ``deterministic_auth_finding`` directly. All other modes (default, other_member)
+    go through the LLM judge.
+    """
+    if probe.auth_mode in ("unauth", "wrong_creds"):
+        return deterministic_auth_finding(probe)
     client = ollama.Client(host=host) if host else ollama
     kwargs: dict[str, Any] = {
         "model": model,

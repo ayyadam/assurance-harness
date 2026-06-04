@@ -30,6 +30,9 @@ class Variant:
     rationale: str  # one-line description of what this variant probes
 
 
+AUTH_MODES = ("default", "unauth", "wrong_creds", "other_member")
+
+
 @dataclass
 class Probe:
     endpoint: Endpoint
@@ -41,6 +44,7 @@ class Probe:
     latency_ms: float
     response_body: Any  # dict | list | str — best-effort decoded
     response_text: str
+    auth_mode: str = "default"  # one of AUTH_MODES
 
     @property
     def status_class(self) -> str:
@@ -174,6 +178,9 @@ def resolve_path(endpoint: Endpoint, seed_context: dict[str, str]) -> str | None
     return path
 
 
+_AUTH_FROM_SESSION = object()  # sentinel: keep whatever session.headers carries
+
+
 def send_probe(
     session: requests.Session,
     base_url: str,
@@ -181,18 +188,40 @@ def send_probe(
     variant: Variant,
     seed_context: dict[str, str],
     timeout: float = 15.0,
+    auth_mode: str = "default",
+    auth_header: object = _AUTH_FROM_SESSION,
 ) -> Probe | None:
-    """Send one probe; return None if the endpoint can't be resolved."""
+    """Send one probe; return None if the endpoint can't be resolved.
+
+    ``auth_mode`` is tagged on the resulting ``Probe`` for downstream judging
+    and reporting. ``auth_header`` controls the Authorization header on this
+    one call without mutating the session:
+
+    * ``_AUTH_FROM_SESSION`` (default) — leave session.headers alone.
+    * ``None`` — strip Authorization for this request (unauth probe).
+    * ``str`` — send exactly this Authorization header value (wrong_creds /
+      other_member probes).
+    """
     resolved = resolve_path(endpoint, seed_context)
     if resolved is None:
         return None
     url = base_url.rstrip("/") + resolved
+    headers: dict[str, str] | None = None
+    if auth_header is _AUTH_FROM_SESSION:
+        pass  # session.headers used as-is
+    elif auth_header is None:
+        # requests merges per-call headers with session.headers; setting the
+        # key to None on the merged dict tells requests to drop it for this call.
+        headers = {"Authorization": None}  # type: ignore[dict-item]
+    else:
+        headers = {"Authorization": str(auth_header)}
     started = time.perf_counter()
     try:
         resp = session.request(
             method=endpoint.method,
             url=url,
             json=variant.body if variant.body is not None else None,
+            headers=headers,
             timeout=timeout,
         )
     except requests.RequestException as exc:
@@ -207,6 +236,7 @@ def send_probe(
             latency_ms=latency_ms,
             response_body=None,
             response_text=f"<request error: {exc}>",
+            auth_mode=auth_mode,
         )
     latency_ms = (time.perf_counter() - started) * 1000
     text = resp.text
@@ -225,4 +255,5 @@ def send_probe(
         latency_ms=latency_ms,
         response_body=body,
         response_text=text,
+        auth_mode=auth_mode,
     )
