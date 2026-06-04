@@ -2,7 +2,7 @@
 
 **Refactor: extract general booking logic into a service layer**
 
-_Run: 2026-06-03 • model: `qwen2.5:32b-instruct-q4_K_M`_  
+_Run: 2026-06-04 • model: `qwen2.5:32b-instruct-q4_K_M`_  
 _Repo: ayyadam/golf-web-app_
 
 ## Summary
@@ -20,26 +20,18 @@ This PR refactors and extracts general booking logic into a service layer, centr
 
 ### 1. R-002 — _direct_ — **COVERAGE GAP**
 
-**Why:** The diff modifies the core booking creation logic in `app/services/booking_service.py`, which directly affects how concurrent booking requests are handled. The new service layer could introduce concurrency issues if not properly tested.
+**Why:** The diff modifies the core booking creation logic in `create_general_booking` within `app/services/booking_service.py`, which directly affects the transaction boundary for creating bookings. This change could introduce concurrency issues if not properly synchronized.
 
 **Covered by:** none (open, no layer)
 
-**Action:** Re-run the contract suite to ensure that the concurrency control at the POST /book transaction boundary is still intact.
-
-### 2. R-007 — _plausible_
-
-**Why:** The diff introduces new service layer functions and changes how bookings are created. This could potentially impact performance if not optimized correctly.
-
-**Covered by:** k6 performance gate
-
-**Action:** Run a load test using k6 to ensure that the performance baseline is maintained after this refactoring.
+**Action:** Add explicit concurrency tests to verify that concurrent booking requests are handled correctly.
 
 ## Exploratory probes
 
-- Manually trigger concurrent booking requests for the same tee slot via curl or Postman and observe the system's behavior.
-- Check the database logs for any constraint violations during concurrent booking attempts.
-- Monitor the application's response time before and after applying the PR to identify any performance regressions.
-- Test edge cases such as booking with minimum and maximum group sizes to ensure validation logic works correctly.
+- Simulate multiple concurrent POST /book requests using `curl` or a load testing tool like Apache JMeter to check for overbooking or database constraint violations.
+- Manually test the booking process by rapidly submitting two booking requests with the same tee slot details through the web interface.
+- Check the logs for any unexpected errors or warnings during the booking creation process when multiple users attempt to book simultaneously.
+- Review the transaction isolation level and locking mechanisms in the database to ensure they are configured correctly for handling concurrent bookings.
 
 ## Pre-filter
 
@@ -50,6 +42,7 @@ _Filtered out by the deterministic pre-filter before the LLM saw the register (n
 - R-004
 - R-005
 - R-006
+- R-007
 - R-008
 - R-009
 - R-010

@@ -4,25 +4,17 @@
     {
       "id": "R-002",
       "relevance": 3,
-      "rationale": "The diff modifies the core booking creation logic in `app/services/booking_service.py`, which directly affects how concurrent booking requests are handled. The new service layer could introduce concurrency issues if not properly tested.",
-      "action": "Re-run the contract suite to ensure that the concurrency control at the POST /book transaction boundary is still intact.",
+      "rationale": "The diff modifies the core booking creation logic in `create_general_booking` within `app/services/booking_service.py`, which directly affects the transaction boundary for creating bookings. This change could introduce concurrency issues if not properly synchronized.",
+      "action": "Add explicit concurrency tests to verify that concurrent booking requests are handled correctly.",
       "covered_by": "none (open, no layer)",
       "is_gap": true
-    },
-    {
-      "id": "R-007",
-      "relevance": 2,
-      "rationale": "The diff introduces new service layer functions and changes how bookings are created. This could potentially impact performance if not optimized correctly.",
-      "action": "Run a load test using k6 to ensure that the performance baseline is maintained after this refactoring.",
-      "covered_by": "k6 performance gate",
-      "is_gap": false
     }
   ],
   "exploratory_probes": [
-    "Manually trigger concurrent booking requests for the same tee slot via curl or Postman and observe the system's behavior.",
-    "Check the database logs for any constraint violations during concurrent booking attempts.",
-    "Monitor the application's response time before and after applying the PR to identify any performance regressions.",
-    "Test edge cases such as booking with minimum and maximum group sizes to ensure validation logic works correctly."
+    "Simulate multiple concurrent POST /book requests using `curl` or a load testing tool like Apache JMeter to check for overbooking or database constraint violations.",
+    "Manually test the booking process by rapidly submitting two booking requests with the same tee slot details through the web interface.",
+    "Check the logs for any unexpected errors or warnings during the booking creation process when multiple users attempt to book simultaneously.",
+    "Review the transaction isolation level and locking mechanisms in the database to ensure they are configured correctly for handling concurrent bookings."
   ],
   "model": "qwen2.5:32b-instruct-q4_K_M",
   "filtered_out_ids": [
@@ -31,6 +23,7 @@
     "R-004",
     "R-005",
     "R-006",
+    "R-007",
     "R-008",
     "R-009",
     "R-010",

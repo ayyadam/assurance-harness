@@ -2,12 +2,12 @@
 
 **Correct and complete the v1 API error contract**
 
-_Run: 2026-06-03 • model: `qwen2.5:32b-instruct-q4_K_M`_  
+_Run: 2026-06-04 • model: `qwen2.5:32b-instruct-q4_K_M`_  
 _Repo: ayyadam/golf-web-app_
 
 ## Summary
 
-This PR changes the v1 API error contract and modifies schema validation for UTF-8 encoding and player handicap ranges.
+This PR changes the v1 API error contract and modifies schema validation in several places.
 
 ## Changed files
 
@@ -19,26 +19,26 @@ This PR changes the v1 API error contract and modifies schema validation for UTF
 
 ### 1. R-006 — _direct_
 
-**Why:** The diff directly modifies the OpenAPI spec by changing status-code mappings and adding new validations in `app/api/schemas.py` and `app/api/views.py`. These changes affect the published API contract.
+**Why:** The diff directly modifies the OpenAPI spec by changing status-code mappings and adding/removing fields from schemas. These changes affect the published API contract.
 
 **Covered by:** Schemathesis contract suite
 
-**Action:** Re-run the Schemathesis property-based contract tests to ensure no drift from the documented behavior.
+**Action:** Re-run the Schemathesis property-based contract tests in `contract/` to ensure no mismatches between the spec and behavior.
 
-### 2. R-007 — _plausible_
+### 2. R-003 — _plausible_ — **COVERAGE GAP**
 
-**Why:** The diff modifies error handling and validation logic in `app/api/views.py` which could potentially impact performance if new validations introduce significant overhead.
+**Why:** The diff modifies validation logic for authentication-related schemas (`TokenRequest`). Although it does not directly touch session or cookie handling, changes in input validation could indirectly affect security.
 
-**Covered by:** k6 performance gate
+**Covered by:** none (open, no layer)
 
-**Action:** Run a load test with k6 to ensure that the changes do not cause latency or throughput regressions.
+**Action:** Manually probe the auth endpoints with various malformed inputs to ensure no bypasses are possible.
 
 ## Exploratory probes
 
-- Manually trigger an API request with a malformed UTF-8 string in the username field and verify it returns 422.
-- Send a booking request with a player handicap out of range (e.g., -15) and ensure it returns 422.
-- Check if a past tee time booking request now correctly returns 409 instead of 400.
-- Verify that the API response for `book_tee_time` includes the correct status codes for different error scenarios.
+- Use `curl` to send a request with an invalid UTF-8 string for the username field and verify that it returns 422.
+- Send a booking request with a player handicap out of range (e.g., -15 or 60) and ensure it returns 422.
+- Attempt to book a tee time in the past and confirm it returns 409.
+- Check if an already booked tee time returns 409 when attempting another booking.
 
 ## Pre-filter
 
@@ -48,6 +48,7 @@ _Filtered out by the deterministic pre-filter before the LLM saw the register (n
 - R-002
 - R-004
 - R-005
+- R-007
 - R-008
 - R-009
 - R-010

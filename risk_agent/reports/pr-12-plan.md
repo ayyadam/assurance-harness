@@ -2,7 +2,7 @@
 
 **Add time-of-day constraints to the booking assistant (F-008)**
 
-_Run: 2026-06-03 • model: `qwen2.5:32b-instruct-q4_K_M`_  
+_Run: 2026-06-04 • model: `qwen2.5:32b-instruct-q4_K_M`_  
 _Repo: ayyadam/golf-web-app_
 
 ## Summary
@@ -20,26 +20,34 @@ This PR changes the booking assistant to include time-of-day constraints in the 
 
 ### 1. R-011 — _direct_
 
-**Why:** The diff modifies the BookingIntent schema and parsing logic to handle new time-of-day constraints (not_before and not_after), directly impacting how the assistant interprets and proposes tee times.
+**Why:** The diff modifies the BookingIntent schema and parsing logic to handle new time-of-day constraints (not_before and not_after), directly impacting how the AI feature interprets user intent.
 
 **Covered by:** ai_evaluation/
 
-**Action:** Add golden-set cases for various time-of-day scenarios in ai_evaluation/.
+**Action:** Add golden-set cases for various time-of-day scenarios to ensure correct interpretation.
 
 ### 2. R-012 — _direct_
 
-**Why:** The diff introduces new input fields (not_before and not_after) that could potentially be exploited through prompt injection if not properly sanitized.
+**Why:** The diff introduces new input fields (not_before and not_after) that could potentially be exploited through prompt injection attacks if not properly sanitized.
 
 **Covered by:** ai_evaluation/
 
-**Action:** Verify the structured-output boundary by running additional adversarial tests on these new fields.
+**Action:** Run additional adversarial tests to ensure the structured-output boundary holds for these new time-of-day constraints.
+
+### 3. R-006 — _plausible_
+
+**Why:** The diff modifies the BookingIntentOut schema and adds new fields (not_before and not_after), which could affect the published API contract.
+
+**Covered by:** Schemathesis contract suite
+
+**Action:** Re-run the Schemathesis property-based contract tests to ensure the changes align with the OpenAPI spec.
 
 ## Exploratory probes
 
-- Test the booking assistant with various time-of-day constraints to ensure correct interpretation (e.g., 'from 9am', 'before noon').
-- Manually verify that the assistant correctly handles malformed or unexpected input for not_before and not_after.
-- Check if the new fields are properly reflected in the API documentation and contract tests.
-- Validate that the booking assistant's response includes accurate time-of-day constraints as interpreted from user inputs.
+- Test the booking assistant's response to various time-of-day constraints using curl, e.g., `curl -X POST http://localhost:5000/api/book_tee_time -d '{"date": "2026-06-10", "period": "morning", "group_size": 4, "not_before": "09:00", "not_after": "11:00"}'`
+- Manually verify the booking assistant's interpretation of time-of-day constraints on the web interface.
+- Check if the new fields (not_before and not_after) are correctly reflected in the API documentation.
+- Test edge cases such as invalid or missing time values to ensure proper handling.
 
 ## Pre-filter
 
@@ -49,6 +57,7 @@ _Filtered out by the deterministic pre-filter before the LLM saw the register (n
 - R-002
 - R-004
 - R-005
+- R-007
 - R-009
 - R-010
 - R-013
