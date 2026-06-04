@@ -22,7 +22,8 @@ _CATEGORY_RANK = {
     "unexpected_5xx": 1,
     "business_rule_concern": 2,
     "schema_drift": 3,
-    "expected": 4,
+    "documented_public_endpoint": 4,
+    "expected": 5,
 }
 
 
@@ -70,6 +71,7 @@ def render_markdown(
         "unexpected_5xx",
         "business_rule_concern",
         "schema_drift",
+        "documented_public_endpoint",
         "expected",
     ):
         if cat in by_cat:
@@ -83,7 +85,7 @@ def render_markdown(
     lines.append("| # | Endpoint | Variant | Auth | Status | Category | Severity |")
     lines.append("|---|---|---|---|---|---|---|")
     for i, r in enumerate(sorted_results, start=1):
-        sev = r.finding.severity if r.finding.category != "expected" else "—"
+        sev = r.finding.severity if r.finding.category not in ("expected", "documented_public_endpoint") else "—"
         lines.append(
             f"| {i} | `{r.probe.endpoint.signature}` | `{r.probe.variant.label}` | "
             f"`{r.probe.auth_mode}` | "
@@ -98,7 +100,7 @@ def render_markdown(
         lines.append(f"### {i}. `{ep.signature}` — {r.probe.variant.label}")
         lines.append("")
         lines.append(f"**Category:** `{r.finding.category}`")
-        if r.finding.category != "expected":
+        if r.finding.category not in ("expected", "documented_public_endpoint"):
             lines.append(f"  **Severity:** `{r.finding.severity}`")
         lines.append("")
         lines.append(f"**Auth mode:** `{r.probe.auth_mode}`")
