@@ -26,13 +26,16 @@ from playwright.sync_api import Page
 
 SUT_BASE_URL = os.getenv("SUT_BASE_URL", "http://localhost:5000")
 
-# F-009 originally bumped the global expect() timeout to 15s as a tactical
-# response to R-018's intermittent booking-confirm assertion timeouts on cold
-# runners. F-012 traced the actual cause — a client-side smooth-scroll race —
-# and the fix (a page-fixture init script disabling CSS smooth-scroll for
-# tests, below) made the timeout bump unnecessary. After 5 clean consecutive
-# functional CI runs validated F-012's mitigation, the timeout has been
-# reverted to Playwright's 5s default. R-018 is now closed in the register.
+# R-018 — intermittent booking-confirm flake on cold CI runners. History:
+# F-009 bumped the global expect() timeout to 15s (wrong problem; reverted).
+# F-012 traced it to a client-side smooth-scroll race and disabled CSS
+# scroll-behavior (below); R-018 was closed after 5 clean runs. F-025 RE-OPENED
+# it: the closure was false confidence from an intermittent absence, and the CI
+# trace from the recurrence proved F-012's CSS-only fix never disabled the
+# actual animation — the booking page calls scrollIntoView({behavior:'smooth'})
+# with an EXPLICIT behavior argument, which per CSSOM overrides the CSS
+# scroll-behavior property. The effective fix is the scrollIntoView shim in the
+# page fixture below. See F-025 in test-strategy.md.
 
 
 @dataclass(frozen=True)
@@ -52,29 +55,43 @@ def base_url() -> str:
     return SUT_BASE_URL
 
 
-# CSS smooth-scroll is *non-deterministic in tests*. The booking page's
-# slot-selection JS triggers a 50ms-delayed ``scrollIntoView({behavior: 'smooth'})``
-# after every slot click. On a fast local machine, that smooth scroll completes
-# before the next test action; on a cold CI runner, Playwright's confirm-button
-# stability check can race against the smooth scroll and dispatch a click whose
-# form-submission side-effect is silently lost in the viewport animation. The
-# Playwright trace from PR #25's R-018 hit shows the exact sequence:
-# ``performing click action → click action done → navigations have finished``
-# (no nav scheduled — the form never POSTed).
+# Smooth scrolling is *non-deterministic in tests*. The booking page's
+# slot-selection JS runs ``scrollIntoView({behavior: 'smooth'})`` on the wrapper
+# that contains the confirm submit button. On a cold CI runner, Playwright's
+# confirm-button click races the animation and the click is lost — the form
+# never POSTs (proven by the F-025 trace: the failed run shows login → dashboard
+# → booking-page loads in ms, then NO booking POST at all, then a 30s nav
+# timeout). We neutralise the animation in two layers, because they cover
+# different code paths:
 #
-# Forcing ``scroll-behavior: auto`` on every page returns deterministic scroll.
-# Tests still exercise the real submit button, the real form, the real handler —
-# only the cosmetic transition is bypassed.
+#   1. ``scroll-behavior: auto`` on the root — kills CSS-driven smooth scroll.
+#   2. a ``scrollIntoView`` shim coercing every call to ``behavior: 'auto'`` —
+#      kills calls that pass ``behavior: 'smooth'`` EXPLICITLY. The CSS property
+#      does NOT override an explicit argument (CSSOM), which is why F-012's
+#      layer-1-only fix never disabled the booking page's animation. F-025.
+#
+# Tests still exercise the real submit button, form, and handler; only the
+# cosmetic transition is bypassed.
 @pytest.fixture
 def page(page: Page) -> Page:
-    """Override pytest-playwright's page fixture to disable CSS smooth scroll.
+    """Override pytest-playwright's page fixture to make scrolling deterministic.
 
-    See R-018 / F-009 / F-012 for the full diagnostic trail. The init script
-    runs on every navigation in this page's context, so any test that uses
-    the `page` fixture (directly or via `member_page`) gets deterministic
-    scroll behaviour automatically.
+    See R-018 / F-012 / F-025 for the full diagnostic trail. The init script
+    runs on every navigation in this page's context, so any test that uses the
+    `page` fixture (directly or via `member_page`) is covered automatically.
     """
-    page.add_init_script("document.documentElement.style.scrollBehavior = 'auto';")
+    page.add_init_script(
+        "document.documentElement.style.scrollBehavior = 'auto';"
+        "(() => {"
+        "  const orig = Element.prototype.scrollIntoView;"
+        "  Element.prototype.scrollIntoView = function (arg) {"
+        "    if (arg && typeof arg === 'object') {"
+        "      return orig.call(this, Object.assign({}, arg, { behavior: 'auto' }));"
+        "    }"
+        "    return orig.call(this, arg);"
+        "  };"
+        "})();"
+    )
     return page
 
 

@@ -2,7 +2,7 @@
 
 **Status:** living document — updated as the assurance harness matures.
 **Owner:** Adam (acting as Digital Assurance Engineer)
-**Last updated:** 2026-06-05 *(F-024 — non-blinding positive control made durable as a gated regression test; the eval measures precision, this test guards recall)*
+**Last updated:** 2026-06-05 *(F-025 — R-018 re-opened; CI trace root-caused the lost confirm POST, F-012's CSS smooth-scroll fix proven ineffective, scrollIntoView shim added)*
 
 ---
 
@@ -1142,6 +1142,71 @@ F-023 named two routes: (a) a deliberately-defective fixtured probe scored *insi
 
 - **It does not characterise recall comprehensively.** One archetype (past-date acceptance) is guarded, not a panel of every concern shape (blocked-action-completed, leaked-internals, cross-member data). Comprehensive recall on an LLM judge is *unbounded* — there is always another archetype, phrasing, or endpoint — so it is correctly framed as an open-ended *track* to open deliberately if ever wanted, not as unfinished F-024 scope. F-024's claim is narrow and complete: "the judge demonstrably still fires on a genuine concern, and a regression that breaks that now goes red."
 - **It does not surface in the rendered `regression-report.md`.** That renderer is purpose-built for the risk/triage jitter metrics; wiring a third agent shape into it is cosmetic and was left out to keep this change minimal. The test's pass/fail is the guard; this finding is the evidence.
+
+### F-025 — R-018 re-opened: F-012's smooth-scroll fix was ineffective; CI trace root-causes the lost confirm POST
+
+**Date:** 2026-06-05
+**Surfaced by:** A Functional Tests failure on the docs-only README-refresh merge (dev push run [`27024069137`](https://github.com/ayyadam/assurance-harness/actions/runs/27024069137)). `test_member_books_a_tee_time` timed out at `page.wait_for_url("/member/dashboard")` after the confirm click — the R-018 signature, on a risk that had been marked **closed**.
+**Severity:** Significant — not for the bug size (one flaky test) but for the lesson: a fix "validated by 5 clean runs" was never actually working, and only a discipline of *reading the real failure artifact* caught it. This is a methodology finding as much as a defect finding.
+
+**Why this finding exists at all — a process the investigation got wrong first**
+
+The honest path to the root cause went through a wrong turn worth recording, because it is the transferable part:
+
+1. **Mischaracterised as a clears-on-rerun flake.** The first instinct was "flaky, rerun it" — the documented R-019 playbook. The rerun **failed identically** (2 consecutive failures on the same SHA, against 1 pass on master). A rerun that does not clear is not that kind of flake.
+2. **Over-confident root-cause claim, then a local repro with the wrong lever.** The next instinct was to assert "client-side smooth-scroll CPU-timing race" and reproduce it locally under CPU throttling. **42 local runs — including 10 at 20× CPU throttle — all passed.** The lever was wrong: CDP CPU-throttling slows the *browser*, but a cold-runner SUT-vs-client interaction timing is not raw-CPU-bound, and in any case the suspected slow chain (the POST→commit→302) is *server-side*, which throttling the browser cannot exercise. A clean local run proved nothing.
+3. **The decisive move: read the actual trace.** The functional job uploads a `retain-on-failure` Playwright trace. Its network log from the real failure is unambiguous:
+
+   ```
+   POST /auth/login            302   272ms
+   GET  /member/dashboard      200    14ms
+   GET  /member/book-tee-time  200    36ms
+   … then only static-asset 304s. No booking POST. Ever.
+   ```
+
+   The server was never asked to book. The confirm click's form submission never fired. The failure screenshot corroborates: stuck on the booking page, slot selected, Booking Details rendered, no navigation. This **ruled out** both the transient-infra hypothesis (every other request succeeded in milliseconds) and server-side slowness (the server was never contacted), and **ruled in** a lost client-side click.
+
+**Root cause — and why F-012's fix never worked**
+
+The booking page (`golf-web-app/app/templates/member/book_tee_time.html`) renders `#confirmBookingBtn` (a `type="submit"` button) inside `#bookingFormWrapper`, then on slot-select runs:
+
+```js
+setTimeout(() => wrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+```
+
+Playwright's confirm click races that animation on a cold runner and the click is lost — the submit never fires. F-012 diagnosed this *mechanism* correctly but applied a fix that cannot address it: it set CSS `scroll-behavior: auto` on the root. **Per CSSOM, the CSS `scroll-behavior` property is only consulted when `scrollIntoView` is called with `behavior: 'auto'` (or no argument); an explicit `behavior: 'smooth'` argument overrides it.** The booking page passes `'smooth'` explicitly, so F-012's CSS line never disabled this animation. The race was live the entire time; the "5 clean runs" that justified closing R-018 were the same intermittent luck that produces any small run of green on a ~50%-failure flake.
+
+**The methodology lesson (the durable part)**
+
+- *Absence of recurrence in a small window is not proof of a fix* — especially for intermittent failures. F-012 closed R-018 on 5 clean runs; the true failure rate was high enough that 5 greens was unremarkable luck. A fix for an intermittent failure needs either a deterministic mechanism you can argue from first principles, or a much larger validation window — ideally both.
+- *Reproduce against the right variable.* A local repro that cannot exercise the suspected cause (here: browser-CPU throttle vs a cold-runner click/animation race) is worse than no repro — a clean result invites a false "it's not us" conclusion. When you cannot reproduce, **read the artifact from the real failure** (trace, screenshot, network log) before theorising further.
+- *The trace is the source of truth.* Two competing hypotheses (transient infra; server-side slowness) and one over-confident claim (client CPU race) were all settled in one read of the network log. Uploading `retain-on-failure` traces is cheap; this finding is the payoff.
+
+**The fix (F-025)**
+
+`functional/conftest.py` page fixture keeps F-012's CSS line (it still covers CSS-driven smooth scroll) and adds the layer it was missing — a `scrollIntoView` shim that coerces every call to `behavior: 'auto'`:
+
+```js
+const orig = Element.prototype.scrollIntoView;
+Element.prototype.scrollIntoView = function (arg) {
+  if (arg && typeof arg === 'object') {
+    return orig.call(this, Object.assign({}, arg, { behavior: 'auto' }));
+  }
+  return orig.call(this, arg);
+};
+```
+
+This is effective regardless of how the call is made — it rewrites the explicit `behavior: 'smooth'` argument the CSS property could not override. Harness-only; the test still exercises the real submit button, form, and handler — only the cosmetic transition is removed.
+
+**Validation — and an honest limit**
+
+Because the race is cold-runner-specific, it **cannot be reproduced locally** (42 clean local runs confirm that), so the fix cannot be validated by a local repro. Validation is therefore by CI evidence: the fix was run through the functional gate across consecutive green runs. R-018 is held at **mitigated, not re-closed** — a deliberate choice this time, applying F-025's own lesson: a mechanism-sound fix whose confidence rests on CI runs rather than a closed-form proof should not claim "closed". If the flake recurs, the escalation is the SUT-side fix (honour `prefers-reduced-motion`, emulate `reduced_motion='reduce'` in the test) — which would also be a genuine accessibility improvement.
+
+**What F-025 ships**
+
+- `functional/conftest.py` — the `scrollIntoView` shim added to the page fixture; the R-018 history and fixture comments rewritten to reflect the re-open and the CSSOM root cause.
+- `docs/risk-register.md` — R-018 status closed → **mitigated**, mitigation text rewritten with the trace evidence and the held-at-mitigated rationale.
+- This finding.
 
 ## 12. Roadmap
 
