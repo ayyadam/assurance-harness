@@ -1,25 +1,32 @@
-"""LLM-planned tours, Playwright-executed steps, captured per-step state.
+"""Adaptive single-step UI exploration: an LLM *policy*, Playwright-executed.
 
-The flow per tour:
+This is the policy-based successor to the plan-based UI agent (phase 12 v1 v2,
+preserved in git history). The difference is structural:
 
-  1. Planner LLM call — system prompt + tour goal + starting URL + seed creds →
-     a JSON plan: a list of steps with action / target / value / rationale.
-  2. Deterministic executor — runs each step in Playwright, capturing URL,
-     page title, simplified interactive elements list, JS console errors,
-     network 5xx responses, and a screenshot per step.
-  3. (Judgement lives in ``ui_judge.py`` — kept separate so the executor stays
-     dumb and the judge stays focused.)
+  - The old agent **planned once** from the starting page, then executed the
+    whole plan blindly. Selectors for pages it had not yet seen were invented —
+    the booking-assistant tour waited for ``.candidate-slot`` (hallucinated)
+    while the real class is ``.booking-slot``. A plan cannot perceive.
+  - This agent runs a **perceive → decide → act loop**. Each step it snapshots
+    the CURRENT page (URL, title, the interactive elements actually present),
+    shows that plus the history so far to the LLM, and asks for exactly ONE next
+    action. It then executes that one action, re-perceives, and asks again.
 
-The planner is shown the page state of the **starting URL** at planning time
-so its plan can refer to elements that actually exist. Re-planning during a
-tour is not done in v1 — if the plan diverges from reality, the executor
-records the failed steps and the judge classifies them.
+Because the model only ever chooses selectors from the elements it has just been
+shown, hallucinating a selector for an unseen page is structurally impossible —
+that is the whole point of a policy over a plan.
+
+The loop stops when the LLM emits ``finish`` (goal reached, or stuck — with a
+reason) or when the tour's ``max_steps`` budget is exhausted. Judgement still
+lives in ``ui_judge.py`` (per-step), kept separate so the executor stays dumb
+and the judge stays focused.
 """
 
 from __future__ import annotations
 
 import json
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -31,13 +38,15 @@ from playwright.sync_api import Page
 from explore_agent.tours import TourGoal
 
 DEFAULT_MODEL = "qwen2.5:32b-instruct-q4_K_M"
-ACTIONS = ("navigate", "click", "fill", "wait", "observe")
+# ``finish`` is a control signal, not a browser action — the loop breaks on it
+# and it is never dispatched to the executor.
+ACTIONS = ("navigate", "click", "fill", "wait", "observe", "finish")
 
 
 @dataclass
 class Step:
     action: str  # one of ACTIONS
-    target: str | None  # CSS selector, URL (for navigate), or None (for observe)
+    target: str | None  # CSS selector, URL (for navigate), or None
     value: str | None  # text to fill (for fill), or None
     rationale: str  # one-line description of why this step
 
@@ -55,6 +64,24 @@ class StepResult:
     network_5xx: list[str] = field(default_factory=list)
     screenshot_path: str | None = None
     elapsed_ms: float = 0.0
+
+
+@dataclass
+class PageState:
+    """What the policy is shown about the current page before each decision."""
+
+    url: str
+    title: str
+    interactive: list[str] = field(default_factory=list)
+
+
+@dataclass
+class TourRun:
+    """Outcome of one adaptive tour: the steps taken plus how it terminated."""
+
+    steps: list[StepResult]
+    finish_reason: str | None  # the LLM's stated reason if it chose to finish; None if the cap was hit
+    hit_cap: bool  # True if the loop exhausted max_steps without the agent finishing
 
 
 # ── page state extraction ─────────────────────────────────────────────────
@@ -105,58 +132,89 @@ def _snapshot_interactive(page: Page) -> list[str]:
     return rows
 
 
-# ── LLM planner ───────────────────────────────────────────────────────────
+def _snapshot_state(page: Page) -> PageState:
+    """Capture the current page as the policy sees it (url, title, elements)."""
+    try:
+        url = page.url
+        title = page.title()
+    except Exception:
+        url, title = "(unavailable)", "(unavailable)"
+    return PageState(url=url, title=title, interactive=_snapshot_interactive(page))
 
 
-_PLANNER_SYSTEM = (
-    "You are an exploratory testing agent driving a real web browser via Playwright. "
-    "Given a tour goal and the current page state (URL, title, interactive elements), "
-    "plan a sequence of browser steps to achieve the goal.\n\n"
-    "Each step is ONE action from this enum:\n"
-    "  navigate — go to a URL (target = relative path like '/auth/login' or absolute URL)\n"
-    "  click    — click an element (target = a CSS selector, prefer an id like '#sign-in-button')\n"
+# ── LLM policy ────────────────────────────────────────────────────────────
+
+
+_POLICY_SYSTEM = (
+    "You are an exploratory testing agent driving a real web browser via Playwright, "
+    "ONE action at a time. This is a perceive-decide-act loop, not an upfront plan: each "
+    "turn you are shown the CURRENT page (its URL, title, and the interactive elements "
+    "ACTUALLY present on it) plus the history of what you have done, and you choose exactly "
+    "ONE next action to advance the tour goal. You will then be shown the result and asked "
+    "again.\n\n"
+    "Each action is ONE of:\n"
+    "  navigate — go to a URL (target = relative path like '/auth/login', or absolute URL)\n"
+    "  click    — click an element (target = a CSS selector)\n"
     "  fill     — type into an input (target = CSS selector, value = text to type)\n"
-    "  wait     — wait briefly (target = a CSS selector to wait for, or null)\n"
-    "  observe  — no-op, capture current state (used as a terminal step)\n\n"
-    "Rules:\n"
-    "  - Use CSS selectors only. Prefer id selectors (#foo) when available — they were "
-    "    listed in the interactive-elements list with a leading '#'.\n"
-    "  - For navigate, target may be a relative path or absolute URL.\n"
-    "  - Do NOT exceed the supplied step budget. Plan exactly N steps where N ≤ budget.\n"
-    "  - The final step MUST verify the goal was reached (observe is fine).\n"
-    "  - Each step needs a one-sentence rationale grounded in the goal.\n"
-    "  - If the goal requires being logged in and the page state does not show member "
-    "    nav, START the plan with login form steps using the supplied credentials."
+    "  wait     — wait for a selector to appear (target = CSS selector), or briefly (target = null)\n"
+    "  observe  — re-capture the current page without acting (rarely needed; you re-perceive every turn)\n"
+    "  finish   — stop the tour. Set rationale to WHY: goal reached, or you cannot progress.\n\n"
+    "Selector discipline (this is the point of the loop):\n"
+    "  - Every CSS selector you use MUST be one of the interactive elements listed for the "
+    "CURRENT page. Prefer id selectors (#foo); they are shown with a leading '#'.\n"
+    "  - NEVER invent a selector for an element you have not been shown. If what you need is "
+    "not in the list, either it has not rendered yet (use wait), or you are on the wrong page "
+    "(navigate), or the goal cannot be met from here (finish).\n"
+    "  - If your previous action FAILED with 'selector not found', do NOT retry the same "
+    "selector — pick a real one from the current list, or finish.\n\n"
+    "Progress discipline:\n"
+    "  - Advance the goal each turn; do not repeat an action that already succeeded.\n"
+    "  - Emit finish the moment the goal is reached, or as soon as you are stuck. Do not burn "
+    "the remaining budget once there is nothing left to learn.\n"
+    "  - Honour scope limits stated in the goal (e.g. 'stop at suggestions; do not confirm').\n"
+    "  - If the goal needs you logged in and the current page is a login form, fill username "
+    "and password from the supplied credentials and submit.\n"
+    "  - Give a one-sentence rationale, grounded in the goal and what is on the current page."
 )
 
 
-_PLAN_SCHEMA = {
+_DECISION_SCHEMA = {
     "type": "object",
     "properties": {
-        "steps": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "action": {"type": "string", "enum": list(ACTIONS)},
-                    "target": {"type": ["string", "null"]},
-                    "value": {"type": ["string", "null"]},
-                    "rationale": {"type": "string"},
-                },
-                "required": ["action", "target", "value", "rationale"],
-            },
-        }
+        "action": {"type": "string", "enum": list(ACTIONS)},
+        "target": {"type": ["string", "null"]},
+        "value": {"type": ["string", "null"]},
+        "rationale": {"type": "string"},
     },
-    "required": ["steps"],
+    "required": ["action", "target", "value", "rationale"],
 }
 
 
-def _planner_user_message(
+def _render_history(history: list[StepResult]) -> str:
+    """Compact trail of prior actions + outcomes — NOT the full element dumps."""
+    if not history:
+        return "  (nothing yet — this is your first action)"
+    lines: list[str] = []
+    for i, r in enumerate(history, start=1):
+        s = r.step
+        bit = f"  {i}. {s.action}"
+        if s.target:
+            bit += f" {s.target}"
+        if s.value:
+            bit += f" = {s.value!r}"
+        if r.succeeded:
+            bit += f"  → OK, now at {r.page_url}"
+        else:
+            bit += f"  → FAILED: {r.error_message}"
+        lines.append(bit)
+    return "\n".join(lines)
+
+
+def _policy_user_message(
     tour: TourGoal,
     base_url: str,
-    page_url: str,
-    page_title: str,
-    interactive: list[str],
+    state: PageState,
+    history: list[StepResult],
     creds: tuple[str, str] | None,
 ) -> str:
     creds_blob = (
@@ -164,44 +222,39 @@ def _planner_user_message(
         if creds
         else "No credentials needed for this tour.\n"
     )
-    elements_blob = "\n".join(f"  - {e}" for e in interactive) or "  (no interactive elements detected)"
+    elements_blob = "\n".join(f"  - {e}" for e in state.interactive) or "  (no interactive elements detected)"
     return (
         f"Tour: {tour.name}\n"
         f"Goal: {tour.description}\n"
-        f"Step budget: at most {tour.max_steps} steps.\n\n"
+        f"Budget: at most {tour.max_steps} actions; this is action {len(history) + 1}.\n\n"
         f"Base URL: {base_url}\n"
-        f"Current page URL: {page_url}\n"
-        f"Current page title: {page_title!r}\n"
         f"{creds_blob}\n"
-        f'Interactive elements visible on this page (tag#id "label" -> href):\n'
-        f"{elements_blob}\n\n"
-        "Plan the tour. Return the steps array."
+        f"History so far:\n{_render_history(history)}\n\n"
+        f"CURRENT page URL: {state.url}\n"
+        f"CURRENT page title: {state.title!r}\n"
+        f'Interactive elements on THIS page (tag#id "label" -> href):\n{elements_blob}\n\n'
+        "Choose the single next action to advance the goal."
     )
 
 
-def plan_tour(
+def decide_next_action(
     tour: TourGoal,
     base_url: str,
-    page: Page,
+    state: PageState,
+    history: list[StepResult],
     creds: tuple[str, str] | None,
     model: str = DEFAULT_MODEL,
     host: str | None = None,
-) -> list[Step]:
-    """Snapshot the current page, ask the LLM for a step-by-step plan."""
-    page_url = page.url
-    page_title = page.title()
-    interactive = _snapshot_interactive(page)
+) -> Step:
+    """Ask the LLM for the single next action, given the CURRENT page + history."""
     client = ollama.Client(host=host) if host else ollama
     kwargs: dict[str, Any] = {
         "model": model,
         "messages": [
-            {"role": "system", "content": _PLANNER_SYSTEM},
-            {
-                "role": "user",
-                "content": _planner_user_message(tour, base_url, page_url, page_title, interactive, creds),
-            },
+            {"role": "system", "content": _POLICY_SYSTEM},
+            {"role": "user", "content": _policy_user_message(tour, base_url, state, history, creds)},
         ],
-        "format": _PLAN_SCHEMA,
+        "format": _DECISION_SCHEMA,
         "options": {"temperature": 0},
     }
     try:
@@ -209,15 +262,12 @@ def plan_tour(
     except ollama.ResponseError:
         response = client.chat(**kwargs)
     parsed = json.loads(response["message"]["content"])
-    return [
-        Step(
-            action=s["action"],
-            target=s.get("target"),
-            value=s.get("value"),
-            rationale=s["rationale"],
-        )
-        for s in parsed["steps"][: tour.max_steps]
-    ]
+    return Step(
+        action=parsed["action"],
+        target=parsed.get("target"),
+        value=parsed.get("value"),
+        rationale=parsed["rationale"],
+    )
 
 
 # ── Playwright executor ───────────────────────────────────────────────────
@@ -238,7 +288,10 @@ def _execute_step(
     step: Step,
     base_url: str,
 ) -> tuple[bool, str | None]:
-    """Dispatch on action type. Return (succeeded, error_message)."""
+    """Dispatch on action type. Return (succeeded, error_message).
+
+    ``finish`` never reaches here — the loop breaks on it before executing.
+    """
     try:
         if step.action == "navigate":
             target = step.target or "/"
@@ -270,52 +323,95 @@ def _execute_step(
     return True, None
 
 
-def execute_plan(
+def _execute_and_capture(
     page: Page,
-    plan: list[Step],
+    step: Step,
     base_url: str,
     screenshot_dir: Path,
     tour_name: str,
+    step_num: int,
     console_errors: list[str],
     network_5xx: list[str],
-) -> list[StepResult]:
-    """Run each step, capturing post-step state and screenshot."""
-    results: list[StepResult] = []
+) -> StepResult:
+    """Execute one step and capture the resulting page state + screenshot."""
+    # Snapshot pre-step error counts so we can attribute new errors to this step.
+    pre_console = len(console_errors)
+    pre_net = len(network_5xx)
+    started = time.perf_counter()
+    started_at = datetime.now(UTC)
+    ok, err = _execute_step(page, step, base_url)
+    elapsed = (time.perf_counter() - started) * 1000
+    try:
+        page_url = page.url
+        page_title = page.title()
+    except Exception:
+        page_url = "(unavailable)"
+        page_title = "(unavailable)"
+    # Always snapshot — even after a FAILED action — so the next decision sees the
+    # page as it really is and can recover. (The plan-based agent blanked the element
+    # list on failure; a policy must perceive to adapt.)
+    interactive = _snapshot_interactive(page)
+    screenshot_path: Path | None = screenshot_dir / f"{tour_name}-step-{step_num:02d}.png"
+    try:
+        page.screenshot(path=str(screenshot_path), full_page=False, timeout=5_000)
+    except Exception:
+        screenshot_path = None
+    return StepResult(
+        step=step,
+        started_at=started_at,
+        succeeded=ok,
+        error_message=err,
+        page_url=page_url,
+        page_title=page_title,
+        interactive_elements=interactive,
+        console_errors=console_errors[pre_console:],
+        network_5xx=network_5xx[pre_net:],
+        screenshot_path=str(screenshot_path) if screenshot_path else None,
+        elapsed_ms=elapsed,
+    )
+
+
+def run_tour(
+    tour: TourGoal,
+    base_url: str,
+    page: Page,
+    creds: tuple[str, str] | None,
+    screenshot_dir: Path,
+    console_errors: list[str],
+    network_5xx: list[str],
+    model: str = DEFAULT_MODEL,
+    host: str | None = None,
+    log: Callable[[str], None] | None = None,
+) -> TourRun:
+    """Perceive → decide → act loop: one LLM decision per step from the CURRENT page.
+
+    The page is assumed already navigated to the tour's starting URL (and pre-authed
+    if the tour requires it). Each iteration snapshots the current page, asks the policy
+    for ONE next action, executes it, captures the result, and feeds it back as history.
+    Stops when the agent emits ``finish`` or the ``max_steps`` budget is exhausted.
+    """
     screenshot_dir.mkdir(parents=True, exist_ok=True)
-    for i, step in enumerate(plan, start=1):
-        # Snapshot pre-step error counts so we can attribute new errors to this step.
-        pre_console = len(console_errors)
-        pre_net = len(network_5xx)
-        started = time.perf_counter()
-        started_at = datetime.now(UTC)
-        ok, err = _execute_step(page, step, base_url)
-        elapsed = (time.perf_counter() - started) * 1000
-        # Snapshot post-step page state.
-        try:
-            page_url = page.url
-            page_title = page.title()
-        except Exception:
-            page_url = "(unavailable)"
-            page_title = "(unavailable)"
-        interactive = _snapshot_interactive(page) if ok else []
-        screenshot_path = screenshot_dir / f"{tour_name}-step-{i:02d}.png"
-        try:
-            page.screenshot(path=str(screenshot_path), full_page=False, timeout=5_000)
-        except Exception:
-            screenshot_path = None  # type: ignore[assignment]
-        results.append(
-            StepResult(
-                step=step,
-                started_at=started_at,
-                succeeded=ok,
-                error_message=err,
-                page_url=page_url,
-                page_title=page_title,
-                interactive_elements=interactive,
-                console_errors=console_errors[pre_console:],
-                network_5xx=network_5xx[pre_net:],
-                screenshot_path=str(screenshot_path) if screenshot_path else None,
-                elapsed_ms=elapsed,
-            )
+    results: list[StepResult] = []
+    state = _snapshot_state(page)
+    finish_reason: str | None = None
+    hit_cap = False
+    for step_num in range(1, tour.max_steps + 1):
+        decision = decide_next_action(tour, base_url, state, results, creds, model=model, host=host)
+        if decision.action == "finish":
+            finish_reason = decision.rationale
+            if log:
+                log(f"  step {step_num}: finish — {decision.rationale}")
+            break
+        if log:
+            tgt = f" {decision.target}" if decision.target else ""
+            log(f"  step {step_num}: {decision.action}{tgt}")
+        result = _execute_and_capture(
+            page, decision, base_url, screenshot_dir, tour.name, step_num, console_errors, network_5xx
         )
-    return results
+        results.append(result)
+        # Re-perceive from the post-action page so the next decision sees reality.
+        state = PageState(url=result.page_url, title=result.page_title, interactive=result.interactive_elements)
+    else:
+        # Loop ran the full budget without the agent emitting finish.
+        hit_cap = True
+    return TourRun(steps=results, finish_reason=finish_reason, hit_cap=hit_cap)
