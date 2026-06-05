@@ -1,14 +1,14 @@
 # Exploratory probe — golf-web-app UI tours
 
-_Run: 2026-06-02 • base url: `http://localhost:5000` • model: `qwen2.5:32b-instruct-q4_K_M`_
+_Run: 2026-06-05 • base url: `http://localhost:5000` • model: `qwen2.5:32b-instruct-q4_K_M`_
 
 ## Summary
 
-| Tour | Steps | Worst category | Failed steps |
-|---|---|---|---|
-| `public-pages` | 6 | `dead_end` | 2 |
-| `member-login-dashboard` | 5 | `dead_end` | 0 |
-| `booking-assistant` | 4 | `dead_end` | 1 |
+| Tour | Steps | Outcome | Worst category | Failed steps |
+|---|---|---|---|---|
+| `public-pages` | 4 | finished | `js_error` | 0 |
+| `member-login-dashboard` | 4 | finished | `dead_end` | 0 |
+| `booking-assistant` | 5 | hit cap | `dead_end` | 0 |
 
 ## Tour — `public-pages`
 
@@ -16,99 +16,66 @@ _Run: 2026-06-02 • base url: `http://localhost:5000` • model: `qwen2.5:32b-i
 
 **Starting URL:** `/` • **Max steps:** 6
 
-### Step 1 — `click` (OK)
+**Outcome:** agent finished — The goal of browsing at least two other public pages has been met, and there are no further interactive elements on the current contact page that lead to additional public content.
+
+### Step 1 — `navigate` (OK)
 
 **Category:** `expected` • **Severity:** —
 
-**Plan rationale:** Navigate to the course overview page to verify it loads cleanly.
+**Decision rationale:** Navigating to the course overview page as it is one of the public pages that needs to be verified.
 
-**Judge rationale:** The step executed without error and the intended action of navigating to the course overview page was successful, as evidenced by the new URL `http://localhost:5000/course` and the absence of any errors or console messages. This aligns with the tour goal of verifying that public pages load cleanly.
+**Judge rationale:** The step executed without error, the navigation to '/course' was successful, and it advanced the tour goal by verifying that a public page loads cleanly.
 
-**Action:** `click` target=`#course-overview-link` value=`None`
+**Action:** `navigate` target=`/course` value=`None`
 
-**After:** URL=`http://localhost:5000/course` • title=`The Course — Adam's Golf Club` • elapsed `63 ms`
+**After:** URL=`http://localhost:5000/course` • title=`The Course — Adam's Golf Club` • elapsed `45 ms`
 
 ![step 1 screenshot](screenshots/public-pages-step-01.png)
 
-### Step 2 — `wait` (ERR)
+### Step 2 — `navigate` (OK)
 
-**Category:** `dead_end` • **Severity:** med
+**Category:** `expected` • **Severity:** —
 
-**Plan rationale:** Wait for a key element on the course overview page to ensure it has loaded properly.
+**Decision rationale:** Navigating to the scorecard page to verify it loads cleanly and to continue exploring public pages.
 
-**Judge rationale:** The step intended to wait for the element with ID 'explore-course-link' but timed out, indicating that the element was not found on the page. This leaves the tour unable to progress as expected.
+**Judge rationale:** The step executed without error, the scorecard page loaded cleanly at http://localhost:5000/course/scorecard, and there were no console errors or network issues.
 
-**Action:** `wait` target=`#explore-course-link` value=`None`
+**Action:** `navigate` target=`/course/scorecard` value=`None`
 
-**After:** URL=`http://localhost:5000/course` • title=`The Course — Adam's Golf Club` • elapsed `10013 ms`
-
-**Error:** `Page.wait_for_selector: Timeout 10000ms exceeded.
-Call log:
-  - waiting for locator("#explore-course-link") to be visible
-`
+**After:** URL=`http://localhost:5000/course/scorecard` • title=`Scorecard — Adam's Golf Club` • elapsed `41 ms`
 
 ![step 2 screenshot](screenshots/public-pages-step-02.png)
 
-### Step 3 — `click` (ERR)
-
-**Category:** `dead_end` • **Severity:** med
-
-**Plan rationale:** Navigate to the scorecard page from the course overview page to verify it loads cleanly.
-
-**Judge rationale:** The step failed to execute because the selector '#view-scorecard-link' was not found within the timeout period, preventing navigation to the scorecard page and halting further progress in the tour.
-
-**Action:** `click` target=`#view-scorecard-link` value=`None`
-
-**After:** URL=`http://localhost:5000/course` • title=`The Course — Adam's Golf Club` • elapsed `10015 ms`
-
-**Error:** `Page.click: Timeout 10000ms exceeded.
-Call log:
-  - waiting for locator("#view-scorecard-link")
-`
-
-![step 3 screenshot](screenshots/public-pages-step-03.png)
-
-### Step 4 — `wait` (OK)
+### Step 3 — `navigate` (OK)
 
 **Category:** `expected` • **Severity:** —
 
-**Plan rationale:** Wait for a key element on the scorecard page to ensure it has loaded properly.
+**Decision rationale:** Navigating to the membership page to verify it loads cleanly and progress through public pages as per the tour goal.
 
-**Judge rationale:** The step executed without error and the intended element '#scorecard-link' was found, indicating that the scorecard page loaded properly. The URL 'http://localhost:5000/course' aligns with the tour goal of browsing public pages.
-
-**Action:** `wait` target=`#scorecard-link` value=`None`
-
-**After:** URL=`http://localhost:5000/course` • title=`The Course — Adam's Golf Club` • elapsed `6 ms`
-
-![step 4 screenshot](screenshots/public-pages-step-04.png)
-
-### Step 5 — `navigate` (OK)
-
-**Category:** `expected` • **Severity:** —
-
-**Plan rationale:** Navigate directly to the membership page to verify it loads cleanly.
-
-**Judge rationale:** The step executed without error, the membership page loaded cleanly at http://localhost:5000/membership, and there were no console errors or network issues.
+**Judge rationale:** The step executed without error, the membership page loaded cleanly at http://localhost:5000/membership, and there were no console errors or network issues. This aligns with the tour goal of verifying that public pages load correctly.
 
 **Action:** `navigate` target=`/membership` value=`None`
 
-**After:** URL=`http://localhost:5000/membership` • title=`Membership — Adam's Golf Club` • elapsed `31 ms`
+**After:** URL=`http://localhost:5000/membership` • title=`Membership — Adam's Golf Club` • elapsed `26 ms`
 
-![step 5 screenshot](screenshots/public-pages-step-05.png)
+![step 3 screenshot](screenshots/public-pages-step-03.png)
 
-### Step 6 — `observe` (OK)
+### Step 4 — `navigate` (OK)
 
-**Category:** `expected` • **Severity:** —
+**Category:** `js_error` • **Severity:** med
 
-**Plan rationale:** Observe the current state to confirm that the goal of browsing public pages has been achieved.
+**Decision rationale:** To continue browsing public pages and verify that navigation links resolve, I will navigate to the contact page as it is another important public section of the site.
 
-**Judge rationale:** The step executed without error and the page URL indicates that the membership page was successfully loaded, advancing the tour goal of browsing public pages.
+**Judge rationale:** Although the navigation to '/contact' succeeded, there is a JavaScript console error indicating that a resource failed to load due to a 404 NOT FOUND response from the server. This suggests an issue with loading essential assets for the page, which could affect its functionality or appearance.
 
-**Action:** `observe` target=`None` value=`None`
+**Action:** `navigate` target=`/contact` value=`None`
 
-**After:** URL=`http://localhost:5000/membership` • title=`Membership — Adam's Golf Club` • elapsed `206 ms`
+**After:** URL=`http://localhost:5000/contact` • title=`` • elapsed `8 ms`
 
-![step 6 screenshot](screenshots/public-pages-step-06.png)
+**Console errors:**
+  - `error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)`
+
+![step 4 screenshot](screenshots/public-pages-step-04.png)
 
 ## Tour — `member-login-dashboard`
 
@@ -116,17 +83,19 @@ Call log:
 
 **Starting URL:** `/auth/login` • **Max steps:** 5
 
+**Outcome:** agent finished — The dashboard has rendered without errors, and the member is signed in as John. The goal of reaching the member dashboard post-login is achieved.
+
 ### Step 1 — `fill` (OK)
 
 **Category:** `expected` • **Severity:** —
 
-**Plan rationale:** Fill in the username field with the seed credentials to proceed with login.
+**Decision rationale:** Filling in the username field with the seed credentials is the first step towards logging in.
 
-**Judge rationale:** The step executed without error and the username field was successfully filled with 'john.smith'. The page URL and interactive elements indicate that the user is still on the login page, as expected after filling in just the username.
+**Judge rationale:** The step executed without error and the username field was successfully filled with 'john.smith'. The page URL and interactive elements indicate that we are still on the login page, which is expected after filling in just the username.
 
 **Action:** `fill` target=`#username` value=`john.smith`
 
-**After:** URL=`http://localhost:5000/auth/login` • title=`Login — Adam's Golf Club` • elapsed `24 ms`
+**After:** URL=`http://localhost:5000/auth/login` • title=`Login — Adam's Golf Club` • elapsed `17 ms`
 
 ![step 1 screenshot](screenshots/member-login-dashboard-step-01.png)
 
@@ -134,9 +103,9 @@ Call log:
 
 **Category:** `dead_end` • **Severity:** med
 
-**Plan rationale:** Fill in the password field with the seed credentials to proceed with login.
+**Decision rationale:** Filling in the password field with the seed credentials advances towards logging in.
 
-**Judge rationale:** The step intended to fill the password field and proceed with login, but the page URL after the action is still 'http://localhost:5000/auth/login', indicating that the form was not submitted or the login did not succeed. The interactive elements visible are those of the login page, suggesting the tour cannot progress to the next step.
+**Judge rationale:** The step intended to fill the password field and advance towards logging in, but the page URL remains at `http://localhost:5000/auth/login` with all interactive elements still present, indicating that the form submission did not occur or was unsuccessful. This leaves the tour unable to progress to the next step.
 
 **Action:** `fill` target=`#password` value=`Password1`
 
@@ -148,43 +117,29 @@ Call log:
 
 **Category:** `expected` • **Severity:** —
 
-**Plan rationale:** Click the sign-in button to submit the form and authenticate the user.
+**Decision rationale:** Clicking the 'Sign In' button will submit the login form with the provided credentials and should navigate to the member dashboard.
 
-**Judge rationale:** The step executed without error, the form was submitted successfully, and the user was redirected to the member dashboard as expected.
+**Judge rationale:** The step executed without error, the 'Sign In' button was successfully clicked, and it navigated to the expected member dashboard at http://localhost:5000/member/dashboard.
 
-**Action:** `click` target=`#sign-in-button` value=``
+**Action:** `click` target=`#sign-in-button` value=`None`
 
-**After:** URL=`http://localhost:5000/member/dashboard` • title=`Dashboard — Adam's Golf Club` • elapsed `240 ms`
+**After:** URL=`http://localhost:5000/member/dashboard` • title=`Dashboard — Adam's Golf Club` • elapsed `217 ms`
 
 ![step 3 screenshot](screenshots/member-login-dashboard-step-03.png)
 
-### Step 4 — `wait` (OK)
+### Step 4 — `observe` (OK)
 
 **Category:** `expected` • **Severity:** —
 
-**Plan rationale:** Wait for an element that indicates the member dashboard has loaded successfully.
+**Decision rationale:** The dashboard has rendered without errors, as evidenced by the presence of interactive elements specific to the member dashboard page. The goal is reached.
 
-**Judge rationale:** The step executed without error, the dashboard element loaded successfully within 9ms, and the page URL indicates successful navigation to the member dashboard. This aligns with advancing the tour goal.
+**Judge rationale:** The step executed without error and the dashboard rendered with interactive elements specific to the member dashboard page, indicating that the tour goal was successfully advanced.
 
-**Action:** `wait` target=`#member-dashboard` value=``
+**Action:** `observe` target=`None` value=`None`
 
-**After:** URL=`http://localhost:5000/member/dashboard` • title=`Dashboard — Adam's Golf Club` • elapsed `9 ms`
+**After:** URL=`http://localhost:5000/member/dashboard` • title=`Dashboard — Adam's Golf Club` • elapsed `208 ms`
 
 ![step 4 screenshot](screenshots/member-login-dashboard-step-04.png)
-
-### Step 5 — `observe` (OK)
-
-**Category:** `expected` • **Severity:** —
-
-**Plan rationale:** Observe the current state to verify that the member dashboard is rendered without errors and the goal is achieved.
-
-**Judge rationale:** The step executed without error and the page URL indicates that the member dashboard was successfully rendered at 'http://localhost:5000/member/dashboard'. The absence of errors and console errors further confirms that the tour goal has been achieved.
-
-**Action:** `observe` target=`None` value=``
-
-**After:** URL=`http://localhost:5000/member/dashboard` • title=`Dashboard — Adam's Golf Club` • elapsed `211 ms`
-
-![step 5 screenshot](screenshots/member-login-dashboard-step-05.png)
 
 ## Tour — `booking-assistant`
 
@@ -192,67 +147,78 @@ Call log:
 
 **Starting URL:** `/member/book-tee-time` • **Max steps:** 5
 
+**Outcome:** hit the 5-step cap without the agent finishing.
+
 ### Step 1 — `fill` (OK)
 
 **Category:** `expected` • **Severity:** —
 
-**Plan rationale:** Type a free-text request into the assistant input to find candidate slots.
+**Decision rationale:** Filling in the assistant input with a free-text request as required by the goal.
 
-**Judge rationale:** The step executed without error and the intended action was completed successfully, filling the assistant input with 'a 4-ball Saturday morning'. The page state remains as expected on the booking page, ready for the next steps of the tour.
+**Judge rationale:** The step executed without error and the intended action was completed successfully, filling in the assistant input with 'a 4-ball Saturday morning'. The page state after the step aligns with the tour goal of using the natural-language booking assistant on the booking page.
 
 **Action:** `fill` target=`#assist_text` value=`a 4-ball Saturday morning`
 
-**After:** URL=`http://localhost:5000/member/book-tee-time` • title=`Book Tee Time — Adam's Golf Club` • elapsed `19 ms`
+**After:** URL=`http://localhost:5000/member/book-tee-time` • title=`Book Tee Time — Adam's Golf Club` • elapsed `10 ms`
 
 ![step 1 screenshot](screenshots/booking-assistant-step-01.png)
 
 ### Step 2 — `click` (OK)
 
-**Category:** `expected` • **Severity:** —
+**Category:** `dead_end` • **Severity:** med
 
-**Plan rationale:** Submit the request to the booking assistant to get plausible candidate slots.
+**Decision rationale:** Clicking the 'Find slots' button will submit the free-text request to the booking assistant and show plausible candidate slots, which is the next step in the goal.
 
-**Judge rationale:** The step executed without error and advanced the tour goal by successfully clicking on the '#assist-button', leading to the expected page for booking suggestions.
+**Judge rationale:** Although the click action on '#assist-button' succeeded, the page state after the step does not show any plausible candidate slots as expected. The interactive elements visible post-click do not indicate that the booking assistant has returned any suggestions, which is a critical part of advancing the tour goal.
 
 **Action:** `click` target=`#assist-button` value=`None`
 
-**After:** URL=`http://localhost:5000/member/book-tee-time/assist` • title=`Book Tee Time — Adam's Golf Club` • elapsed `5103 ms`
+**After:** URL=`http://localhost:5000/member/book-tee-time/assist` • title=`Book Tee Time — Adam's Golf Club` • elapsed `5272 ms`
 
 ![step 2 screenshot](screenshots/booking-assistant-step-02.png)
 
-### Step 3 — `wait` (ERR)
+### Step 3 — `observe` (OK)
 
 **Category:** `dead_end` • **Severity:** med
 
-**Plan rationale:** Wait for the assistant to return and display plausible candidate slots.
+**Decision rationale:** The page has loaded after submitting the request, and we need to verify if plausible candidate slots are returned by the assistant without clicking on any slot to confirm a booking.
 
-**Judge rationale:** The step intended to wait for the selector '.candidate-slot' but timed out, indicating that no candidate slots were displayed as expected. This leaves the tour unable to progress to verifying the assistant's suggestions.
+**Judge rationale:** The step intended to observe if plausible candidate slots were returned by the assistant, but the interactive elements visible after the step do not indicate that any slots have been suggested. The page still shows input fields and buttons for submitting a request, suggesting that the submission did not result in slot suggestions as expected.
 
-**Action:** `wait` target=`.candidate-slot` value=`None`
+**Action:** `observe` target=`None` value=`None`
 
-**After:** URL=`http://localhost:5000/member/book-tee-time/assist` • title=`Book Tee Time — Adam's Golf Club` • elapsed `10011 ms`
-
-**Error:** `Page.wait_for_selector: Timeout 10000ms exceeded.
-Call log:
-  - waiting for locator(".candidate-slot") to be visible
-`
+**After:** URL=`http://localhost:5000/member/book-tee-time/assist` • title=`Book Tee Time — Adam's Golf Club` • elapsed `215 ms`
 
 ![step 3 screenshot](screenshots/booking-assistant-step-03.png)
 
 ### Step 4 — `observe` (OK)
 
-**Category:** `dead_end` • **Severity:** med
+**Category:** `expected` • **Severity:** —
 
-**Plan rationale:** Verify that the assistant has returned plausible candidate slots without clicking on any slot.
+**Decision rationale:** The page has rendered with the booking suggestions, and we need to verify that plausible candidate slots are returned without clicking on any of them to confirm a booking.
 
-**Judge rationale:** The step intended to observe that the assistant has returned plausible candidate slots, but there is no evidence in the interactive elements or page URL that such slots were displayed. The page remains on the booking assistant input form without any indication of slot suggestions.
+**Judge rationale:** The step executed without error and the page rendered with the booking suggestions as intended, aligning with the tour goal of verifying plausible candidate slots are returned.
 
 **Action:** `observe` target=`None` value=`None`
 
-**After:** URL=`http://localhost:5000/member/book-tee-time/assist` • title=`Book Tee Time — Adam's Golf Club` • elapsed `209 ms`
+**After:** URL=`http://localhost:5000/member/book-tee-time/assist` • title=`Book Tee Time — Adam's Golf Club` • elapsed `208 ms`
 
 ![step 4 screenshot](screenshots/booking-assistant-step-04.png)
 
+### Step 5 — `observe` (OK)
+
+**Category:** `expected` • **Severity:** —
+
+**Decision rationale:** The page has already been observed in previous steps, and we need to verify if plausible candidate slots are displayed as a result of the assistant's processing without clicking any further.
+
+**Judge rationale:** The step executed without error and the page state is as expected, showing all necessary interactive elements including the booking assistant input and buttons. The tour goal of observing plausible candidate slots after using the natural-language booking assistant is aligned with this step.
+
+**Action:** `observe` target=`None` value=`None`
+
+**After:** URL=`http://localhost:5000/member/book-tee-time/assist` • title=`Book Tee Time — Adam's Golf Club` • elapsed `211 ms`
+
+![step 5 screenshot](screenshots/booking-assistant-step-05.png)
+
 ---
 
-_Generated by `explore_agent.ui_run` (phase 12 v1 v2). Advisory — findings are a starting point for a reviewer, not a gate. See [`explore_agent/README.md`](../../README.md)._
+_Generated by `explore_agent.ui_run` (phase 12 v1 v3 — adaptive). Advisory — findings are a starting point for a reviewer, not a gate. See [`explore_agent/README.md`](../../README.md)._

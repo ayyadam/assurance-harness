@@ -2,7 +2,7 @@
 
 **Status:** living document — updated as the assurance harness matures.
 **Owner:** Adam (acting as Digital Assurance Engineer)
-**Last updated:** 2026-06-05 *(F-025 — R-018 re-opened; CI trace root-caused the lost confirm POST, F-012's CSS smooth-scroll fix proven ineffective, scrollIntoView shim added)*
+**Last updated:** 2026-06-06 *(F-026 — adaptive single-step UI exploration: the UI agent's plan-once-from-starting-page architecture replaced by a perceive→decide→act policy; hallucinated-selector dead-ends 3→0)*
 
 ---
 
@@ -1208,6 +1208,45 @@ Because the race is cold-runner-specific, it **cannot be reproduced locally** (4
 - `docs/risk-register.md` — R-018 status closed → **mitigated**, mitigation text rewritten with the trace evidence and the held-at-mitigated rationale.
 - This finding.
 
+### F-026 — Adaptive single-step UI exploration: plan-once becomes a policy, eliminating hallucinated selectors
+
+**Date:** 2026-06-06
+**Surfaced by:** The v1 v2 UI agent's documented *plan-once-from-starting-page* limitation (Phase 12 sub-roadmap). The committed plan-era report showed three `dead_end` steps on invented selectors across two tours — `#explore-course-link` and `#view-scorecard-link` (public-pages), and `.candidate-slot` (booking-assistant, where the real class is `.booking-slot`) — because the planner referenced elements on pages it had never perceived.
+**Severity:** Moderate — an architectural improvement to an advisory, local-only agent (never a CI gate). Its worth is that it removes a whole *class* of false `dead_end`s at the root rather than patching tours one selector at a time, and that the same first run cleanly surfaced the next two limitations (F-027, F-028).
+
+**Plan vs policy — the root cause**
+
+The v1 v2 UI agent was *plan-first*: one LLM call snapshotted the **starting page** and emitted the entire N-step plan up front (`plan_tour`), then a deterministic executor ran every step blindly (`execute_plan`). Because the planner only ever saw the starting page, every selector for a page it had not navigated to yet was a guess; when the guess was wrong the step failed and the judge tagged it `dead_end` — a failure mode baked into the architecture, not the tour. A plan cannot perceive.
+
+v1 v3 replaces this with a **policy**: a perceive→decide→act loop (`run_tour`). Each step it snapshots the *current* page (URL, title, the interactive elements actually present), shows that plus the history so far to the LLM, and asks for exactly **one** next action; it executes that action, re-perceives, and asks again. The model only ever chooses selectors from elements it has just been shown, so hallucinating a selector for an unseen page is **structurally impossible** — the central guarantee. The loop terminates when the LLM emits `finish` (goal reached or stuck, with a reason) or the tour's `max_steps` budget is exhausted; both outcomes are recorded (`finish_reason` / `hit_cap`).
+
+**Evidence — same three tours, before and after**
+
+| Tour | Plan-based (v1 v2) | Policy-based (v1 v3) |
+|---|---|---|
+| `public-pages` | 6 steps, **2 dead-ends** — invented `#explore-course-link`, `#view-scorecard-link` | 4 steps, **0 failures**, finished deliberately |
+| `member-login-dashboard` | 5 steps, 0 failures | 4 steps, **0 failures**, finished at the dashboard |
+| `booking-assistant` | 4 steps, **1 dead-end** — invented `.candidate-slot` | 5 steps, **0 failures**, hit the step cap |
+
+Executor failures from hallucinated selectors: **3 → 0**. Every selector the policy chose existed on the page it was perceiving. The before report is preserved in git history; the after is [`explore_agent/reports/ui/report.md`](../explore_agent/reports/ui/report.md).
+
+**What the same run surfaced (now tracked, deliberately out of scope here)**
+
+The first adaptive run did its job *and* made the next two limitations visible — which is the stated value of this agent (limits show up in the report, not as silent skips):
+
+- **F-027 — judge mislabels a successful intermediate fill as `dead_end`.** On the member-login tour, `fill #password` succeeded and the tour went on to finish at the dashboard, but the judge tagged the fill `dead_end` because it stayed on `/auth/login`. This is a *judge* limitation (already documented in the explore_agent README), independent of plan-vs-policy; it just shows every run now that the policy reliably produces the intermediate-fill pattern. Fix: anchor `dead_end` on the executor's `succeeded` signal rather than on an inferred URL change.
+- **F-028 — perception covers controls, not result content.** The booking tour reached `/assist` with zero errors but hit its step cap `observe`-ing, because the assistant renders suggested slots as non-interactive `<div onclick=…>` cards (verified in `golf-web-app/app/templates/member/book_tee_time.html`) and `_snapshot_interactive` lists only `a`/`button`/`input`/`textarea`/`select`. The agent could not perceive that slots arrived, so it could not confidently `finish`. This is a *strictly better* failure mode than the plan-based one — graceful budget exhaustion using only real selectors, versus a hard timeout on an invented one. Fix: widen perception.
+
+Bundling either fix would mix three distinct mechanisms (policy, judge prompt, perception) in one change and dilute this result; each is its own focused, evidence-led follow-up.
+
+**What F-026 ships**
+
+- [`explore_agent/ui_probe.py`](../explore_agent/ui_probe.py) — the plan-based `plan_tour` / `execute_plan` (and the `_PLANNER_*` prompt/schema) replaced by the policy: `decide_next_action` (one action from the current page + history), `run_tour` (the perceive→decide→act loop), plus `PageState` / `TourRun` and a `finish` action. `Step` / `StepResult` / `_snapshot_interactive` / `attach_listeners` / `_execute_step` are unchanged. One deliberate behaviour change: the executor now snapshots the page even after a *failed* action, so the next decision can see reality and recover.
+- [`explore_agent/ui_run.py`](../explore_agent/ui_run.py) — wires `run_tour` in place of plan+execute, threads the `finish_reason` / `hit_cap` outcome into the report (summary "Outcome" column + per-tour line), relabels "Plan rationale" → "Decision rationale".
+- `explore_agent/reports/ui/report.md` + `report.json` + screenshots — regenerated from the first adaptive run.
+- [`explore_agent/README.md`](../explore_agent/README.md) — UI surface rewritten plan→policy; known-limitations updated (plan-once hallucination removed; F-027 / F-028 added).
+- This finding + sub-roadmap update (v1 v3 delivered; F-027 / F-028 opened) + Last updated bump.
+
 ## 12. Roadmap
 
 The full phased plan lives in conversational notes; the abbreviated public form:
@@ -1227,7 +1266,7 @@ The full phased plan lives in conversational notes; the abbreviated public form:
 | 9 | Risk-prioritisation agent (PR diff → ranked test plan) | **Done (v4 v2)** — v2 v1 deterministic `covered_by` + `is_gap` and relevance scale; v2 v2 golden-set eval tier; v3 subject-vs-adjacent prompt rule + R-002/R-018/R-019 sharpened (F1 0.526 → 0.588, 4-case); v4 v1 golden set 4 → 9 cases (honest baseline F1 0.421); v4 v2 R-006 sharpened (F1 0.421 → 0.462, methodological ceiling documented in F-015). Architectural next step (deterministic register pre-filter) tracked as phase 13. PR-comment Action deferred (needs hosted-LLM commitment) |
 | 10 | Triage agent (CI failure clustering) | **Done (v1 v2)** — v1 v1: heuristic clustering + LLM category + R-ID xref. v1 v2: golden-set eval tier with deterministic scorer. 5/5 baseline on five real failures from last 30 days |
 | 11 | Prometheus + Grafana observability stack | **Done (v1)** — local stack scraping the SUT, provisioned dashboard with SLOs aligned to the k6 gate; closes R-013. Loki + Alertmanager deferred to v2 |
-| 12 | Exploratory testing agent + tests of agents | **Done (v1 v1, v1 v2, v2 v1, v2 v2)** — see sub-roadmap below for deferred-but-tracked work |
+| 12 | Exploratory testing agent + tests of agents | **Done (v1 v1, v1 v2 → v1 v3, v2 v1, v2 v2)** — UI agent re-architected plan→policy (v1 v3, F-026); see sub-roadmap below for deferred-but-tracked work |
 | 13 | Deterministic register pre-filter for the risk_agent | **Done (v3) — phase closed** — v1 added [`risk_agent/prefilter.py`](../risk_agent/prefilter.py) path-based filtering (F1 0.462 → 0.710). v2 tightened R-001/R-011/R-018 mappings (F1 → 0.733). v3 added content-aware filtering for five rows (R-007, R-009, R-010, R-012, R-019), narrowed R-002's paths, and added a comment-line stripping helper after PR #2's diff revealed marker-words-in-comments cause FPs. **F1 → 0.929** (precision 0.929; recall 0.929); 7 of 9 cases at F1 1.000. F-017's cross-row coupling hypothesis empirically confirmed by v3's eval. See [F-016](#f-016--deterministic-register-pre-filter-phase-13-v1-lifts-f1-0462--0710), [F-017](#f-017--mapping-tightening-phase-13-v2-lifts-f1-0710--0733-cross-row-coupling-surfaced), [F-018](#f-018--content-aware-filtering-phase-13-v3-lifts-f1-0733--0929-phase-13-closed) |
 
 ### Phase 12 sub-roadmap
@@ -1237,7 +1276,8 @@ The exploratory testing arc has its own sub-roadmap because the agentic surface 
 | Sub-phase | Goal | Status |
 |---|---|---|
 | v1 v1 | Exploratory agent — **API surface**: OpenAPI-driven, LLM payload variants per endpoint, LLM-judged responses | **Done** ([`explore_agent/reports/report.md`](../explore_agent/reports/report.md)) |
-| v1 v2 | Exploratory agent — **UI surface**: Playwright tours, LLM plan + LLM judgement per step | **Done** ([`explore_agent/reports/ui/report.md`](../explore_agent/reports/ui/report.md)) |
+| v1 v2 | Exploratory agent — **UI surface**: Playwright tours, LLM plan + LLM judgement per step | **Done; superseded by v1 v3** — plan-once hallucinated selectors for pages it had not perceived |
+| v1 v3 | Exploratory agent — **UI surface, adaptive**: replace the upfront plan with a perceive→decide→act *policy* (one action per step from the current page) | **Done** ([`explore_agent/reports/ui/report.md`](../explore_agent/reports/ui/report.md)); hallucinated-selector dead-ends 3→0. See [F-026](#f-026--adaptive-single-step-ui-exploration-plan-once-becomes-a-policy-eliminating-hallucinated-selectors) |
 | v2 v1 | **Golden-set eval tier** for the explore agent — mirrors [`risk_agent.eval`](../risk_agent/eval.py) and [`triage_agent.eval`](../triage_agent/eval.py) (deterministic scorer, no LLM in scoring) | **Done** — baseline 50.0% accuracy (9/18); [`explore_agent/reports/eval-report.md`](../explore_agent/reports/eval-report.md) |
 | v2 v2 | **Adversarial regression tests on existing agents** — run `risk_agent` / `triage_agent` N times against fixed inputs, assert invariants hold across LLM jitter | **Done** — 12/12 schema-valid, 12/12 closed-vocab, 100% top-result stability; [`tests/agents/reports/regression-report.md`](../tests/agents/reports/regression-report.md) |
 
@@ -1247,7 +1287,9 @@ Phase 9 v3 (delivered — fix to the issue surfaced by phase 12 v2 v2):
 
 Beyond v2, deferred-but-tracked work:
 
-- **Adaptive single-step exploration mode** *(architectural fix to plan-once-from-starting-page)*. The current UI agent commits to a multi-step plan based only on the starting page's interactive elements; selectors on pages the planner hasn't seen yet are hallucinated. The booking-assistant tour's first run made this visible — the planner waited for `.candidate-slot` (invented) while the actual class is `.booking-slot`. The architectural fix is to drop the upfront plan and have the LLM decide one next action per step from the current page state — the difference between a *plan* and a *policy*. **Decision pattern:** the v2 v1 eval will quantify how often hallucination produces a dead-end versus a real finding; the eval result determines whether this jumps the queue or stays here. Same evidence-led pattern as R-011's deployed-model decision becoming numbers-led after phase 8.
+- ~~**Adaptive single-step exploration mode**~~ — **Done (v1 v3, F-026).** The plan-once UI agent committed to a multi-step plan from the starting page's interactive elements only, so selectors on pages it had not seen were hallucinated (the booking-assistant tour waited for the invented `.candidate-slot` while the real class is `.booking-slot`). Replaced with a perceive→decide→act *policy*: the LLM decides one action per step from the current page, making invented selectors structurally impossible. First adaptive run: hallucinated-selector dead-ends 3→0 across the three tours. The decision was taken without waiting on the eval-quantification gate originally noted here — the plan-era report's three invented-selector dead-ends were sufficient evidence on their own. See [F-026](#f-026--adaptive-single-step-ui-exploration-plan-once-becomes-a-policy-eliminating-hallucinated-selectors).
+- **Judge: anchor `dead_end` on the executor's `succeeded` signal** *(F-027, surfaced by F-026)*. The step judge can tag a *successful* intermediate `fill` / `wait` / `observe` as `dead_end` when it reasons "still on the same URL → tour stuck", even though the executor reported the action succeeded and the tour goes on to finish (seen on the member-login tour's `fill #password`). The judge already receives `succeeded` in its input; the fix is a prompt sharpening that keys `dead_end` off it rather than off an inferred URL change. The nuance — a *successful* `click` / `navigate` that should have moved you but didn't (e.g. bad credentials) is still a concern — wants the same evidence-led A/B/C stability treatment as F-021 / F-023.
+- **Wider page perception — interactive controls *and* result content** *(F-028, surfaced by F-026)*. `_snapshot_interactive` lists `a` / `button` / `input` / `textarea` / `select` only, so a tour whose success is non-interactive content is invisible to the agent — the booking assistant renders suggested slots as `<div onclick=…>` cards, so the policy reaches the results page cleanly but cannot perceive the slots and exhausts its budget `observe`-ing (the booking-assistant tour now hits its step cap for this reason). The fix is to capture `[onclick]` / `[role]` / `[tabindex]` (and perhaps a light text snapshot), with a check that scope limits like "do not confirm a booking" still hold once slots are visible.
 - **Free-form UI exploration mode** — the LLM picks goals from a surface map of the SUT instead of running fixed tours.
 - **State-mutating tours** — booking confirmation, admin flows, visitor registration. Held out of v1 because the SUT state would drift across runs and the report would not be reproducible.
 - **Cross-tour memory** — each tour currently starts fresh. A finding from one tour could in principle inform the next tour's plan or goal selection.

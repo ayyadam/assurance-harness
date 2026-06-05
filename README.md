@@ -102,7 +102,7 @@ assurance-harness/
 ├── explore_agent/                  # phase 12: LLM-driven exploration (API + UI)
 │   ├── spec.py + probe.py          # v1 v1: API surface — OpenAPI-driven + auth-bypass probing
 │   ├── judge.py + render.py + run.py
-│   ├── tours.py + ui_probe.py      # v1 v2: UI surface — Playwright tours
+│   ├── tours.py + ui_probe.py      # v1 v3: UI surface — adaptive Playwright tours (policy)
 │   ├── ui_judge.py + ui_run.py
 │   ├── eval.py                     # v2 v1: deterministic golden-set scorer
 │   └── reports/                    # committed evidence (report.md + ui/report.md + screenshots)

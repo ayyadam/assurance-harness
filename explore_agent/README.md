@@ -7,9 +7,10 @@ creativity** the rule-based layers don't have. Two surfaces:
 - **API** (`explore_agent.run`, phase 12 v1 v1) — drives from the live
   OpenAPI spec, asks the LLM to propose payload variants per endpoint, then
   classifies each response.
-- **UI** (`explore_agent.ui_run`, phase 12 v1 v2) — drives Playwright
-  through predefined tours, asks the LLM to plan each tour from the starting
-  page state, then judges each step.
+- **UI** (`explore_agent.ui_run`, phase 12 v1 v3 — adaptive) — drives
+  Playwright through predefined tours, asks the LLM to decide one action at a
+  time from the *current* page state (an adaptive policy, not an upfront plan),
+  then judges each step.
 
 Both surfaces share the same shape: **LLM proposes, deterministic harness
 executes, LLM judges**, with a closed-enum finding category that bounds the
@@ -54,14 +55,23 @@ uv run python -m explore_agent.run --no-llm
 
 ## UI surface — `explore_agent.ui_run`
 
+The UI agent is an adaptive **policy**, not a fixed plan: it decides one action
+at a time from the page it can currently see, so it cannot reference a selector
+on a page it has not yet perceived (which is exactly what the earlier plan-based
+version did — see [Known limitations](#known-limitations-v1-v3)).
+
 1. For each predefined tour (see [`tours.py`](tours.py)):
    - If the tour requires auth, the executor logs in via the UI form first.
    - Navigate to the tour's starting URL.
-   - **Plan**: ask the LLM for a step plan (≤ tour budget), given the
-     starting page state (URL, title, interactive elements visible).
-   - **Execute**: drive Playwright through each step (navigate / click /
-     fill / wait / observe), capturing per-step:
-     - URL, page title, JS console errors, network 5xx, screenshot
+   - **Loop** (`ui_probe.run_tour`), up to the tour's step budget:
+     - **Perceive** — snapshot the current page (URL, title, interactive
+       elements actually present).
+     - **Decide** — ask the LLM for the single next action, given the current
+       page + the history so far. It chooses `navigate` / `click` / `fill` /
+       `wait` / `observe`, or `finish` (goal reached, or stuck — with a reason).
+     - **Act** — drive Playwright through that one action, capturing URL, page
+       title, JS console errors, network 5xx, and a screenshot. Then re-perceive
+       and decide again.
    - **Judge**: ask the LLM to classify each step's outcome:
      - `expected` / `unexpected_5xx` / `js_error` / `dead_end` /
        `business_rule_concern`
@@ -102,7 +112,7 @@ uv run playwright install chromium
 
 Findings are **advisory leads to investigate**, not defect tickets.
 
-## Known limitations (v1 v2)
+## Known limitations (v1 v3)
 
 These are limits of LLM-jittered exploration. They show up cleanly in the
 report rather than as silent skips — that visibility is part of the value.
@@ -113,17 +123,24 @@ report rather than as silent skips — that visibility is part of the value.
   if you want strict 5xx only.
 - **API surface — no temporal context.** The agent doesn't know today's
   date and will sometimes flag "future dates" that are actually today.
-- **UI surface — plan-once-from-starting-page.** The planner sees the
-  starting page's interactive elements only. When planning further into the
-  app (e.g. clicking a link, then expecting selectors on the next page) it
-  invents plausible-but-non-existent selectors. These surface as `dead_end`
-  steps with the invented selector visible — easy for a reviewer to spot
-  and adjust their mental model.
+- **UI surface — perception covers interactive controls, not result content.**
+  The page snapshot lists `a` / `button` / `input` / `textarea` / `select`
+  only. When a tour's *success* shows up as non-interactive content — e.g. the
+  booking assistant renders its suggested slots as `<div onclick=…>` cards, not
+  buttons — the agent cannot perceive that the result arrived, so it cannot
+  confidently `finish` and instead exhausts its step budget `observe`-ing. This
+  is the successor to the now-fixed plan-once hallucination: v1 v3 replaced the
+  upfront plan with a policy (see F-026), which made inventing selectors for
+  unseen pages structurally impossible, and in doing so surfaced this perception
+  gap cleanly. Tracked as **F-028** (widen perception to `[onclick]` / `[role]`
+  / `[tabindex]`, with a check that scope limits like "do not confirm" still hold).
 - **UI surface — judge can mistake intermediate fills for divergence.** A
-  `fill #password` step that leaves you on the same `/auth/login` page is
-  the *correct* intermediate state, but the judge can read "still on
-  login page" as a goal-divergence and tag it `dead_end`. Read per-step
-  judgement with the tour goal in mind.
+  `fill #password` step that leaves you on the same `/auth/login` page is the
+  *correct* intermediate state, but the judge can read "still on login page" as
+  a goal-divergence and tag it `dead_end` even though the step succeeded and the
+  tour goes on to finish. Read per-step judgement with the tour goal in mind.
+  Tracked as **F-027** (anchor `dead_end` on the executor's `succeeded` signal
+  rather than on an inferred URL change).
 
 ## Eval surface — `explore_agent.eval`
 
@@ -178,7 +195,7 @@ agent **catches real defects** — without changes to the eval code.
 This README intentionally does not maintain its own backlog — the single
 source of truth is the **Phase 12 sub-roadmap** in
 [`docs/test-strategy.md` §12](../docs/test-strategy.md#phase-12-sub-roadmap).
-That section tracks v2 v1 / v2 v2 plus the deferred items beyond
-(including the *adaptive single-step* architectural fix, free-form
-exploration, state-mutating tours, cross-tour memory, and auth-bypass
-probing). Read there for what's next and why.
+That section tracks the delivered sub-versions plus the deferred items beyond
+(free-form exploration, state-mutating tours, cross-tour memory, and the two
+items the v1 v3 adaptive rewrite surfaced — judge-signal sharpening (F-027) and
+wider perception (F-028)). Read there for what's next and why.
