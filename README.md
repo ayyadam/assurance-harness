@@ -9,9 +9,10 @@ Strategy and risk register are the source of truth — [`docs/test-strategy.md`]
 Currently in place across the two repos:
 
 - **Per-PR CI gates (`assurance-harness/.github/workflows/assurance.yml`):** lint (ruff), harness pytest, contract (Schemathesis), functional (Playwright), accessibility (axe-core), performance (k6), data quality (pandera) — every gate runs against an ephemeral SUT brought up from `golf-web-app`'s source.
-- **Local on-demand layers:** AI evaluation harness ([`ai_evaluation/`](ai_evaluation/README.md), phase 8), risk-prioritisation agent ([`risk_agent/`](risk_agent/README.md), phase 9), triage agent ([`triage_agent/`](triage_agent/README.md), phase 10), and exploratory agent ([`explore_agent/`](explore_agent/README.md), phase 12). All four use a local Ollama runtime so the per-PR path stays fast and reproducible; their evidence artefacts are committed under each module's `reports/` dir.
+- **Local on-demand agent layers (Ollama-backed):** AI evaluation harness ([`ai_evaluation/`](ai_evaluation/README.md), phase 8), risk-prioritisation agent with a deterministic register pre-filter ([`risk_agent/`](risk_agent/README.md), phase 9 + phase 13), triage agent ([`triage_agent/`](triage_agent/README.md), phase 10), and exploratory agent — API + UI surfaces plus spec-aware auth-bypass probing ([`explore_agent/`](explore_agent/README.md), phase 12). All four use a local Ollama runtime so the per-PR path stays fast and reproducible; each carries a deterministic golden-set eval tier, and their evidence artefacts are committed under each module's `reports/` dir.
 - **Production-style observability:** Prometheus + Grafana stack ([`observability/`](observability/README.md), phase 11) scraping the SUT's `/metrics`; SLO thresholds on the dashboard match the k6 perf gate's pre-merge budget. Closes R-013.
-- **Documented findings:** F-001 through F-011 captured in the strategy with diagnosis, fix, and generalisation.
+- **Tests of the harness's own agents:** a gated regression suite ([`tests/agents/`](tests/agents/README.md), phase 12 v2 v2 + F-024) running `risk_agent`, `triage_agent`, and the `explore_agent` judge N times against fixed inputs, asserting schema/vocab invariants and stability under LLM jitter — including a non-blinding positive control on the explore judge.
+- **Documented findings:** F-001 through F-024 captured in the strategy with diagnosis, fix, and generalisation.
 
 ## Stack
 
@@ -22,7 +23,7 @@ Currently in place across the two repos:
 - **axe-core** (axe-playwright-python) for WCAG 2.1 A/AA accessibility checks
 - **k6** for performance budgets (thresholds-as-code)
 - **pandera** for data-quality checks on the live database
-- **Ollama** for the AI evaluation harness and risk-prioritisation agent (local on-demand only — not in CI)
+- **Ollama** for the four agent layers — AI evaluation, risk-prioritisation, triage, and exploration (local on-demand only — not in CI)
 - **ruff** for lint + format
 - **GitHub Actions** for CI
 
@@ -80,9 +81,10 @@ assurance-harness/
 │   ├── register.py                 # parses docs/risk-register.md
 │   ├── diff.py                     # gh pr diff / --diff file
 │   ├── agent.py                    # Ollama structured-output call
+│   ├── prefilter.py                # phase 13: deterministic register pre-filter (path + content)
 │   ├── render.py + run.py          # CLI + markdown
-│   ├── golden_set.yaml             # v2 v2: expected ranks per historic PR
-│   ├── eval.py                     # v2 v2: deterministic scorer (precision/recall/F1)
+│   ├── golden_set.yaml             # expected ranks per historic PR
+│   ├── eval.py                     # deterministic scorer (precision/recall/F1)
 │   └── reports/                    # committed evidence (per-PR + eval-report)
 ├── triage_agent/                   # phase 10: cluster failed CI runs by root cause
 │   ├── fetcher.py                  # gh CLI wrappers (cached log dumps)
@@ -98,18 +100,22 @@ assurance-harness/
 │   ├── grafana/                    # provisioned datasource + dashboard
 │   └── evidence/                   # committed screenshots
 ├── explore_agent/                  # phase 12: LLM-driven exploration (API + UI)
-│   ├── spec.py + probe.py          # v1 v1: API surface — OpenAPI-driven
+│   ├── spec.py + probe.py          # v1 v1: API surface — OpenAPI-driven + auth-bypass probing
 │   ├── judge.py + render.py + run.py
 │   ├── tours.py + ui_probe.py      # v1 v2: UI surface — Playwright tours
 │   ├── ui_judge.py + ui_run.py
+│   ├── eval.py                     # v2 v1: deterministic golden-set scorer
 │   └── reports/                    # committed evidence (report.md + ui/report.md + screenshots)
 ├── tests/                          # tests OF the harness itself
 │   ├── test_smoke.py
-│   └── agents/                     # phase 12 v2 v2: agent regression
+│   ├── test_prefilter.py           # phase 13: risk_agent register pre-filter unit tests
+│   ├── test_auth_finding.py        # F-020: explore_agent spec-aware auth finding unit tests
+│   └── agents/                     # phase 12 v2 v2 + F-024: agent regression (gated)
 │       ├── fixtures/               # cached PR diffs + synthetic clusters
 │       ├── _runner.py              # run-N-times harness + jitter metrics
 │       ├── test_risk_agent_invariants.py
 │       ├── test_triage_agent_invariants.py
+│       ├── test_explore_judge_nonblinding.py   # F-024: judge non-blinding positive control
 │       ├── render_report.py        # combined markdown from JSON dumps
 │       └── reports/                # committed evidence
 └── .github/workflows/
@@ -157,7 +163,7 @@ SUT_BASE_URL=http://host.docker.internal:5000 \
 
 ### Local-on-demand layers (Ollama-backed)
 
-Both phase 8 and phase 9 use a local Ollama runtime — they are deliberately *not* in CI so the per-PR gate stays fast and reproducible, and the model isn't a moving budget on the critical path.
+The four agent layers (phases 8, 9, 10, 12) use a local Ollama runtime — they are deliberately *not* in CI so the per-PR gate stays fast and reproducible, and the model isn't a moving budget on the critical path.
 
 ```bash
 # AI evaluation harness — score the booking assistant across a model list
@@ -194,11 +200,12 @@ uv run python -m explore_agent.ui_run --headed                     # show the br
 uv run python -m explore_agent.eval                                # score against cached report
 uv run python -m explore_agent.eval --refresh                      # re-run the agent first
 
-# Agent regression suite (phase 12 v2 v2) — runs risk_agent + triage_agent
-# N times against cached fixtures; asserts schema/vocab invariants and
-# measures top-result stability under LLM jitter. ~3 min local.
+# Agent regression suite (phase 12 v2 v2 + F-024) — runs risk_agent,
+# triage_agent, and the explore_agent judge N times against fixed inputs;
+# asserts schema/vocab invariants, top-result stability under LLM jitter,
+# and a non-blinding positive control on the explore judge. ~3 min local.
 RUN_AGENT_REGRESSION=1 uv run pytest tests/agents/ -v
-uv run python tests/agents/render_report.py                        # refresh the markdown report
+uv run python tests/agents/render_report.py                        # refresh the markdown report (risk + triage)
 ```
 
 ### Observability stack
@@ -212,7 +219,7 @@ cd observability && docker compose up -d
 # Prometheus: http://localhost:9090
 ```
 
-See [`ai_evaluation/README.md`](ai_evaluation/README.md) and [`risk_agent/README.md`](risk_agent/README.md) for the full design notes and committed evidence.
+See each module's README — [`ai_evaluation/`](ai_evaluation/README.md), [`risk_agent/`](risk_agent/README.md), [`triage_agent/`](triage_agent/README.md), [`explore_agent/`](explore_agent/README.md), [`observability/`](observability/README.md) — for the full design notes and committed evidence.
 
 ## Related
 
