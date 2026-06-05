@@ -1,9 +1,9 @@
 """CLI for the triage agent.
 
 Usage:
-  uv run python -m triage_agent.run --repo ayyadam/testing-system
-  uv run python -m triage_agent.run --repo ayyadam/testing-system --since-days 7
-  uv run python -m triage_agent.run --repo ayyadam/testing-system --no-llm    # skip categorisation
+  uv run python -m triage_agent.run --repo ayyadam/assurance-harness
+  uv run python -m triage_agent.run --repo ayyadam/assurance-harness --since-days 7
+  uv run python -m triage_agent.run --repo ayyadam/assurance-harness --no-llm    # skip categorisation
 """
 
 from __future__ import annotations
@@ -28,8 +28,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Triage agent — cluster failed CI runs.")
     parser.add_argument(
         "--repo",
-        default="ayyadam/testing-system",
-        help="GitHub repo to scan (default: ayyadam/testing-system)",
+        default="ayyadam/assurance-harness",
+        help="GitHub repo to scan (default: ayyadam/assurance-harness)",
     )
     parser.add_argument(
         "--since-days",

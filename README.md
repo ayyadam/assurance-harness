@@ -1,4 +1,4 @@
-# testing-system
+# assurance-harness
 
 Assurance harness targeting [golf-web-app](https://github.com/ayyadam/golf-web-app) — a portfolio demonstration of modern, automation-led quality engineering for the Digital Assurance Engineer role.
 
@@ -8,7 +8,7 @@ Strategy and risk register are the source of truth — [`docs/test-strategy.md`]
 
 Currently in place across the two repos:
 
-- **Per-PR CI gates (`testing-system/.github/workflows/assurance.yml`):** lint (ruff), harness pytest, contract (Schemathesis), functional (Playwright), accessibility (axe-core), performance (k6), data quality (pandera) — every gate runs against an ephemeral SUT brought up from `golf-web-app`'s source.
+- **Per-PR CI gates (`assurance-harness/.github/workflows/assurance.yml`):** lint (ruff), harness pytest, contract (Schemathesis), functional (Playwright), accessibility (axe-core), performance (k6), data quality (pandera) — every gate runs against an ephemeral SUT brought up from `golf-web-app`'s source.
 - **Local on-demand layers:** AI evaluation harness ([`ai_evaluation/`](ai_evaluation/README.md), phase 8), risk-prioritisation agent ([`risk_agent/`](risk_agent/README.md), phase 9), triage agent ([`triage_agent/`](triage_agent/README.md), phase 10), and exploratory agent ([`explore_agent/`](explore_agent/README.md), phase 12). All four use a local Ollama runtime so the per-PR path stays fast and reproducible; their evidence artefacts are committed under each module's `reports/` dir.
 - **Production-style observability:** Prometheus + Grafana stack ([`observability/`](observability/README.md), phase 11) scraping the SUT's `/metrics`; SLO thresholds on the dashboard match the k6 perf gate's pre-merge budget. Closes R-013.
 - **Documented findings:** F-001 through F-011 captured in the strategy with diagnosis, fix, and generalisation.
@@ -43,7 +43,7 @@ uv run ruff format --check .
 ## Layout
 
 ```
-testing-system/
+assurance-harness/
 ├── pyproject.toml
 ├── .python-version
 ├── schemathesis.toml               # contract-test check config
