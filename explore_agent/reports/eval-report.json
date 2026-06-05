@@ -2,13 +2,13 @@
   "totals": {
     "cases": 18,
     "found_in_report": 18,
-    "category_correct": 9,
-    "accuracy": 0.5,
+    "category_correct": 12,
+    "accuracy": 0.667,
     "confusion": {
       "expected": {
-        "expected": 9,
-        "unexpected_5xx": 2,
-        "business_rule_concern": 7
+        "expected": 12,
+        "business_rule_concern": 5,
+        "unexpected_5xx": 1
       }
     }
   },
@@ -38,10 +38,10 @@
       "endpoint": "GET /api/v1/competitions",
       "variant": "abusive",
       "expected_category": "expected",
-      "actual_category": "unexpected_5xx",
+      "actual_category": "expected",
       "actual_status": 200,
       "found_in_report": true,
-      "category_match": false
+      "category_match": true
     },
     {
       "case_id": "members-me-get-happy",
@@ -88,20 +88,20 @@
       "endpoint": "GET /api/v1/tee-times",
       "variant": "edge",
       "expected_category": "expected",
-      "actual_category": "business_rule_concern",
+      "actual_category": "expected",
       "actual_status": 200,
       "found_in_report": true,
-      "category_match": false
+      "category_match": true
     },
     {
       "case_id": "tee-times-list-abusive",
       "endpoint": "GET /api/v1/tee-times",
       "variant": "abusive",
       "expected_category": "expected",
-      "actual_category": "business_rule_concern",
+      "actual_category": "expected",
       "actual_status": 200,
       "found_in_report": true,
-      "category_match": false
+      "category_match": true
     },
     {
       "case_id": "tee-times-detail-happy",
@@ -128,7 +128,7 @@
       "endpoint": "GET /api/v1/tee-times/{tee_time_id}",
       "variant": "abusive",
       "expected_category": "expected",
-      "actual_category": "business_rule_concern",
+      "actual_category": "unexpected_5xx",
       "actual_status": 200,
       "found_in_report": true,
       "category_match": false
@@ -188,7 +188,7 @@
       "endpoint": "POST /api/v1/tee-times/{tee_time_id}/bookings",
       "variant": "abusive",
       "expected_category": "expected",
-      "actual_category": "unexpected_5xx",
+      "actual_category": "business_rule_concern",
       "actual_status": 409,
       "found_in_report": true,
       "category_match": false

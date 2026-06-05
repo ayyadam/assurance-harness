@@ -1,6 +1,6 @@
 # explore_agent v2 v1 — golden-set evaluation
 
-_Run: 2026-06-02_
+_Run: 2026-06-05_
 
 Compares the agent's emitted category per (endpoint, variant) probe (cached in `reports/report.json`) against the expected values in [`golden_set.yaml`](../golden_set.yaml). Scoring is deterministic — no LLM in the scoring path. Re-score after a golden-set edit is free; `--refresh` first re-runs the agent against the live SUT.
 
@@ -10,15 +10,15 @@ Compares the agent's emitted category per (endpoint, variant) probe (cached in `
 |---|---|
 | Cases | 18 |
 | Probes found in report | 18 / 18 |
-| **Overall accuracy** | **0.500** (9/18) |
+| **Overall accuracy** | **0.667** (12/18) |
 
 ## Confusion
 
 Rows are expected categories; columns are what the agent emitted.
 
-| expected \ actual | `expected` | `unexpected_5xx` | `schema_drift` | `business_rule_concern` |
-|---|---|---|---|---|
-| `expected` | 9 | 2 | 0 | 7 |
+| expected \ actual | `expected` | `unexpected_5xx` | `schema_drift` | `business_rule_concern` | `auth_boundary_concern` | `documented_public_endpoint` |
+|---|---|---|---|---|---|---|
+| `expected` | 12 | 1 | 0 | 5 | 0 | 0 |
 
 ## Per-case
 
@@ -34,11 +34,11 @@ Rows are expected categories; columns are what the agent emitted.
 
 - ✓ category: expected `expected`, got `expected` (http status 200)
 
-### ⚠ `competitions-get-abusive`
+### ✓ `competitions-get-abusive`
 
 **Probe:** `GET /api/v1/competitions` — `abusive`
 
-- ✗ category: expected `expected`, got `unexpected_5xx` (http status 200)
+- ✓ category: expected `expected`, got `expected` (http status 200)
 
 ### ✓ `members-me-get-happy`
 
@@ -64,17 +64,17 @@ Rows are expected categories; columns are what the agent emitted.
 
 - ✓ category: expected `expected`, got `expected` (http status 200)
 
-### ⚠ `tee-times-list-edge`
+### ✓ `tee-times-list-edge`
 
 **Probe:** `GET /api/v1/tee-times` — `edge`
 
-- ✗ category: expected `expected`, got `business_rule_concern` (http status 200)
+- ✓ category: expected `expected`, got `expected` (http status 200)
 
-### ⚠ `tee-times-list-abusive`
+### ✓ `tee-times-list-abusive`
 
 **Probe:** `GET /api/v1/tee-times` — `abusive`
 
-- ✗ category: expected `expected`, got `business_rule_concern` (http status 200)
+- ✓ category: expected `expected`, got `expected` (http status 200)
 
 ### ✓ `tee-times-detail-happy`
 
@@ -92,7 +92,7 @@ Rows are expected categories; columns are what the agent emitted.
 
 **Probe:** `GET /api/v1/tee-times/{tee_time_id}` — `abusive`
 
-- ✗ category: expected `expected`, got `business_rule_concern` (http status 200)
+- ✗ category: expected `expected`, got `unexpected_5xx` (http status 200)
 
 ### ✓ `booking-assistant-happy`
 
@@ -128,7 +128,7 @@ Rows are expected categories; columns are what the agent emitted.
 
 **Probe:** `POST /api/v1/tee-times/{tee_time_id}/bookings` — `abusive`
 
-- ✗ category: expected `expected`, got `unexpected_5xx` (http status 409)
+- ✗ category: expected `expected`, got `business_rule_concern` (http status 409)
 
 ---
 
