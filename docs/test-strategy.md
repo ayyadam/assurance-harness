@@ -2,7 +2,7 @@
 
 **Status:** living document — updated as the assurance harness matures.
 **Owner:** Adam (acting as Digital Assurance Engineer)
-**Last updated:** 2026-06-04 *(F-020 — explore_agent's deterministic_auth_finding becomes spec-aware; new documented_public_endpoint category; six F-019 concerns flip to expected post-fix)*
+**Last updated:** 2026-06-05 *(F-021 — other_member LLM-judge prompt-tightening; phase A N=3 stable-divergent → phase B sharpen → phase C N=3 verification; 5 stable false-positives → 0)*
 
 ---
 
@@ -68,7 +68,7 @@ Layers planned across the project. Each layer has an explicit "why this exists" 
 | Risk-prioritisation (advisory) | **Done (phase 13 v3)** | Local Ollama agent + deterministic register pre-filter (path + content) + deterministic post-processing + golden-set eval | [`testing-system/risk_agent/`](../risk_agent/README.md) | Given a PR diff + the live risk register, produces a ranked test plan with `covered_by` per risk, coverage-gap flags, relevance label (`direct` / `plausible`), and exploratory probes. Advisory only, not a CI gate. Phase 9 v2 v1 → v4 v2: prompt + row tuning iterations (F1 0.526 → 0.462 across the 9-case set). Phase 13: deterministic register pre-filter — v1 path-based filtering (F1 → 0.710); v2 mapping tightening (F1 → 0.733); **v3 content-aware filtering** for R-007, R-009, R-010, R-012, R-019 + R-002 path narrowing + comment-line stripping in marker matching. **F1: 0.733 → 0.929** (precision 0.688 → 0.929, recall 0.786 → 0.929; **7 of 9 cases at F1 1.000**). Single FP and single FN remaining are both honest LLM-calibration calls. F-017's cross-row coupling hypothesis confirmed via a side-effect of v3's R-007 filter. Phase 13 closed. See [F-013](#f-013--risk_agent-subject-vs-adjacent-rule--sharpened-rows-lift-f1-0526--0588), [F-014](#f-014--golden-set-growth-4--9-cases-surfaces-three-new-failure-modes-honest-baseline-f1-0421), [F-015](#f-015--r-006-row-sharpening-lifts-f1-0421--0462-three-attempted-sharpenings-reveal-the-llm-tuning-ceiling), [F-016](#f-016--deterministic-register-pre-filter-phase-13-v1-lifts-f1-0462--0710), [F-017](#f-017--mapping-tightening-phase-13-v2-lifts-f1-0710--0733-cross-row-coupling-surfaced), [F-018](#f-018--content-aware-filtering-phase-13-v3-lifts-f1-0733--0929-phase-13-closed), and [`risk_agent/reports/eval-report.md`](../risk_agent/reports/eval-report.md) |
 | Triage (advisory) | **Done (phase 10 v1 v2)** | Local Ollama agent over `gh` log dumps + golden-set eval | [`testing-system/triage_agent/`](../triage_agent/README.md) | Clusters failed CI runs by signature `(test path, test name, error class)`, then asks the LLM for a category (flake / defect / infra / env) and a candidate register R-ID per cluster. Closed-vocabulary enum on the R-ID — the model cannot invent risks. v1 v2 added a golden-set evaluation tier ([`triage_agent.eval`](../triage_agent/eval.py)) scoring the agent against expected (category, R-ID) per known cluster — deterministic, no LLM in scoring. Current baseline: 5/5 on category, R-ID, and combined. Historical insight from v1 v1: R-018 was actually present at run #18 (2026-05-28), three weeks before it was logged. See [`triage_agent/reports/report.md`](../triage_agent/reports/report.md) and [`triage_agent/reports/eval-report.md`](../triage_agent/reports/eval-report.md) |
 | Production observability | **Done (phase 11 v1)** | Prometheus + Grafana (metrics only; Loki + Alertmanager v2 candidates) | [`testing-system/observability/`](../observability/README.md) | Local stack scraping the SUT's `/metrics` (provisioned by `prometheus-flask-exporter`), provisioned dashboard with request rate / error rate / p95 latency / per-path breakdowns. SLO thresholds on the dashboard match the k6 perf gate's pre-merge budget — same SLOs, two enforcement points. Closes R-013. See [`observability/README.md`](../observability/README.md) and [`observability/evidence/grafana-sut-overview.png`](../observability/evidence/grafana-sut-overview.png) |
-| Exploratory (advisory) | **Done (phase 12 v2 v1 + deferred-E + F-020 sharpening)** | Local Ollama agent — API surface via OpenAPI, UI surface via Playwright, deterministic eval tier, spec-aware auth-bypass probing | [`testing-system/explore_agent/`](../explore_agent/README.md) | Two surfaces share the same package and the same closed-enum + LLM-jury pattern. **API** (`explore_agent.run`, v1 v1): every v1 endpoint probed with three LLM-generated payload variants (happy / edge / abusive, including prompt-injection on AI endpoints), responses classified into `expected` / `unexpected_5xx` / `schema_drift` / `business_rule_concern` / `auth_boundary_concern` / `documented_public_endpoint`. Phase 12 **deferred-E** added a credential-mode axis: each endpoint's happy payload is re-sent under `unauth` (no token), `wrong_creds` (invalid bearer), and `other_member` (a different seeded member's valid token). The first two are judged mechanically — **spec-aware** since F-020: a 2xx on `unauth`/`wrong_creds` is `auth_boundary_concern` only when the OpenAPI spec marks the endpoint as auth-required (spec/impl drift); a 2xx where the spec documents the endpoint as public is `documented_public_endpoint` (informational, for reviewer confirmation of design intent). `other_member` remains LLM-judged with auth-mode context. **UI** (`explore_agent.ui_run`, v1 v2): three predefined tours, each with an LLM-planned step sequence executed in Playwright, per-step state captured and LLM-judged into `expected` / `unexpected_5xx` / `js_error` / `dead_end` / `business_rule_concern`. **Eval** (`explore_agent.eval`, v2 v1): golden-set evaluation tier mirroring [`risk_agent.eval`](../risk_agent/eval.py) and [`triage_agent.eval`](../triage_agent/eval.py) — deterministic scoring against expected category per (endpoint, variant), no LLM in the scoring path. **Baseline: 50.0% accuracy (9/18 cases)** — every case's expected category is `expected` (no defects in the seeded surface) and the agent over-flags 9 of them (7 as `business_rule_concern`, 2 as `unexpected_5xx`). This quantifies the documented v1 v1 over-flagging behaviour and gives a measurable target for any future judge-prompt tightening or model swap. v1 v2's UI agent also surfaced the *plan-once-from-starting-page* limitation cleanly (LLM hallucinated `.candidate-slot` when the actual class was `.booking-slot`); the architectural fix (adaptive single-step) is tracked in the [phase-12 sub-roadmap](#phase-12-sub-roadmap), with the eval baseline as its decision input. Both probing surfaces remain local-only (cost-prohibitive for CI); the eval is also local-only. See [F-019](#f-019--auth-bypass-probing-phase-12-deferred-e-surfaces-three-get-endpoints-accepting-anonymous-traffic), [`explore_agent/reports/report.md`](../explore_agent/reports/report.md) (API), [`explore_agent/reports/ui/report.md`](../explore_agent/reports/ui/report.md) (UI), [`explore_agent/reports/eval-report.md`](../explore_agent/reports/eval-report.md) (eval). |
+| Exploratory (advisory) | **Done (phase 12 v2 v1 + deferred-E + F-020 / F-021 sharpening)** | Local Ollama agent — API surface via OpenAPI, UI surface via Playwright, deterministic eval tier, spec-aware auth-bypass probing | [`testing-system/explore_agent/`](../explore_agent/README.md) | Two surfaces share the same package and the same closed-enum + LLM-jury pattern. **API** (`explore_agent.run`, v1 v1): every v1 endpoint probed with three LLM-generated payload variants (happy / edge / abusive, including prompt-injection on AI endpoints), responses classified into `expected` / `unexpected_5xx` / `schema_drift` / `business_rule_concern` / `auth_boundary_concern` / `documented_public_endpoint`. Phase 12 **deferred-E** added a credential-mode axis: each endpoint's happy payload is re-sent under `unauth` (no token), `wrong_creds` (invalid bearer), and `other_member` (a different seeded member's valid token). The first two are judged mechanically — **spec-aware** since F-020: a 2xx on `unauth`/`wrong_creds` is `auth_boundary_concern` only when the OpenAPI spec marks the endpoint as auth-required (spec/impl drift); a 2xx where the spec documents the endpoint as public is `documented_public_endpoint` (informational, for reviewer confirmation of design intent). `other_member` remains LLM-judged with auth-mode context — **prompt-tightened in F-021** (phase A N=3 stable-divergent measurement → phase B caller-as-source-of-truth framing + concrete shared/identity/owner-scoped examples + explicit exclusions → phase C N=3 verification: 5 stable false-positives → 0). **UI** (`explore_agent.ui_run`, v1 v2): three predefined tours, each with an LLM-planned step sequence executed in Playwright, per-step state captured and LLM-judged into `expected` / `unexpected_5xx` / `js_error` / `dead_end` / `business_rule_concern`. **Eval** (`explore_agent.eval`, v2 v1): golden-set evaluation tier mirroring [`risk_agent.eval`](../risk_agent/eval.py) and [`triage_agent.eval`](../triage_agent/eval.py) — deterministic scoring against expected category per (endpoint, variant), no LLM in the scoring path. **Baseline: 50.0% accuracy (9/18 cases)** — every case's expected category is `expected` (no defects in the seeded surface) and the agent over-flags 9 of them (7 as `business_rule_concern`, 2 as `unexpected_5xx`). This quantifies the documented v1 v1 over-flagging behaviour and gives a measurable target for any future judge-prompt tightening or model swap. v1 v2's UI agent also surfaced the *plan-once-from-starting-page* limitation cleanly (LLM hallucinated `.candidate-slot` when the actual class was `.booking-slot`); the architectural fix (adaptive single-step) is tracked in the [phase-12 sub-roadmap](#phase-12-sub-roadmap), with the eval baseline as its decision input. Both probing surfaces remain local-only (cost-prohibitive for CI); the eval is also local-only. See [F-019](#f-019--auth-bypass-probing-phase-12-deferred-e-surfaces-three-get-endpoints-accepting-anonymous-traffic), [`explore_agent/reports/report.md`](../explore_agent/reports/report.md) (API), [`explore_agent/reports/ui/report.md`](../explore_agent/reports/ui/report.md) (UI), [`explore_agent/reports/eval-report.md`](../explore_agent/reports/eval-report.md) (eval). |
 | Tests of the harness itself | **Done (phase 12 v2 v2)** | pytest (LLM-gated via `RUN_AGENT_REGRESSION=1`) | [`testing-system/tests/agents/`](../tests/agents/README.md) | Adversarial regression suite for `risk_agent` and `triage_agent`: each agent invoked N=3 times against cached fixtures, with hard invariants (schema validity, closed-vocabulary on every emitted R-ID, relevance in {2, 3}), soft invariants (top-result stability ≥ 0.66 across runs), and a **stable-divergent warning** (test still passes, but emits a `StableDivergentWarning` and flags the case in the rendered report when the agent's stable answer disagrees with the golden set's expected top-1). The eval tiers measure *accuracy*; this measures *stability under LLM jitter* and surfaces stable-but-wrong cases that single-run eval averages can hide. v2 v2's baseline run surfaced one stable-divergent case (`risk_agent` PR #12 — R-002 stably top, golden expected R-011); phase 9 v3 fixed it via subject-vs-adjacent prompt + sharpened register rows (see [F-013](#f-013--risk_agent-subject-vs-adjacent-rule--sharpened-rows-lift-f1-0526--0588)). Current run: 12/12 schema-valid, 12/12 closed-vocab, 100% top-result stability across all 4 cases, **no stable-divergent warnings**. Local-only — LLM calls would flake CI. See [`tests/agents/reports/regression-report.md`](../tests/agents/reports/regression-report.md) |
 
 A traditional test pyramid does not map cleanly onto this project because the SUT is one of several concerns alongside data quality, AI evaluation, and observability. The above is a *responsibility map*, not a pyramid.
@@ -900,7 +900,86 @@ The v1 of the meta-finding could have just *suppressed* `auth_boundary_concern` 
 
 **Open work surfaced by the full-LLM verification run**
 
-- **LLM-judge over-flags `other_member` probes on shared-resource and identity endpoints.** The auth-mode context block in [`explore_agent/judge.py`](../explore_agent/judge.py) tells the model that `/me`-style identity endpoints are *expected* to return the other member's data and that the question is "did this endpoint leak data the other member shouldn't see?" The first end-to-end LLM run on `other_member` (made possible because the agent now consistently exercises the LLM judge on this path) shows the model labelling 5 of 6 such probes as `auth_boundary_concern`. Candidate fixes, in increasing scope: (1) tighten the prompt with explicit list/calendar/identity carve-outs; (2) add a deterministic pre-filter on `other_member` for endpoints whose response shape is shared rather than per-member; (3) treat as a calibration issue and ship a v2 v2-style stability/divergent measurement before tuning. The same evidence-led pattern as phase 13 — measure before tuning, document the observation now, scope the response once we know it's stable rather than a one-shot LLM jitter.
+- ~~**LLM-judge over-flags `other_member` probes on shared-resource and identity endpoints.**~~ Resolved 2026-06-05 by F-021 below — phase A measurement confirmed the over-flagging was stable (not jitter) across N=3 runs, B1 prompt-tightening eliminated all five false positives, phase C N=3 verification showed the fix is stable.
+
+### F-021 — `other_member` LLM-judge prompt-tightening; 5 stable false-positives → 0 across N=3 verification
+
+**Date:** 2026-06-05
+**Surfaced by:** F-020's full-LLM verification run — the first time the agent's LLM judge actually saw `other_member` probes (F-019 was `--no-llm` so the deterministic fallback short-circuited that path). The judge flagged 5 of 6 `other_member` probes as `auth_boundary_concern`, including endpoints the prompt explicitly carves out (`/me`-style identity, shared resources like `/competitions`).
+**Severity:** Material to the explore_agent's signal-to-noise ratio — five false-positive `auth_boundary_concern` rows per report drown out genuine concerns and erode reviewer trust. Resolution closes the F-020 open-work item that was the highest-cost remaining noise source on the auth pass.
+
+**Phase A — stability measurement (N=3)**
+
+Before tuning the prompt, measure whether the over-flagging is *systematic* (real prompt-tuning issue) or *jitter* (LLM noise that would shift around on every run). Same evidence-led pattern as phase 13: tune what's stable, leave what's noisy.
+
+| Endpoint | Run 1 | Run 2 | Run 3 |
+|---|---|---|---|
+| `GET /competitions` | `auth_boundary_concern` high | `auth_boundary_concern` high | `auth_boundary_concern` high |
+| `GET /members/me` | `auth_boundary_concern` high | `auth_boundary_concern` high | `auth_boundary_concern` high |
+| `GET /tee-times` | `auth_boundary_concern` med | `auth_boundary_concern` high | `auth_boundary_concern` high |
+| `GET /tee-times/{id}` | `auth_boundary_concern` high | `auth_boundary_concern` med | `auth_boundary_concern` med |
+| `POST /booking-assistant` | `auth_boundary_concern` med | `auth_boundary_concern` high | `auth_boundary_concern` high |
+| `POST /bookings` (409) | `expected` | `expected` | `expected` |
+
+**Result:** 100% stable on category across runs (severities show minor jitter med↔high but the classifications are identical). The 409 booking-conflict is consistently and correctly classified as `expected` — the model handles *that* case fine; it's the 200-on-shared-or-identity case it stubs on. Verdict: real prompt-tuning issue → proceed to phase B.
+
+**Phase B — sharpen (B1 prompt-tightening)**
+
+Two targeted edits in [`explore_agent/judge.py`](../explore_agent/judge.py):
+
+1. **Sharpen `_SYSTEM`'s `auth_boundary_concern` category description.** The pre-F-021 phrasing was "another member's data returned when ownership should restrict it" — the model was reading "another member" as "different from the seed member" rather than "different from the caller". Replaced with explicit "this does NOT cover identity endpoints like /me (which return the CALLER's data, whoever the caller is) or shared resources like /tee-times or /competitions (which return the same data for every authenticated member)."
+2. **Replace `_AUTH_MODE_CONTEXT["other_member"]`** with a decision rule. Four cases enumerated with concrete examples: identity endpoints (caller's own data → expected), shared/catalog endpoints (same data for every member → expected), owner-scoped reads (refuses or filters when caller doesn't own → real concern), and non-auth 4xx/5xx (business logic, not auth → expected). The framing pivots from "different from seed" to "different from caller", explicitly: **"THE CALLER IN THIS PROBE IS THAT OTHER MEMBER."**
+
+The criterion the prompt now lands on: **OWNERSHIP, not "a different token was used"**.
+
+**Phase C — verification (N=3)**
+
+| Endpoint | Pre-fix (phase A) — stable | Post-fix run 1 | Post-fix run 2 | Post-fix run 3 |
+|---|---|---|---|---|
+| `GET /competitions` | `auth_boundary_concern` | `expected` | `expected` | `expected` |
+| `GET /members/me` | `auth_boundary_concern` | `expected` | `expected` | `expected` |
+| `GET /tee-times` | `auth_boundary_concern` | `expected` | `expected` | `expected` |
+| `GET /tee-times/{id}` | `auth_boundary_concern` | `expected` | `expected` | `expected` |
+| `POST /booking-assistant` | `auth_boundary_concern` | `expected` | `expected` | `expected` |
+| `POST /bookings` (409) | `expected` | `expected` | `expected` | `expected` |
+
+**Result:** 5 stable false-positives → 0, also stable across N=3. The 409 booking-conflict case continues to classify correctly (no regression in what was already right).
+
+**Side effect — default-mode classifications**
+
+The sharpened `_SYSTEM` category description also affects how the LLM judges *default*-mode probes. Comparing F-020's run to phase C:
+
+| Bucket | F-020 run | Phase C runs (range) |
+|---|---|---|
+| `auth_boundary_concern` | 5 | **0** |
+| `unexpected_5xx` | 1 | 1–2 |
+| `business_rule_concern` | 8 | 5–6 |
+| `expected` | 22 | 28–30 |
+
+The shift is consistent and in the expected direction: 5 `auth_boundary_concern` rows gone (resolved as designed), 2–3 borderline `business_rule_concern` rows now landing as `expected`. No new concerns appeared. This is the side benefit of a sharper category vocabulary — adjacent ambiguity also tightens. The explore_agent v2 v1 eval baseline (50.0% accuracy on the 18-case golden set) was set before this sharpening; re-baselining the eval is a candidate follow-up.
+
+**Why F-021 worked when the original prompt didn't**
+
+The pre-F-021 prompt *did* include a carve-out: "Endpoints that return data scoped to the caller (e.g. /me) are expected to return that other member's data, which is correct behaviour." Why did the LLM ignore it?
+
+Three reasons, in order of effect:
+
+1. **Framing mismatch.** The prompt said "a DIFFERENT seeded member's valid token was sent" — the model latched onto "different" and read every subsequent token's data as a leak by default. F-021 explicitly states "THE CALLER IN THIS PROBE IS THAT OTHER MEMBER", reframing "the caller" as the source of truth for ownership.
+2. **Implicit category, not enumerated.** "Endpoints that return data scoped to the caller (e.g. /me)" is one phrase; the model has to recognise that competitions/tee-times/catalog endpoints are *also* a non-leak category. F-021 enumerates four explicit cases (identity, shared, owner-scoped, business-logic 4xx/5xx) with concrete URL examples for each.
+3. **Negative example absent.** The original prompt told the model what a leak *is* but not what it *isn't*. F-021's `_SYSTEM` category description now ends with the explicit exclusion: "This does NOT cover identity endpoints like /me … or shared resources like /tee-times or /competitions."
+
+This is a transferable lesson for future LLM-judge prompts in this repo: **concrete examples + explicit exclusions + caller-as-source-of-truth framing**, in that order, are what made the difference. Future findings work where the LLM's judgement is off-target should reach for this pattern before more invasive deterministic fixes (B2-style).
+
+**What F-021 ships**
+
+- `explore_agent/judge.py` — two prompt edits as described above. No code-path changes; the deterministic spine + LLM-jury structure is unchanged.
+- `explore_agent/reports/report.md`, `report.json` — refreshed from phase C run 3.
+- This finding + header bump + F-020 open-work resolution.
+
+**What F-021 does NOT do**
+
+- B2 (deterministic shared-resource fence) remains *unused*. B1's prompt-tightening alone resolved the over-flagging stably; the more invasive fix is not warranted. B2 stays documented in F-020's open-work plan as a fallback if a future SUT surfaces a case B1 can't handle.
+- The v2 v1 eval baseline (50.0% on 18 cases) is *not* re-baselined here; the phase C side-effect numbers suggest the sharpening tightens default-mode calls too, but that's a separate eval-extension exercise (an F-022-eligible follow-up).
 
 ## 12. Roadmap
 
