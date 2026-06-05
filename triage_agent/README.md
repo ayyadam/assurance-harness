@@ -36,7 +36,7 @@ Decisions worth calling out:
 The agent is **local on-demand** — needs `gh` authenticated to the repo and a local Ollama runtime.
 
 ```bash
-# Default: scan ayyadam/testing-system for the last 30 days of failures
+# Default: scan ayyadam/assurance-harness for the last 30 days of failures
 uv run python -m triage_agent.run
 
 # Different repo / window
@@ -56,7 +56,7 @@ Outputs (under [`reports/`](reports/)):
 
 ## Evidence: real failures in this repo's last 30 days
 
-The committed [`reports/report.md`](reports/report.md) is the agent run against `ayyadam/testing-system` on 2026-06-01. Five failed runs in the window, clustered into five groups:
+The committed [`reports/report.md`](reports/report.md) is the agent run against `ayyadam/assurance-harness` on 2026-06-01. Five failed runs in the window, clustered into five groups:
 
 | # | Signature | R-ID | What the agent saw |
 |---|---|---|---|
@@ -117,4 +117,4 @@ These caveats limit how strong the *single number* is — but the **process** st
 - [x] v1 v2: golden-set evaluation tier with deterministic scorer (5/5 baseline)
 - [ ] v1 v3 candidates: grow the dataset (cross-repo failures); add `tooling` / `developer-error` to the category vocabulary if the ruff-class miss recurs
 - [ ] Pull Playwright traces into the diagnosis (LLM-judged failure mode beyond the textual log)
-- [ ] Cross-repo triage (`golf-web-app` + `testing-system` together)
+- [ ] Cross-repo triage (`golf-web-app` + `assurance-harness` together)

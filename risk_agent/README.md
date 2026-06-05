@@ -40,7 +40,7 @@ Default: `qwen2.5:32b-instruct-q4_K_M` — the same model that passes structured
 
 ## Quick start
 
-The agent is **local on-demand** — Ollama on the host, run from the testing-system venv.
+The agent is **local on-demand** — Ollama on the host, run from the assurance-harness venv.
 
 ```bash
 # Against a GitHub PR (gh-authenticated)

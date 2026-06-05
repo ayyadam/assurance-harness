@@ -26,7 +26,7 @@ observability/
 
 Decisions worth calling out:
 
-- **Two independent stacks talking via the host gateway.** The SUT compose lives in `golf-web-app/`, this stack lives in `testing-system/observability/`. They run side-by-side without a shared compose network — Prometheus reaches the SUT via `host.docker.internal:5000`. Lets each repo own its own runtime concerns without cross-coupling.
+- **Two independent stacks talking via the host gateway.** The SUT compose lives in `golf-web-app/`, this stack lives in `assurance-harness/observability/`. They run side-by-side without a shared compose network — Prometheus reaches the SUT via `host.docker.internal:5000`. Lets each repo own its own runtime concerns without cross-coupling.
 - **Everything provisioned, nothing clicked.** Prometheus config, Grafana datasource, dashboard provider, and dashboard JSON are all version-controlled and loaded at container start. There is no "I made some changes in the Grafana UI" state — `docker compose up -d` from a clean clone reproduces the exact dashboard reviewed here.
 - **Anonymous viewer enabled.** `GF_AUTH_ANONYMOUS_ENABLED=true` (Viewer role) so the panel can browse without credentials; `admin/admin` still works for editing. Local stack only — no public exposure.
 - **7-day retention.** Prometheus is configured with `--storage.tsdb.retention.time=7d` — enough to support a few PR cycles, short enough that the local volume doesn't grow indefinitely for a demo stack.
@@ -40,7 +40,7 @@ The SUT must be up first (separate compose in the golf-web-app repo). The SUT ex
 cd ../golf-web-app && docker compose up -d
 
 # 2. Bring up the observability stack
-cd ../testing-system/observability && docker compose up -d
+cd ../assurance-harness/observability && docker compose up -d
 
 # 3. Open the dashboards
 #    Grafana:    http://localhost:3000  (anonymous viewer or admin/admin)

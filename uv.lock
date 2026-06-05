@@ -33,6 +33,51 @@ wheels = [
 ]
 
 [[package]]
+name = "assurance-harness"
+version = "0.1.0"
+source = { virtual = "." }
+
+[package.dev-dependencies]
+dev = [
+    { name = "axe-playwright-python" },
+    { name = "ollama" },
+    { name = "pandas" },
+    { name = "pandera", extra = ["pandas"] },
+    { name = "playwright" },
+    { name = "psycopg2-binary" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-html" },
+    { name = "pytest-playwright" },
+    { name = "pyyaml" },
+    { name = "requests" },
+    { name = "ruff" },
+    { name = "schemathesis" },
+    { name = "sqlalchemy" },
+]
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "axe-playwright-python", specifier = ">=0.1.4" },
+    { name = "ollama", specifier = ">=0.6.2" },
+    { name = "pandas", specifier = ">=2.2" },
+    { name = "pandera", extras = ["pandas"], specifier = ">=0.20" },
+    { name = "playwright", specifier = ">=1.49" },
+    { name = "psycopg2-binary", specifier = ">=2.9" },
+    { name = "pytest", specifier = ">=8.3" },
+    { name = "pytest-cov", specifier = ">=6.0" },
+    { name = "pytest-html", specifier = ">=4.1" },
+    { name = "pytest-playwright", specifier = ">=0.5" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
+    { name = "requests", specifier = ">=2.34.2" },
+    { name = "ruff", specifier = ">=0.7" },
+    { name = "schemathesis", specifier = ">=4.20.2" },
+    { name = "sqlalchemy", specifier = ">=2.0" },
+]
+
+[[package]]
 name = "attrs"
 version = "26.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1361,51 +1406,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/47/c6/ee486fd809e357697ee8a44d3d69222b344920433d3b6666ccd9b374630c/tenacity-9.1.4.tar.gz", hash = "sha256:adb31d4c263f2bd041081ab33b498309a57c77f9acf2db65aadf0898179cf93a", size = 49413, upload-time = "2026-02-07T10:45:33.841Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d7/c1/eb8f9debc45d3b7918a32ab756658a0904732f75e555402972246b0b8e71/tenacity-9.1.4-py3-none-any.whl", hash = "sha256:6095a360c919085f28c6527de529e76a06ad89b23659fa881ae0649b867a9d55", size = 28926, upload-time = "2026-02-07T10:45:32.24Z" },
-]
-
-[[package]]
-name = "testing-system"
-version = "0.1.0"
-source = { virtual = "." }
-
-[package.dev-dependencies]
-dev = [
-    { name = "axe-playwright-python" },
-    { name = "ollama" },
-    { name = "pandas" },
-    { name = "pandera", extra = ["pandas"] },
-    { name = "playwright" },
-    { name = "psycopg2-binary" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-html" },
-    { name = "pytest-playwright" },
-    { name = "pyyaml" },
-    { name = "requests" },
-    { name = "ruff" },
-    { name = "schemathesis" },
-    { name = "sqlalchemy" },
-]
-
-[package.metadata]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "axe-playwright-python", specifier = ">=0.1.4" },
-    { name = "ollama", specifier = ">=0.6.2" },
-    { name = "pandas", specifier = ">=2.2" },
-    { name = "pandera", extras = ["pandas"], specifier = ">=0.20" },
-    { name = "playwright", specifier = ">=1.49" },
-    { name = "psycopg2-binary", specifier = ">=2.9" },
-    { name = "pytest", specifier = ">=8.3" },
-    { name = "pytest-cov", specifier = ">=6.0" },
-    { name = "pytest-html", specifier = ">=4.1" },
-    { name = "pytest-playwright", specifier = ">=0.5" },
-    { name = "pyyaml", specifier = ">=6.0.3" },
-    { name = "requests", specifier = ">=2.34.2" },
-    { name = "ruff", specifier = ">=0.7" },
-    { name = "schemathesis", specifier = ">=4.20.2" },
-    { name = "sqlalchemy", specifier = ">=2.0" },
 ]
 
 [[package]]

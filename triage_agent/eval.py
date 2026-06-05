@@ -220,8 +220,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--repo",
-        default="ayyadam/testing-system",
-        help="Repo for --refresh (default: ayyadam/testing-system)",
+        default="ayyadam/assurance-harness",
+        help="Repo for --refresh (default: ayyadam/assurance-harness)",
     )
     parser.add_argument(
         "--since-days",

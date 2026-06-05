@@ -1,5 +1,5 @@
 [project]
-name = "testing-system"
+name = "assurance-harness"
 version = "0.1.0"
 description = "Assurance harness for golf-web-app — Digital Assurance Engineer portfolio demo"
 readme = "README.md"

@@ -42,7 +42,7 @@ def _synth_run(num: int, sha: str, title: str) -> Run:
         id=10_000 + num,
         number=num,
         workflow_name="Assurance Harness",
-        url=f"https://github.com/ayyadam/testing-system/actions/runs/{10_000 + num}",
+        url=f"https://github.com/ayyadam/assurance-harness/actions/runs/{10_000 + num}",
         event="pull_request",
         branch="feat/example",
         sha=sha,
