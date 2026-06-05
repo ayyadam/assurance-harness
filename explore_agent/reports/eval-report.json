@@ -2,13 +2,11 @@
   "totals": {
     "cases": 18,
     "found_in_report": 18,
-    "category_correct": 12,
-    "accuracy": 0.667,
+    "category_correct": 18,
+    "accuracy": 1.0,
     "confusion": {
       "expected": {
-        "expected": 12,
-        "business_rule_concern": 5,
-        "unexpected_5xx": 1
+        "expected": 18
       }
     }
   },
@@ -118,20 +116,20 @@
       "endpoint": "GET /api/v1/tee-times/{tee_time_id}",
       "variant": "edge",
       "expected_category": "expected",
-      "actual_category": "business_rule_concern",
+      "actual_category": "expected",
       "actual_status": 200,
       "found_in_report": true,
-      "category_match": false
+      "category_match": true
     },
     {
       "case_id": "tee-times-detail-abusive",
       "endpoint": "GET /api/v1/tee-times/{tee_time_id}",
       "variant": "abusive",
       "expected_category": "expected",
-      "actual_category": "unexpected_5xx",
+      "actual_category": "expected",
       "actual_status": 200,
       "found_in_report": true,
-      "category_match": false
+      "category_match": true
     },
     {
       "case_id": "booking-assistant-happy",
@@ -148,20 +146,20 @@
       "endpoint": "POST /api/v1/booking-assistant",
       "variant": "edge",
       "expected_category": "expected",
-      "actual_category": "business_rule_concern",
+      "actual_category": "expected",
       "actual_status": 200,
       "found_in_report": true,
-      "category_match": false
+      "category_match": true
     },
     {
       "case_id": "booking-assistant-abusive",
       "endpoint": "POST /api/v1/booking-assistant",
       "variant": "abusive",
       "expected_category": "expected",
-      "actual_category": "business_rule_concern",
+      "actual_category": "expected",
       "actual_status": 200,
       "found_in_report": true,
-      "category_match": false
+      "category_match": true
     },
     {
       "case_id": "bookings-create-happy",
@@ -178,20 +176,20 @@
       "endpoint": "POST /api/v1/tee-times/{tee_time_id}/bookings",
       "variant": "edge",
       "expected_category": "expected",
-      "actual_category": "business_rule_concern",
+      "actual_category": "expected",
       "actual_status": 409,
       "found_in_report": true,
-      "category_match": false
+      "category_match": true
     },
     {
       "case_id": "bookings-create-abusive",
       "endpoint": "POST /api/v1/tee-times/{tee_time_id}/bookings",
       "variant": "abusive",
       "expected_category": "expected",
-      "actual_category": "business_rule_concern",
+      "actual_category": "expected",
       "actual_status": 409,
       "found_in_report": true,
-      "category_match": false
+      "category_match": true
     }
   ]
 }
