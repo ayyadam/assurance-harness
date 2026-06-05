@@ -10,7 +10,7 @@ Compares the agent's emitted category per (endpoint, variant) probe (cached in `
 |---|---|
 | Cases | 18 |
 | Probes found in report | 18 / 18 |
-| **Overall accuracy** | **0.667** (12/18) |
+| **Overall accuracy** | **1.000** (18/18) |
 
 ## Confusion
 
@@ -18,7 +18,7 @@ Rows are expected categories; columns are what the agent emitted.
 
 | expected \ actual | `expected` | `unexpected_5xx` | `schema_drift` | `business_rule_concern` | `auth_boundary_concern` | `documented_public_endpoint` |
 |---|---|---|---|---|---|---|
-| `expected` | 12 | 1 | 0 | 5 | 0 | 0 |
+| `expected` | 18 | 0 | 0 | 0 | 0 | 0 |
 
 ## Per-case
 
@@ -82,17 +82,17 @@ Rows are expected categories; columns are what the agent emitted.
 
 - ✓ category: expected `expected`, got `expected` (http status 200)
 
-### ⚠ `tee-times-detail-edge`
+### ✓ `tee-times-detail-edge`
 
 **Probe:** `GET /api/v1/tee-times/{tee_time_id}` — `edge`
 
-- ✗ category: expected `expected`, got `business_rule_concern` (http status 200)
+- ✓ category: expected `expected`, got `expected` (http status 200)
 
-### ⚠ `tee-times-detail-abusive`
+### ✓ `tee-times-detail-abusive`
 
 **Probe:** `GET /api/v1/tee-times/{tee_time_id}` — `abusive`
 
-- ✗ category: expected `expected`, got `unexpected_5xx` (http status 200)
+- ✓ category: expected `expected`, got `expected` (http status 200)
 
 ### ✓ `booking-assistant-happy`
 
@@ -100,17 +100,17 @@ Rows are expected categories; columns are what the agent emitted.
 
 - ✓ category: expected `expected`, got `expected` (http status 200)
 
-### ⚠ `booking-assistant-edge`
+### ✓ `booking-assistant-edge`
 
 **Probe:** `POST /api/v1/booking-assistant` — `edge`
 
-- ✗ category: expected `expected`, got `business_rule_concern` (http status 200)
+- ✓ category: expected `expected`, got `expected` (http status 200)
 
-### ⚠ `booking-assistant-abusive`
+### ✓ `booking-assistant-abusive`
 
 **Probe:** `POST /api/v1/booking-assistant` — `abusive`
 
-- ✗ category: expected `expected`, got `business_rule_concern` (http status 200)
+- ✓ category: expected `expected`, got `expected` (http status 200)
 
 ### ✓ `bookings-create-happy`
 
@@ -118,17 +118,17 @@ Rows are expected categories; columns are what the agent emitted.
 
 - ✓ category: expected `expected`, got `expected` (http status 201)
 
-### ⚠ `bookings-create-edge`
+### ✓ `bookings-create-edge`
 
 **Probe:** `POST /api/v1/tee-times/{tee_time_id}/bookings` — `edge`
 
-- ✗ category: expected `expected`, got `business_rule_concern` (http status 409)
+- ✓ category: expected `expected`, got `expected` (http status 409)
 
-### ⚠ `bookings-create-abusive`
+### ✓ `bookings-create-abusive`
 
 **Probe:** `POST /api/v1/tee-times/{tee_time_id}/bookings` — `abusive`
 
-- ✗ category: expected `expected`, got `business_rule_concern` (http status 409)
+- ✓ category: expected `expected`, got `expected` (http status 409)
 
 ---
 
