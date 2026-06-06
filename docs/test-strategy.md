@@ -2,7 +2,7 @@
 
 **Status:** living document — updated as the assurance harness matures.
 **Owner:** Adam (acting as Digital Assurance Engineer)
-**Last updated:** 2026-06-06 *(F-026 — adaptive single-step UI exploration: the UI agent's plan-once-from-starting-page architecture replaced by a perceive→decide→act policy; hallucinated-selector dead-ends 3→0)*
+**Last updated:** 2026-06-06 *(F-027 — UI step judge keys `dead_end` off the executor's `succeeded` flag, fixing a false-positive on successful intermediate fills; gated regression added)*
 
 ---
 
@@ -1247,6 +1247,52 @@ Bundling either fix would mix three distinct mechanisms (policy, judge prompt, p
 - [`explore_agent/README.md`](../explore_agent/README.md) — UI surface rewritten plan→policy; known-limitations updated (plan-once hallucination removed; F-027 / F-028 added).
 - This finding + sub-roadmap update (v1 v3 delivered; F-027 / F-028 opened) + Last updated bump.
 
+### F-027 — UI step judge keys `dead_end` off the executor's `succeeded` flag
+
+**Date:** 2026-06-06
+**Surfaced by:** F-026's first adaptive run. On the `member-login-dashboard` tour, `fill #password` succeeded and the tour went on to finish at the dashboard, yet the step judge tagged the fill `dead_end` — inferring "the form submission did not occur" from the unchanged `/auth/login` URL, overriding the executor's `succeeded=true`. (A pre-existing judge limitation noted in the explore_agent README; F-026's policy just produces the intermediate-fill pattern on every run, so it showed reliably.)
+**Severity:** Low–moderate — a precision bug in an advisory, local-only judge (never a CI gate). It hides no real defect; it adds a spurious `dead_end` on a healthy step, which erodes trust in the report. The fix's value is as much the *durable guard* (a gated regression test) as the prompt change.
+
+**The bug, measured (Phase A, N=3)**
+
+Three synthetic `StepResult`s through the live judge established the baseline:
+
+| Fixture | Correct label | Phase A |
+|---|---|---|
+| successful `fill #password`, stays on `/auth/login` | `expected` | **`dead_end ×3`** (the FP) |
+| failed `click` on a missing selector | `dead_end` | `dead_end ×3` ✓ |
+| successful `navigate` that advanced | `expected` | `expected ×3` ✓ |
+
+The judge was otherwise sound — it correctly separated a successful navigate from a failed click. The defect was specific: a *successful* step that stayed on the same page was read as "stuck". The FP rationale was explicit: *"Although the password field was filled successfully… the form submission did not occur… leaving the user still on the login page."*
+
+**The fix — and a first attempt that missed (the transferable part)**
+
+The obvious fix was to anchor `dead_end` on `succeeded` inside the category descriptions ("if succeeded=true the step is not a dead_end"). **Re-measured: the FP was still `dead_end ×3`.** The model read the rule but reasoned past it, because it was grading the step against the *whole tour goal* (reach the dashboard) — "still on login → goal not met → dead_end". A rule buried in a category definition did not bind.
+
+What worked was making the selection *procedural and step-local*:
+- an explicit **"judge THIS step, not whether the whole tour goal is complete"** rule, stating that the `succeeded` flag is the source of truth and an unchanged URL is NOT evidence of failure; and
+- a **`succeeded`-first decision procedure** (5xx → js_error → `succeeded=false` ⇒ `dead_end` → else `succeeded=true` ⇒ `business_rule_concern`/`expected`) placed *above* the category list, so `dead_end` is structurally gated on the executor's truth rather than the model's inference.
+
+**Verified (Phase C, N=5)**
+
+| Fixture | Correct label | After fix |
+|---|---|---|
+| successful `fill #password` | `expected` | **`expected ×5`** ✓ (was `dead_end`) |
+| failed `click` on missing selector | `dead_end` | `dead_end ×5` ✓ (no regression) |
+| successful `navigate` | `expected` | `expected ×5` ✓ |
+
+The regenerated report confirms the end-to-end effect: with **identical policy behaviour** (same step counts, so the judge change is isolated), the `member-login-dashboard` and `booking-assistant` tours — whose worst category was `dead_end` purely from this false-positive in the F-026 report — are now `expected`. (Booking still hits its step cap; that is the separate F-028 perception gap, not a `dead_end`.)
+
+The lesson mirrors F-021/F-023: for an LLM judge, a *decision procedure with the authoritative signal named* beats a rule tucked into prose — and the fix must be re-measured, because a plausible sharpening (attempt one) did nothing.
+
+**What F-027 ships**
+
+- [`explore_agent/ui_judge.py`](../explore_agent/ui_judge.py) — `_SYSTEM` gains the "judge THIS step" rule + the `succeeded`-first decision procedure; the `expected` / `dead_end` category text reworded to match. No change to `_user_message` (it already passes `succeeded`).
+- [`tests/agents/test_ui_judge_dead_end.py`](../tests/agents/test_ui_judge_dead_end.py) — a gated (`RUN_AGENT_REGRESSION=1`) regression guarding **both** directions: a successful intermediate fill must not be `dead_end`; a failed click must stay `dead_end`. Passes 2/2; default `pytest` now 35 passed / 7 skipped.
+- `explore_agent/reports/ui/report.md` + `report.json` + screenshots — regenerated with the fixed judge.
+- [`explore_agent/README.md`](../explore_agent/README.md) — the intermediate-fill known-limitation removed (now fixed).
+- This finding + sub-roadmap flip (F-027 done) + Last updated bump.
+
 ## 12. Roadmap
 
 The full phased plan lives in conversational notes; the abbreviated public form:
@@ -1288,7 +1334,7 @@ Phase 9 v3 (delivered — fix to the issue surfaced by phase 12 v2 v2):
 Beyond v2, deferred-but-tracked work:
 
 - ~~**Adaptive single-step exploration mode**~~ — **Done (v1 v3, F-026).** The plan-once UI agent committed to a multi-step plan from the starting page's interactive elements only, so selectors on pages it had not seen were hallucinated (the booking-assistant tour waited for the invented `.candidate-slot` while the real class is `.booking-slot`). Replaced with a perceive→decide→act *policy*: the LLM decides one action per step from the current page, making invented selectors structurally impossible. First adaptive run: hallucinated-selector dead-ends 3→0 across the three tours. The decision was taken without waiting on the eval-quantification gate originally noted here — the plan-era report's three invented-selector dead-ends were sufficient evidence on their own. See [F-026](#f-026--adaptive-single-step-ui-exploration-plan-once-becomes-a-policy-eliminating-hallucinated-selectors).
-- **Judge: anchor `dead_end` on the executor's `succeeded` signal** *(F-027, surfaced by F-026)*. The step judge can tag a *successful* intermediate `fill` / `wait` / `observe` as `dead_end` when it reasons "still on the same URL → tour stuck", even though the executor reported the action succeeded and the tour goes on to finish (seen on the member-login tour's `fill #password`). The judge already receives `succeeded` in its input; the fix is a prompt sharpening that keys `dead_end` off it rather than off an inferred URL change. The nuance — a *successful* `click` / `navigate` that should have moved you but didn't (e.g. bad credentials) is still a concern — wants the same evidence-led A/B/C stability treatment as F-021 / F-023.
+- ~~**Judge: anchor `dead_end` on the executor's `succeeded` signal**~~ — **Done (F-027).** The step judge tagged a *successful* intermediate `fill #password` as `dead_end`, inferring "stuck" from the unchanged URL and overriding `succeeded=true`. Fixed with a `succeeded`-first decision procedure plus a "judge THIS step, not the whole tour" rule — a first attempt that only reworded the category text did not move the model. Verified N=5: the FP → `expected` 5/5, a genuine failed click → `dead_end` 5/5; guarded by a gated regression test ([`tests/agents/test_ui_judge_dead_end.py`](../tests/agents/test_ui_judge_dead_end.py)). See [F-027](#f-027--ui-step-judge-keys-dead_end-off-the-executors-succeeded-flag).
 - **Wider page perception — interactive controls *and* result content** *(F-028, surfaced by F-026)*. `_snapshot_interactive` lists `a` / `button` / `input` / `textarea` / `select` only, so a tour whose success is non-interactive content is invisible to the agent — the booking assistant renders suggested slots as `<div onclick=…>` cards, so the policy reaches the results page cleanly but cannot perceive the slots and exhausts its budget `observe`-ing (the booking-assistant tour now hits its step cap for this reason). The fix is to capture `[onclick]` / `[role]` / `[tabindex]` (and perhaps a light text snapshot), with a check that scope limits like "do not confirm a booking" still hold once slots are visible.
 - **Free-form UI exploration mode** — the LLM picks goals from a surface map of the SUT instead of running fixed tours.
 - **State-mutating tours** — booking confirmation, admin flows, visitor registration. Held out of v1 because the SUT state would drift across runs and the report would not be reproducible.
