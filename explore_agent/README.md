@@ -134,13 +134,6 @@ report rather than as silent skips — that visibility is part of the value.
   unseen pages structurally impossible, and in doing so surfaced this perception
   gap cleanly. Tracked as **F-028** (widen perception to `[onclick]` / `[role]`
   / `[tabindex]`, with a check that scope limits like "do not confirm" still hold).
-- **UI surface — judge can mistake intermediate fills for divergence.** A
-  `fill #password` step that leaves you on the same `/auth/login` page is the
-  *correct* intermediate state, but the judge can read "still on login page" as
-  a goal-divergence and tag it `dead_end` even though the step succeeded and the
-  tour goes on to finish. Read per-step judgement with the tour goal in mind.
-  Tracked as **F-027** (anchor `dead_end` on the executor's `succeeded` signal
-  rather than on an inferred URL change).
 
 ## Eval surface — `explore_agent.eval`
 

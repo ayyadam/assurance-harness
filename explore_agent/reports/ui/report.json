@@ -22,20 +22,20 @@
           "rationale": "Navigating to the course overview page as it is one of the public pages that needs to be verified."
         },
         "result": {
-          "started_at": "2026-06-05T18:48:36.299349+00:00",
+          "started_at": "2026-06-06T13:09:13.463182+00:00",
           "succeeded": true,
           "error_message": null,
           "page_url": "http://localhost:5000/course",
           "page_title": "The Course \u2014 Adam's Golf Club",
           "console_errors": [],
           "network_5xx": [],
-          "elapsed_ms": 44.93,
+          "elapsed_ms": 50.74,
           "screenshot_path": "D:\\Dev\\Repos\\assurance-harness\\explore_agent\\reports\\ui\\screenshots\\public-pages-step-01.png"
         },
         "finding": {
           "category": "expected",
           "severity": "low",
-          "rationale": "The step executed without error, the navigation to '/course' was successful, and it advanced the tour goal by verifying that a public page loads cleanly."
+          "rationale": "The step executed successfully (succeeded=true) and navigated to the intended '/course' URL without any errors or unexpected behavior, aligning with the tour goal of verifying public pages."
         }
       },
       {
@@ -47,20 +47,20 @@
           "rationale": "Navigating to the scorecard page to verify it loads cleanly and to continue exploring public pages."
         },
         "result": {
-          "started_at": "2026-06-05T18:48:39.348387+00:00",
+          "started_at": "2026-06-06T13:09:16.638250+00:00",
           "succeeded": true,
           "error_message": null,
           "page_url": "http://localhost:5000/course/scorecard",
           "page_title": "Scorecard \u2014 Adam's Golf Club",
           "console_errors": [],
           "network_5xx": [],
-          "elapsed_ms": 40.89,
+          "elapsed_ms": 39.44,
           "screenshot_path": "D:\\Dev\\Repos\\assurance-harness\\explore_agent\\reports\\ui\\screenshots\\public-pages-step-02.png"
         },
         "finding": {
           "category": "expected",
           "severity": "low",
-          "rationale": "The step executed without error, the scorecard page loaded cleanly at http://localhost:5000/course/scorecard, and there were no console errors or network issues."
+          "rationale": "The step executed without error (succeeded=true) and the navigation to '/course/scorecard' was successful, as evidenced by the page URL changing to 'http://localhost:5000/course/scorecard'. This is a legitimate move toward the goal of verifying that public pages load cleanly."
         }
       },
       {
@@ -72,20 +72,20 @@
           "rationale": "Navigating to the membership page to verify it loads cleanly and progress through public pages as per the tour goal."
         },
         "result": {
-          "started_at": "2026-06-05T18:48:42.094753+00:00",
+          "started_at": "2026-06-06T13:09:19.520914+00:00",
           "succeeded": true,
           "error_message": null,
           "page_url": "http://localhost:5000/membership",
           "page_title": "Membership \u2014 Adam's Golf Club",
           "console_errors": [],
           "network_5xx": [],
-          "elapsed_ms": 26.42,
+          "elapsed_ms": 28.21,
           "screenshot_path": "D:\\Dev\\Repos\\assurance-harness\\explore_agent\\reports\\ui\\screenshots\\public-pages-step-03.png"
         },
         "finding": {
           "category": "expected",
           "severity": "low",
-          "rationale": "The step executed without error, the membership page loaded cleanly at http://localhost:5000/membership, and there were no console errors or network issues. This aligns with the tour goal of verifying that public pages load correctly."
+          "rationale": "The step executed without error (succeeded=true) and the navigation to '/membership' was successful, as evidenced by the page URL changing to 'http://localhost:5000/membership'. The resulting state is a legitimate move toward the tour goal of verifying that public pages load cleanly."
         }
       },
       {
@@ -97,7 +97,7 @@
           "rationale": "To continue browsing public pages and verify that navigation links resolve, I will navigate to the contact page as it is another important public section of the site."
         },
         "result": {
-          "started_at": "2026-06-05T18:48:45.287055+00:00",
+          "started_at": "2026-06-06T13:09:22.860453+00:00",
           "succeeded": true,
           "error_message": null,
           "page_url": "http://localhost:5000/contact",
@@ -106,13 +106,13 @@
             "error: Failed to load resource: the server responded with a status of 404 (NOT FOUND)"
           ],
           "network_5xx": [],
-          "elapsed_ms": 8.28,
+          "elapsed_ms": 8.76,
           "screenshot_path": "D:\\Dev\\Repos\\assurance-harness\\explore_agent\\reports\\ui\\screenshots\\public-pages-step-04.png"
         },
         "finding": {
           "category": "js_error",
-          "severity": "med",
-          "rationale": "Although the navigation to '/contact' succeeded, there is a JavaScript console error indicating that a resource failed to load due to a 404 NOT FOUND response from the server. This suggests an issue with loading essential assets for the page, which could affect its functionality or appearance."
+          "severity": "low",
+          "rationale": "Although the step succeeded and navigated to the contact page, there is a JavaScript console error indicating that a resource failed to load due to a 404 NOT FOUND response from the server."
         }
       }
     ]
@@ -140,20 +140,20 @@
           "rationale": "Filling in the username field with the seed credentials is the first step towards logging in."
         },
         "result": {
-          "started_at": "2026-06-05T18:49:04.566654+00:00",
+          "started_at": "2026-06-06T13:09:44.187811+00:00",
           "succeeded": true,
           "error_message": null,
           "page_url": "http://localhost:5000/auth/login",
           "page_title": "Login \u2014 Adam's Golf Club",
           "console_errors": [],
           "network_5xx": [],
-          "elapsed_ms": 16.55,
+          "elapsed_ms": 16.75,
           "screenshot_path": "D:\\Dev\\Repos\\assurance-harness\\explore_agent\\reports\\ui\\screenshots\\member-login-dashboard-step-01.png"
         },
         "finding": {
           "category": "expected",
           "severity": "low",
-          "rationale": "The step executed without error and the username field was successfully filled with 'john.smith'. The page URL and interactive elements indicate that we are still on the login page, which is expected after filling in just the username."
+          "rationale": "The step executed without error (succeeded=true) and filled the username field with 'john.smith'. The page URL remained at the login page, which is expected as filling a form field does not trigger navigation."
         }
       },
       {
@@ -165,20 +165,20 @@
           "rationale": "Filling in the password field with the seed credentials advances towards logging in."
         },
         "result": {
-          "started_at": "2026-06-05T18:49:07.054250+00:00",
+          "started_at": "2026-06-06T13:09:46.738825+00:00",
           "succeeded": true,
           "error_message": null,
           "page_url": "http://localhost:5000/auth/login",
           "page_title": "Login \u2014 Adam's Golf Club",
           "console_errors": [],
           "network_5xx": [],
-          "elapsed_ms": 5.08,
+          "elapsed_ms": 5.46,
           "screenshot_path": "D:\\Dev\\Repos\\assurance-harness\\explore_agent\\reports\\ui\\screenshots\\member-login-dashboard-step-02.png"
         },
         "finding": {
-          "category": "dead_end",
-          "severity": "med",
-          "rationale": "The step intended to fill the password field and advance towards logging in, but the page URL remains at `http://localhost:5000/auth/login` with all interactive elements still present, indicating that the form submission did not occur or was unsuccessful. This leaves the tour unable to progress to the next step."
+          "category": "expected",
+          "severity": "low",
+          "rationale": "The step executed without error (succeeded=true) and filled the password field with 'Password1', which is a legitimate move toward logging in. The URL did not change, as expected for a fill action."
         }
       },
       {
@@ -190,20 +190,20 @@
           "rationale": "Clicking the 'Sign In' button will submit the login form with the provided credentials and should navigate to the member dashboard."
         },
         "result": {
-          "started_at": "2026-06-05T18:49:10.066994+00:00",
+          "started_at": "2026-06-06T13:09:49.805774+00:00",
           "succeeded": true,
           "error_message": null,
           "page_url": "http://localhost:5000/member/dashboard",
           "page_title": "Dashboard \u2014 Adam's Golf Club",
           "console_errors": [],
           "network_5xx": [],
-          "elapsed_ms": 217.47,
+          "elapsed_ms": 214.18,
           "screenshot_path": "D:\\Dev\\Repos\\assurance-harness\\explore_agent\\reports\\ui\\screenshots\\member-login-dashboard-step-03.png"
         },
         "finding": {
           "category": "expected",
           "severity": "low",
-          "rationale": "The step executed without error, the 'Sign In' button was successfully clicked, and it navigated to the expected member dashboard at http://localhost:5000/member/dashboard."
+          "rationale": "The step executed successfully (succeeded=true) and the page URL changed to http://localhost:5000/member/dashboard, indicating that the user has been navigated to the member dashboard as intended."
         }
       },
       {
@@ -215,20 +215,20 @@
           "rationale": "The dashboard has rendered without errors, as evidenced by the presence of interactive elements specific to the member dashboard page. The goal is reached."
         },
         "result": {
-          "started_at": "2026-06-05T18:49:13.333077+00:00",
+          "started_at": "2026-06-06T13:09:53.122325+00:00",
           "succeeded": true,
           "error_message": null,
           "page_url": "http://localhost:5000/member/dashboard",
           "page_title": "Dashboard \u2014 Adam's Golf Club",
           "console_errors": [],
           "network_5xx": [],
-          "elapsed_ms": 207.73,
+          "elapsed_ms": 210.97,
           "screenshot_path": "D:\\Dev\\Repos\\assurance-harness\\explore_agent\\reports\\ui\\screenshots\\member-login-dashboard-step-04.png"
         },
         "finding": {
           "category": "expected",
           "severity": "low",
-          "rationale": "The step executed without error and the dashboard rendered with interactive elements specific to the member dashboard page, indicating that the tour goal was successfully advanced."
+          "rationale": "The step executed without error (succeeded=true) and the resulting state indicates that the member dashboard has rendered successfully, as evidenced by the presence of interactive elements specific to the dashboard page. The URL changed to http://localhost:5000/member/dashboard, aligning with the tour goal."
         }
       }
     ]
@@ -256,20 +256,20 @@
           "rationale": "Filling in the assistant input with a free-text request as required by the goal."
         },
         "result": {
-          "started_at": "2026-06-05T18:49:34.149551+00:00",
+          "started_at": "2026-06-06T13:10:15.258698+00:00",
           "succeeded": true,
           "error_message": null,
           "page_url": "http://localhost:5000/member/book-tee-time",
           "page_title": "Book Tee Time \u2014 Adam's Golf Club",
           "console_errors": [],
           "network_5xx": [],
-          "elapsed_ms": 9.94,
+          "elapsed_ms": 10.15,
           "screenshot_path": "D:\\Dev\\Repos\\assurance-harness\\explore_agent\\reports\\ui\\screenshots\\booking-assistant-step-01.png"
         },
         "finding": {
           "category": "expected",
           "severity": "low",
-          "rationale": "The step executed without error and the intended action was completed successfully, filling in the assistant input with 'a 4-ball Saturday morning'. The page state after the step aligns with the tour goal of using the natural-language booking assistant on the booking page."
+          "rationale": "The step executed successfully (succeeded=true) with no errors and the URL remained on the booking page as expected after filling in the assistant input. This is a legitimate move toward the goal of using the natural-language booking assistant."
         }
       },
       {
@@ -281,20 +281,20 @@
           "rationale": "Clicking the 'Find slots' button will submit the free-text request to the booking assistant and show plausible candidate slots, which is the next step in the goal."
         },
         "result": {
-          "started_at": "2026-06-05T18:49:37.532770+00:00",
+          "started_at": "2026-06-06T13:10:18.710486+00:00",
           "succeeded": true,
           "error_message": null,
           "page_url": "http://localhost:5000/member/book-tee-time/assist",
           "page_title": "Book Tee Time \u2014 Adam's Golf Club",
           "console_errors": [],
           "network_5xx": [],
-          "elapsed_ms": 5271.54,
+          "elapsed_ms": 5356.99,
           "screenshot_path": "D:\\Dev\\Repos\\assurance-harness\\explore_agent\\reports\\ui\\screenshots\\booking-assistant-step-02.png"
         },
         "finding": {
-          "category": "dead_end",
-          "severity": "med",
-          "rationale": "Although the click action on '#assist-button' succeeded, the page state after the step does not show any plausible candidate slots as expected. The interactive elements visible post-click do not indicate that the booking assistant has returned any suggestions, which is a critical part of advancing the tour goal."
+          "category": "expected",
+          "severity": "low",
+          "rationale": "The step executed without error (succeeded=true) and the resulting state is technically valid. The page URL did not change, but this is expected as the booking assistant likely operates within the same page context to show candidate slots."
         }
       },
       {
@@ -303,23 +303,23 @@
           "action": "observe",
           "target": null,
           "value": null,
-          "rationale": "The page has loaded after submitting the request, and we need to verify if plausible candidate slots are returned by the assistant without clicking on any slot to confirm a booking."
+          "rationale": "The page has loaded after submitting the request, and we need to verify if plausible candidate slots are returned by the assistant without clicking on any slot."
         },
         "result": {
-          "started_at": "2026-06-05T18:49:51.216833+00:00",
+          "started_at": "2026-06-06T13:10:32.246506+00:00",
           "succeeded": true,
           "error_message": null,
           "page_url": "http://localhost:5000/member/book-tee-time/assist",
           "page_title": "Book Tee Time \u2014 Adam's Golf Club",
           "console_errors": [],
           "network_5xx": [],
-          "elapsed_ms": 215.22,
+          "elapsed_ms": 202.96,
           "screenshot_path": "D:\\Dev\\Repos\\assurance-harness\\explore_agent\\reports\\ui\\screenshots\\booking-assistant-step-03.png"
         },
         "finding": {
-          "category": "dead_end",
-          "severity": "med",
-          "rationale": "The step intended to observe if plausible candidate slots were returned by the assistant, but the interactive elements visible after the step do not indicate that any slots have been suggested. The page still shows input fields and buttons for submitting a request, suggesting that the submission did not result in slot suggestions as expected."
+          "category": "expected",
+          "severity": "low",
+          "rationale": "The step executed without error (succeeded=true) and the page URL remained at the booking assistant page, indicating that the form submission did not navigate away from the expected page. The rationale for observing the returned candidate slots aligns with the tour goal."
         }
       },
       {
@@ -328,23 +328,23 @@
           "action": "observe",
           "target": null,
           "value": null,
-          "rationale": "The page has rendered with the booking suggestions, and we need to verify that plausible candidate slots are returned without clicking on any of them to confirm a booking."
+          "rationale": "The assistant has likely returned candidate slots, but none of the interactive elements listed indicate a specific slot to click. Observing again to ensure no new elements have appeared that might represent the suggested slots."
         },
         "result": {
-          "started_at": "2026-06-05T18:49:54.599565+00:00",
+          "started_at": "2026-06-06T13:10:36.015920+00:00",
           "succeeded": true,
           "error_message": null,
           "page_url": "http://localhost:5000/member/book-tee-time/assist",
           "page_title": "Book Tee Time \u2014 Adam's Golf Club",
           "console_errors": [],
           "network_5xx": [],
-          "elapsed_ms": 208.32,
+          "elapsed_ms": 204.6,
           "screenshot_path": "D:\\Dev\\Repos\\assurance-harness\\explore_agent\\reports\\ui\\screenshots\\booking-assistant-step-04.png"
         },
         "finding": {
           "category": "expected",
           "severity": "low",
-          "rationale": "The step executed without error and the page rendered with the booking suggestions as intended, aligning with the tour goal of verifying plausible candidate slots are returned."
+          "rationale": "The step executed without error (succeeded=true) and the resulting state is technically valid. The page URL did not change, which is expected for an observe action that does not navigate or submit a form."
         }
       },
       {
@@ -353,23 +353,23 @@
           "action": "observe",
           "target": null,
           "value": null,
-          "rationale": "The page has already been observed in previous steps, and we need to verify if plausible candidate slots are displayed as a result of the assistant's processing without clicking any further."
+          "rationale": "The page has already been observed in previous steps, and there are no new interactive elements indicating that the assistant's suggestions have rendered yet."
         },
         "result": {
-          "started_at": "2026-06-05T18:49:58.076697+00:00",
+          "started_at": "2026-06-06T13:10:39.224180+00:00",
           "succeeded": true,
           "error_message": null,
           "page_url": "http://localhost:5000/member/book-tee-time/assist",
           "page_title": "Book Tee Time \u2014 Adam's Golf Club",
           "console_errors": [],
           "network_5xx": [],
-          "elapsed_ms": 210.99,
+          "elapsed_ms": 208.56,
           "screenshot_path": "D:\\Dev\\Repos\\assurance-harness\\explore_agent\\reports\\ui\\screenshots\\booking-assistant-step-05.png"
         },
         "finding": {
           "category": "expected",
           "severity": "low",
-          "rationale": "The step executed without error and the page state is as expected, showing all necessary interactive elements including the booking assistant input and buttons. The tour goal of observing plausible candidate slots after using the natural-language booking assistant is aligned with this step."
+          "rationale": "The step executed without error (succeeded=true) and the resulting state is technically valid. The page URL remains unchanged at `http://localhost:5000/member/book-tee-time/assist`, which aligns with the tour goal of observing the booking assistant's behavior without progressing to a new page."
         }
       }
     ]
