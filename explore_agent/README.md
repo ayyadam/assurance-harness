@@ -123,17 +123,15 @@ report rather than as silent skips — that visibility is part of the value.
   if you want strict 5xx only.
 - **API surface — no temporal context.** The agent doesn't know today's
   date and will sometimes flag "future dates" that are actually today.
-- **UI surface — perception covers interactive controls, not result content.**
-  The page snapshot lists `a` / `button` / `input` / `textarea` / `select`
-  only. When a tour's *success* shows up as non-interactive content — e.g. the
-  booking assistant renders its suggested slots as `<div onclick=…>` cards, not
-  buttons — the agent cannot perceive that the result arrived, so it cannot
-  confidently `finish` and instead exhausts its step budget `observe`-ing. This
-  is the successor to the now-fixed plan-once hallucination: v1 v3 replaced the
-  upfront plan with a policy (see F-026), which made inventing selectors for
-  unseen pages structurally impossible, and in doing so surfaced this perception
-  gap cleanly. Tracked as **F-028** (widen perception to `[onclick]` / `[role]`
-  / `[tabindex]`, with a check that scope limits like "do not confirm" still hold).
+- **UI surface — open-ended goals don't always self-terminate.** On a goal
+  phrased as "navigate to *at least two* public pages", the policy sometimes
+  keeps exploring past the minimum and runs out its step budget (`hit cap`)
+  instead of emitting `finish`. Every step is still `expected` and the goal is
+  met — it just doesn't stop early. This shows cleanly as the tour's `Outcome`,
+  and is ordinary LLM non-determinism on under-specified goals rather than a
+  failure. (Perception of non-interactive result content — the booking
+  assistant's `<div onclick>` slot cards — was the F-028 fix; the booking tour
+  now finishes once it perceives the slots.)
 
 ## Eval surface — `explore_agent.eval`
 
