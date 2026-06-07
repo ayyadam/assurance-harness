@@ -52,7 +52,7 @@ TOURS: list[TourGoal] = [
         name="booking-assistant",
         description=(
             "A logged-in member uses the natural-language booking assistant on the booking "
-            "page. Type a free-text request such as 'a 4-ball Saturday morning' into the "
+            "page. Type a free-text request such as 'a 4-ball tomorrow morning' into the "
             "assistant input and submit. Verify the assistant returns plausible candidate "
             "slots. STOP at the suggestion phase — do not click a slot to confirm a booking "
             "(state mutation is out of scope for v1)."

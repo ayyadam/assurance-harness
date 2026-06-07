@@ -87,12 +87,22 @@ class TourRun:
 # ── page state extraction ─────────────────────────────────────────────────
 
 
+# Perceive standard form controls AND non-standard clickables. The booking
+# assistant renders its result slots as ``<div class="booking-slot" onclick=…>``
+# cards, not buttons — without ``[onclick]`` / interactive ``[role]`` here the
+# agent cannot see that results arrived (F-028). A comma selector returns each
+# element at most once, so no dedup is needed.
 _INTERACTIVE_JS = """
 () => {
     const out = [];
-    document.querySelectorAll('a, button, input, textarea, select').forEach(el => {
+    const selector = 'a, button, input, textarea, select, '
+        + '[onclick], [role="button"], [role="link"], [role="option"], [role="menuitem"]';
+    document.querySelectorAll(selector).forEach(el => {
         const tag = el.tagName.toLowerCase();
         const id = el.id ? '#' + el.id : '';
+        // Fall back to the first class when there is no id, so non-standard
+        // clickables (e.g. div.booking-slot) get a usable selector hint.
+        const cls = (!el.id && el.classList.length) ? '.' + el.classList[0] : '';
         const role = el.getAttribute('role') || '';
         let label = '';
         if (tag === 'a') {
@@ -106,9 +116,12 @@ _INTERACTIVE_JS = """
                 || '';
         } else if (tag === 'select') {
             label = el.getAttribute('name') || '';
+        } else {
+            // non-standard clickable (div/span/li with onclick or an interactive role)
+            label = (el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 60);
         }
         const href = el.getAttribute('href') || '';
-        out.push({tag, id, role, label, href});
+        out.push({tag, id, cls, role, label, href});
     });
     return out;
 }
@@ -124,7 +137,7 @@ def _snapshot_interactive(page: Page) -> list[str]:
     rows: list[str] = []
     for el in items[:80]:  # cap to keep LLM context tight
         tag = el.get("tag", "")
-        sid = el.get("id", "")
+        sid = el.get("id", "") or el.get("cls", "")  # prefer #id, else .firstclass
         label = (el.get("label") or "").replace("\n", " ").strip()
         href = el.get("href", "")
         href_suffix = f" -> {href}" if href and tag == "a" else ""

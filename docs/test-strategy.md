@@ -2,7 +2,7 @@
 
 **Status:** living document — updated as the assurance harness matures.
 **Owner:** Adam (acting as Digital Assurance Engineer)
-**Last updated:** 2026-06-06 *(F-027 — UI step judge keys `dead_end` off the executor's `succeeded` flag, fixing a false-positive on successful intermediate fills; gated regression added)*
+**Last updated:** 2026-06-07 *(F-028 — UI agent perception widened to non-interactive result content (`<div onclick>` booking slots); the booking tour now finishes instead of capping, while still respecting "do not confirm")*
 
 ---
 
@@ -1293,6 +1293,47 @@ The lesson mirrors F-021/F-023: for an LLM judge, a *decision procedure with the
 - [`explore_agent/README.md`](../explore_agent/README.md) — the intermediate-fill known-limitation removed (now fixed).
 - This finding + sub-roadmap flip (F-027 done) + Last updated bump.
 
+### F-028 — UI agent perceives non-interactive result content (`<div onclick>` booking slots)
+
+**Date:** 2026-06-07
+**Surfaced by:** F-026's first adaptive run. The booking-assistant tour reached the `/assist` results page with zero errors but hit its step cap `observe`-ing, because `_snapshot_interactive` queried only `a` / `button` / `input` / `textarea` / `select` — and the assistant renders its suggested slots as `<div class="booking-slot" onclick="selectTeeTime(…)">` cards. The agent literally could not perceive that results had arrived, so it could not confidently `finish`.
+**Severity:** Moderate — a capability gap in the advisory, local-only UI agent. It does not produce wrong findings; it leaves a whole tour unable to reach its goal because the goal's evidence is invisible to the agent. The fix's value is making "result content" (not just controls) a first-class part of perception.
+
+**The gap, measured (Phase A, deterministic — no LLM)**
+
+Because perception is a pure function of the page, this was measured directly, with no LLM jitter. Driving the assistant with an in-window query (`"a 2-ball tomorrow morning"` → "30 matching slots"):
+
+| | Count |
+|---|---|
+| `.booking-slot` elements in the DOM | **30** |
+| Slots perceived by `_snapshot_interactive` | **0** |
+
+The agent saw 35 rows of nav/controls and none of the 30 results — the perception gap, isolated.
+
+**The fix**
+
+- [`explore_agent/ui_probe.py`](../explore_agent/ui_probe.py) — `_INTERACTIVE_JS` widened from `a, button, input, textarea, select` to also match `[onclick]`, `[role="button"]`, `[role="link"]`, `[role="option"]`, `[role="menuitem"]` (a comma selector returns each element once, so no dedup needed). Non-standard clickables fall back to `.firstClass` for a selector hint and their text/aria-label for a label, so the 30 slots now surface as `div.booking-slot "07:00"` … "11:50". `_snapshot_interactive` emits `#id` when present, else `.firstClass`. The 80-row cap is retained (booking page: 35 controls + 30 slots = 65, within budget — a noted bound for denser pages).
+- [`explore_agent/tours.py`](../explore_agent/tours.py) — the booking tour's example query changed from `"a 4-ball Saturday morning"` to `"a 4-ball tomorrow morning"`. The SUT seeds 7 days of tee times from spin-up (`range(7)` = today … +6); "next Saturday" lands at offset 7 when run on a Saturday, just outside the window, so the assistant returned 0 slots regardless of perception. "tomorrow" is always offset 1, in-window on any seed day — making the tour reproducible rather than dependent on the weekday it runs.
+
+**Verified (Phase C)**
+
+- **Deterministic (perception):** with the fix, the same probe shows **30 of 30** slots perceived (`PERCEPTION GAP: False`). Guarded by [`functional/test_ui_perception.py`](../functional/test_ui_perception.py) — a hermetic Playwright test (`set_content`, no SUT/LLM/seed dependency) asserting `<div onclick>` and `role="button"` clickables are captured while a plain `<p>` is not. Runs in the Functional CI job; 1 passed.
+- **End-to-end (policy):** the booking tour now **finishes in 4 steps** (was: hit cap) — fill → click → observe → observe → `finish` ("the assistant has returned plausible candidate slots… without confirming a booking is reached"), worst category `expected`, 0 failed.
+- **Guardrail held without a prompt change (verify-first):** with slots now visible, the agent still did **not** click one — no `selectTeeTime`/`.booking-slot` click anywhere; its own rationale cited "stop at the suggestion phase and not confirm." The post-F-027 scope rule sufficed, so no reinforcement was needed.
+
+**A side-observation that is *not* a regression**
+
+The regenerated report shows `public-pages` going `finished (4 steps)` → `hit cap (6 steps)` (all `expected`, 0 failed — it browsed 6 public pages when the goal asked for "at least two"). This is **not** an F-028 effect: a direct check confirmed the homepage and `/course` snapshots gain **0** rows under the widened selector (those pages have no `[onclick]`/`[role]` clickables), so perception there is byte-identical to before. The shift is ordinary LLM non-determinism on an open-ended "browse" goal — the agent sometimes self-terminates early, sometimes explores to the budget. It is recorded as a residual UI limitation (the policy does not reliably `finish` once an open-ended goal's *minimum* is met), not a defect.
+
+**What F-028 ships**
+
+- `explore_agent/ui_probe.py` — widened perception (selector + `.firstClass` hint + non-standard label fallback).
+- `explore_agent/tours.py` — in-window booking query.
+- [`functional/test_ui_perception.py`](../functional/test_ui_perception.py) — hermetic CI-runnable perception guard.
+- `explore_agent/reports/ui/report.md` + `report.json` + screenshots — regenerated (booking now finishes; one stale screenshot removed).
+- [`explore_agent/README.md`](../explore_agent/README.md) — perception-gap known-limitation removed (now fixed); the open-ended-goal `finish` behaviour noted.
+- This finding + sub-roadmap flip (F-028 done) + Last updated bump.
+
 ## 12. Roadmap
 
 The full phased plan lives in conversational notes; the abbreviated public form:
@@ -1335,7 +1376,7 @@ Beyond v2, deferred-but-tracked work:
 
 - ~~**Adaptive single-step exploration mode**~~ — **Done (v1 v3, F-026).** The plan-once UI agent committed to a multi-step plan from the starting page's interactive elements only, so selectors on pages it had not seen were hallucinated (the booking-assistant tour waited for the invented `.candidate-slot` while the real class is `.booking-slot`). Replaced with a perceive→decide→act *policy*: the LLM decides one action per step from the current page, making invented selectors structurally impossible. First adaptive run: hallucinated-selector dead-ends 3→0 across the three tours. The decision was taken without waiting on the eval-quantification gate originally noted here — the plan-era report's three invented-selector dead-ends were sufficient evidence on their own. See [F-026](#f-026--adaptive-single-step-ui-exploration-plan-once-becomes-a-policy-eliminating-hallucinated-selectors).
 - ~~**Judge: anchor `dead_end` on the executor's `succeeded` signal**~~ — **Done (F-027).** The step judge tagged a *successful* intermediate `fill #password` as `dead_end`, inferring "stuck" from the unchanged URL and overriding `succeeded=true`. Fixed with a `succeeded`-first decision procedure plus a "judge THIS step, not the whole tour" rule — a first attempt that only reworded the category text did not move the model. Verified N=5: the FP → `expected` 5/5, a genuine failed click → `dead_end` 5/5; guarded by a gated regression test ([`tests/agents/test_ui_judge_dead_end.py`](../tests/agents/test_ui_judge_dead_end.py)). See [F-027](#f-027--ui-step-judge-keys-dead_end-off-the-executors-succeeded-flag).
-- **Wider page perception — interactive controls *and* result content** *(F-028, surfaced by F-026)*. `_snapshot_interactive` lists `a` / `button` / `input` / `textarea` / `select` only, so a tour whose success is non-interactive content is invisible to the agent — the booking assistant renders suggested slots as `<div onclick=…>` cards, so the policy reaches the results page cleanly but cannot perceive the slots and exhausts its budget `observe`-ing (the booking-assistant tour now hits its step cap for this reason). The fix is to capture `[onclick]` / `[role]` / `[tabindex]` (and perhaps a light text snapshot), with a check that scope limits like "do not confirm a booking" still hold once slots are visible.
+- ~~**Wider page perception — interactive controls *and* result content**~~ — **Done (F-028).** `_snapshot_interactive` listed `a` / `button` / `input` / `textarea` / `select` only, so the booking assistant's suggested slots (`<div onclick=…>` cards) were invisible and the tour capped without perceiving them. Widened the selector to `[onclick]` + interactive `[role]`s; deterministically the slots went from 0 → 30 perceived, and end-to-end the booking tour now finishes (4 steps) while still respecting "do not confirm" (no slot click — the post-F-027 scope rule sufficed, no prompt change needed). The tour's example query was also moved in-window (`Saturday` → `tomorrow`) since the 7-day seed window makes "next Saturday" unreachable when run on a Saturday. Guarded by a hermetic Playwright test. See [F-028](#f-028--ui-agent-perceives-non-interactive-result-content-div-onclick-booking-slots).
 - **Free-form UI exploration mode** — the LLM picks goals from a surface map of the SUT instead of running fixed tours.
 - **State-mutating tours** — booking confirmation, admin flows, visitor registration. Held out of v1 because the SUT state would drift across runs and the report would not be reproducible.
 - **Cross-tour memory** — each tour currently starts fresh. A finding from one tour could in principle inform the next tour's plan or goal selection.
