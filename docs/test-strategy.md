@@ -2,7 +2,7 @@
 
 **Status:** living document — updated as the assurance harness matures.
 **Owner:** Adam (acting as Digital Assurance Engineer)
-**Last updated:** 2026-06-07 *(F-028 — UI agent perception widened to non-interactive result content (`<div onclick>` booking slots); the booking tour now finishes instead of capping, while still respecting "do not confirm")*
+**Last updated:** 2026-06-07 *(added a prioritised enhancement & capability backlog — net-new pillars (security, mutation, metamorphic AI) alongside the existing deferred items, with a cross-board steer)*
 
 ---
 
@@ -1381,6 +1381,48 @@ Beyond v2, deferred-but-tracked work:
 - **State-mutating tours** — booking confirmation, admin flows, visitor registration. Held out of v1 because the SUT state would drift across runs and the report would not be reproducible.
 - **Cross-tour memory** — each tour currently starts fresh. A finding from one tour could in principle inform the next tour's plan or goal selection.
 - ~~**Auth-bypass probing on the API surface**~~ — **Done (deferred-E).** Each endpoint's happy payload is re-sent under `unauth` / `wrong_creds` / `other_member`. First run surfaced six anonymous-read 200s across three GET endpoints (decision pending: deliberate public-read calendar or auth defect). See [F-019](#f-019--auth-bypass-probing-phase-12-deferred-e-surfaces-three-get-endpoints-accepting-anonymous-traffic).
+
+## 13. Enhancement & capability backlog (prioritised)
+
+This consolidates future work into one prioritised view: **net-new capability areas** (whole pillars the harness does not yet cover) plus the **existing deferred enhancements** (also tracked in their phase rows / the Phase 12 sub-roadmap). Prioritisation weighs *impact* (how much it raises framework quality), *effort*, *distinctiveness* (signal for an assurance portfolio), and *leverage* (reuse of the existing CI + SUT-spin-up infrastructure).
+
+**Where the harness is strong vs thin.** The current gate covers functional correctness, contract conformance, accessibility, performance, and data quality, plus the AI-evaluation and agentic layers. Three industry-standard pillars are thin or absent — **security** ("is it safe?"), **test-suite effectiveness** ("are the tests themselves any good?"), and **AI-feature robustness** ("does the AI behave under variation/attack?", given the SUT's one AI feature) — and a few narrower techniques are missing.
+
+### Net-new capability areas
+
+- **B1 — Security / DevSecOps gate.** SAST (Bandit or GitHub CodeQL), dependency/SCA scanning (pip-audit / Trivy), secret scanning (gitleaks), and a DAST baseline (OWASP ZAP) against the running SUT. Today only the explore_agent's auth-bypass probing (F-019) touches security. Optional crown: a **security-triage agent** that clusters findings against the risk register, mirroring `triage_agent`. *Biggest categorical gap; most on-brand for the role; reuses the CI build-and-seed-SUT pattern.*
+- **B2 — Mutation testing.** mutmut / cosmic-ray against the SUT's logic (slot generation, the NL intent parser, booking rules) to measure whether the suite actually *catches* injected bugs (kill rate). Measures test *effectiveness*, which coverage cannot.
+- **B3 — Metamorphic / invariance testing of the AI feature.** Assert that semantically-equivalent NL phrasings yield the same booking intent (invariance to casing / typos / word-order / synonyms) — robustness the fixed phase-8 golden set cannot express. Builds on the existing eval infra.
+- **B4 — Resilience / chaos testing.** Fault-inject the compose stack (pause `db`, add Postgres latency via toxiproxy, kill `web` mid-request); assert graceful degradation + recovery, and that the incident surfaces in Grafana. Ties to R-013.
+- **B5 — Visual regression testing.** Playwright `toHaveScreenshot` baselines on key pages — the agent already captures screenshots but never diffs them.
+- **B6 — Cross-browser + responsive.** Run functional tests on firefox / webkit + mobile viewports (chromium-only today; near-zero extra code in Playwright).
+- **B7 — Static type-check gate (mypy / pyright).** The codebase is heavily type-hinted but only runtime-checked (typeguard); a static gate is a cheap, standard addition.
+- **B8 — Test-authoring agent.** A new agent *role*: read a PR / spec and **write** Playwright / pytest tests — closing the loop from `risk_agent` ("what to test") to the test itself.
+- **B9 — Systematic flake detection.** A tier that runs the suite N× and quantifies a flake budget, versus the ad-hoc R-018 / R-019 firefighting.
+- **B10 — Stateful / sequence API testing.** Schemathesis-stateful or Hypothesis-stateful to exercise call *sequences* (create-then-cancel honouring spec links), deeper than per-endpoint conformance.
+
+### Existing deferred enhancements (tracked in their phases)
+
+- **B11 — State-mutating UI tours** (Phase 12 sub-roadmap) — booking confirmation, admin, visitor registration; now feasible via `seed.py`'s clean reset.
+- **B12 — Free-form UI exploration** (Phase 12) — the LLM picks goals from a surface map instead of fixed tours.
+- **B13 — Cross-tour memory** (Phase 12) — carry findings between tours; best paired with B12.
+- **B14 — Open-ended-goal self-termination** (F-028 residual) — the policy should `finish` once a goal's minimum is met; carries an under-exploration risk.
+- **B15 — Eval golden-set auth-mode cases** (18 → 36) — score the `unauth` / `wrong_creds` / `other_member` axis, not just payload variants.
+- **B16 — risk_agent PR-comment Action** (Phase 9) — post the ranked test plan on PRs; gated on a hosted-LLM commitment (CI cannot reach local Ollama).
+- **B17 — Observability: Loki + Alertmanager** (Phase 11 v2) — log aggregation + alerting on SLO breaches.
+- **B18 — golf-web-app ruff migration** (flake8 → ruff) — housekeeping/consistency.
+
+### Prioritisation
+
+| Tier | Items | Rationale |
+|---|---|---|
+| **Start here** | **B1 — Security gate** | Closes the single biggest categorical gap; adds a whole pillar; most recognisably "assurance"; reuses CI + SUT-spin-up; incremental on-ramp (SAST/SCA/secrets are a fast first PR, ZAP DAST a natural second, security-triage agent a high-signal third). |
+| **Tier 1 — high impact, distinctive** | B2 mutation testing · B3 metamorphic AI testing | "Test the tests" and "test the AI under variation" — two signals few portfolios show; each builds on existing infra. |
+| **Tier 2 — strong / good leverage** | B11 state-mutating tours · B4 chaos · B5 visual regression | Reach the real (mutation-path) risk surface and add resilience/visual pillars. |
+| **Quick wins — low effort** | B7 mypy gate · B6 cross-browser/responsive · B15 eval auth-mode cases | Cheap, standard, round out coverage; good for momentum. |
+| **Later / situational** | B8 test-authoring agent · B9 flake detection · B10 stateful API · B12 free-form · B13 cross-tour memory · B14 self-termination · B16 PR-comment Action · B17 Loki/Alertmanager · B18 ruff migration | Higher effort, narrower, dependency-gated, or housekeeping. |
+
+**Steer — start with B1 (security gate).** It closes the biggest gap, produces immediate new evidence artifacts (a security report alongside the existing ones), and has a low-friction, incremental path: SAST + dependency + secret scans as a fast first CI job; a ZAP baseline against the already-spun-up SUT as a second; and a security-triage agent — clustering findings against the risk register, mirroring `triage_agent` — as a third that ties the new pillar back into the agentic layer.
 
 ## Appendix A: Glossary
 
