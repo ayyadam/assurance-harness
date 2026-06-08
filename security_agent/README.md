@@ -104,25 +104,26 @@ deterministically. Reconciliation runs **both directions**:
 
 Default is **propose** (a reconciliation report + diff, touching nothing);
 `--apply` rewrites the file, adding proposed lines and removing only the *stale*
-(re-arm) entries. The committed
-[`reports/writeback-report.md`](reports/writeback-report.md) shows the current
-state: all four CVEs **in sync**, nothing to apply — exactly right, since the
-allowlist was hand-written from the same triage. The re-arm direction earns its
-place the moment those CVEs are remediated (the dependency bumps): the next run
-sees them gone and proposes removing the now-stale lines.
+(re-arm) entries. The re-arm direction earned its place under **F-032**: once the
+four CVEs were remediated (the SUT dependency bumps), the next scan came back
+clean, so `writeback --apply` detected all four allowlist lines as stale and
+removed them — re-arming the gate to empty. The committed
+[`reports/writeback-report.md`](reports/writeback-report.md) shows that run:
+`propose remove (re-arm): 4` and the applied diff. (Before remediation it had
+reported all four **in sync**, nothing to apply — the allowlist having been
+hand-written from the same triage.)
 
 ## Evidence: this repo's real B1 findings
 
-The committed [`reports/report.md`](reports/report.md) is the agent run against
-`golf-web-app`'s live scanner output. Seven findings, and the agent reproduced
-the hand triage exactly:
+The agent first ran against `golf-web-app`'s live scanner output and reproduced
+the hand triage (F-029) exactly — **seven findings, 7/7**:
 
 | Finding | Kind | Verdict | Disposition | Risk | Why |
 |---|---|---|---|---|---|
 | `B105` auth.py:16 `'api-v1-token'` | SAST | false_positive | accept | — | the `TOKEN_SALT` salt string, not a credential |
 | `B105` views.py:57 `'Bearer'` | SAST | false_positive | accept | — | the HTTP auth-scheme keyword, not a secret |
 | `B104` run.py:7 bind `0.0.0.0` | SAST | expected_by_design | accept | — | binding all interfaces is required inside the container |
-| `CVE-2025-47278` flask 3.1.0 | SCA | **true_positive** | allowlist | **R-020** | real fallback-key CVE; fix is a deferred bump to 3.1.1 |
+| `CVE-2025-47278` flask 3.1.0 | SCA | **true_positive** | allowlist | **R-020** | real fallback-key CVE; fix 3.1.1 |
 | `CVE-2026-27205` flask 3.1.0 | SCA | **true_positive** | allowlist | **R-020** | real CVE; fix 3.1.3 |
 | `CVE-2026-28684` python-dotenv 1.0.1 | SCA | **true_positive** | allowlist | **R-020** | real arbitrary-file-overwrite CVE; fix 1.2.2 |
 | `CVE-2025-71176` pytest 8.3.4 | SCA | **true_positive** | allowlist | **R-020** | real CVE in the SUT's dev deps; fix 9.0.3 |
@@ -130,6 +131,12 @@ the hand triage exactly:
 Every SAST finding is scanner noise and the agent said so with the right reason;
 every SCA finding is a genuine CVE that the agent correctly routed to *accept-and-track*
 against the dependency-CVE register row.
+
+**Then those four CVEs were remediated (F-032)** — the SUT versions bumped, the
+write-back re-arming the allowlist to empty. So the committed
+[`reports/report.md`](reports/report.md) now shows the **current live surface:
+the three SAST findings**, all still correctly called scanner noise. The seven-finding
+run above is the F-030 record, preserved here and in git history.
 
 ## Evaluation tier — golden-set baseline
 
@@ -140,34 +147,42 @@ machine-checkable. The scorer (`security_agent.eval`) reads the cached
 `reports/report.json` and reports per-axis accuracy plus a combined
 all-three-right score; deterministic, no LLM in the scoring path.
 
-### Baseline (v1, seven findings)
+The golden set tracks the **live scan surface**, so it evolves as the SUT does.
 
-Reported in [`reports/eval-report.md`](reports/eval-report.md):
+### Baseline — F-030 (7 findings) then F-032 (3, post-remediation)
 
-| Metric | Value |
-|---|---|
-| Cases | 7 |
-| Findings matched in report | 7 / 7 |
-| **Verdict accuracy** | **1.000** (7/7) |
-| **Disposition accuracy** | **1.000** (7/7) |
-| **R-ID accuracy** | **1.000** (7/7) |
-| **Combined (all three right)** | **1.000** (7/7) |
+The original baseline, reported in F-030, was **7/7** across all axes (the table
+above). When R-020 was remediated (F-032), the four SCA findings disappeared from
+the scan and were retired from the golden set — leaving the current live baseline
+at **3/3 on the SAST surface** (the three false-positives), reported in
+[`reports/eval-report.md`](reports/eval-report.md):
 
-The baseline is the deliverable: any future regression below 7/7 is immediately
-visible, and any change (prompt, model, schema) is measurable against it.
+| Metric | F-030 (pre-fix) | F-032 (current) |
+|---|---|---|
+| Cases | 7 | 3 |
+| **Verdict accuracy** | 1.000 (7/7) | **1.000** (3/3) |
+| **Disposition accuracy** | 1.000 (7/7) | **1.000** (3/3) |
+| **R-ID accuracy** | 1.000 (7/7) | **1.000** (3/3) |
+| **Combined** | 1.000 (7/7) | **1.000** (3/3) |
+
+A living eval set shrinking as findings are fixed is correct, not a regression:
+the four SCA cases were retired (with a provenance note in `golden_set.yaml`)
+rather than left as perpetual "not found" failures. The baseline is still the
+deliverable — any future regression below the current line is immediately visible.
 
 ### Honest caveats on the baseline
 
-A 100% result with seven findings needs context:
+A 100% result on a small set needs context:
 
-- **The dataset is small and clean-cut.** Three obvious SAST false positives and
-  four obvious dependency CVEs. There is no genuinely ambiguous case (a
-  borderline true-positive, a CVE that should be *remediated now* rather than
-  allowlisted) to stress the judgement — the SUT simply doesn't have one yet.
-- **SCA verdicts are nearly free.** "A named CVE in a pinned version is real" is a
-  low bar; the agent's value on SCA is the *disposition + R-ID*, not the verdict.
-  The harder, more valuable calls are the SAST false-positives, and there are
-  only three.
+- **The dataset is small and clean-cut.** Across its lifecycle the agent has been
+  scored on three obvious SAST false positives and (pre-remediation) four obvious
+  dependency CVEs. There was no genuinely ambiguous case (a borderline
+  true-positive, a CVE that should be *remediated now* rather than allowlisted) to
+  stress the judgement — the SUT simply doesn't have one yet.
+- **SCA verdicts were nearly free.** "A named CVE in a pinned version is real" is a
+  low bar; the agent's value on SCA was the *disposition + R-ID*, not the verdict.
+  The harder, more valuable calls are the SAST false-positives — now the whole
+  live set, all three correctly held.
 - **One SUT, one register.** All findings come from `golf-web-app` and map to one
   register row (R-020). A second owning row, or cross-repo findings, would make
   the R-ID axis non-trivial.

@@ -1,6 +1,6 @@
 # security_agent — allowlist write-back
 
-_Run: 2026-06-08_  •  mode: **propose**
+_Run: 2026-06-08_  •  mode: **apply**
 
 Reconciles the agent's `allowlist`-disposition findings (cached in [`reports/report.json`](report.json)) against the live [`nonfunctional/security/sca_allowlist.txt`](../../nonfunctional/security/sca_allowlist.txt). Propose-by-default; `--apply` adds proposed lines and removes only stale (re-arm) entries.
 
@@ -8,18 +8,21 @@ Reconciles the agent's `allowlist`-disposition findings (cached in [`reports/rep
 
 | State | Count | CVEs |
 |---|---|---|
-| in sync | 4 | CVE-2025-47278, CVE-2025-71176, CVE-2026-27205, CVE-2026-28684 |
+| in sync | 0 | — |
 | propose add | 0 | — |
-| propose remove (re-arm) | 0 | — |
+| propose remove (re-arm) | 4 | CVE-2025-47278, CVE-2025-71176, CVE-2026-27205, CVE-2026-28684 |
 | conflict (review) | 0 | — |
 
 ## Proposed diff
 
-```
-(no changes — allowlist is in sync with the agent's judgement)
+```diff
+- CVE-2025-47278   # flask 3.1.0 -> 3.1.1  (R-020)    # re-arm: CVE-2025-47278 no longer present in the scan
+- CVE-2025-71176   # pytest 8.3.4 -> 9.0.3  (R-020)    # re-arm: CVE-2025-71176 no longer present in the scan
+- CVE-2026-27205   # flask 3.1.0 -> 3.1.3  (R-020)    # re-arm: CVE-2026-27205 no longer present in the scan
+- CVE-2026-28684   # python-dotenv 1.0.1 -> 1.2.2  (R-020)    # re-arm: CVE-2026-28684 no longer present in the scan
 ```
 
-Nothing to apply.
+**Applied** — additions written and stale entries removed. Conflicts (if any) left for review.
 
 ---
 

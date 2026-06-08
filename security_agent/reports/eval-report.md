@@ -8,12 +8,12 @@ Compares the agent's emitted (verdict, disposition, candidate_risk_id) per findi
 
 | Metric | Value |
 |---|---|
-| Cases | 7 |
-| Findings matched in report | 7 / 7 |
-| **Verdict accuracy** | **1.000** (7/7) |
-| **Disposition accuracy** | **1.000** (7/7) |
-| **R-ID accuracy** | **1.000** (7/7) |
-| **Combined (all three right)** | **1.000** (7/7) |
+| Cases | 3 |
+| Findings matched in report | 3 / 3 |
+| **Verdict accuracy** | **1.000** (3/3) |
+| **Disposition accuracy** | **1.000** (3/3) |
+| **R-ID accuracy** | **1.000** (3/3) |
+| **Combined (all three right)** | **1.000** (3/3) |
 
 ## Per-case
 
@@ -40,38 +40,6 @@ Compares the agent's emitted (verdict, disposition, candidate_risk_id) per findi
 - ✓ verdict: expected `expected_by_design`, got `expected_by_design`
 - ✓ disposition: expected `accept`, got `accept`
 - ✓ R-ID: expected `null`, got `null`
-
-### ✓ cve-flask-47278
-
-**Signature:** `pip-audit` `CVE-2025-47278` — `flask 3.1.0`
-
-- ✓ verdict: expected `true_positive`, got `true_positive`
-- ✓ disposition: expected `allowlist`, got `allowlist`
-- ✓ R-ID: expected `R-020`, got `R-020`
-
-### ✓ cve-flask-27205
-
-**Signature:** `pip-audit` `CVE-2026-27205` — `flask 3.1.0`
-
-- ✓ verdict: expected `true_positive`, got `true_positive`
-- ✓ disposition: expected `allowlist`, got `allowlist`
-- ✓ R-ID: expected `R-020`, got `R-020`
-
-### ✓ cve-dotenv-28684
-
-**Signature:** `pip-audit` `CVE-2026-28684` — `python-dotenv 1.0.1`
-
-- ✓ verdict: expected `true_positive`, got `true_positive`
-- ✓ disposition: expected `allowlist`, got `allowlist`
-- ✓ R-ID: expected `R-020`, got `R-020`
-
-### ✓ cve-pytest-71176
-
-**Signature:** `pip-audit` `CVE-2025-71176` — `pytest 8.3.4`
-
-- ✓ verdict: expected `true_positive`, got `true_positive`
-- ✓ disposition: expected `allowlist`, got `allowlist`
-- ✓ R-ID: expected `R-020`, got `R-020`
 
 ---
 

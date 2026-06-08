@@ -39,28 +39,14 @@ findings:
     expected_disposition: accept
     expected_risk_id: null
 
-  # ── SCA (pip-audit) — all four are real CVEs, accepted + tracked (R-020) ──
-
-  - id: cve-flask-47278
-    signature: [pip-audit, CVE-2025-47278, "flask 3.1.0"]
-    expected_verdict: true_positive
-    expected_disposition: allowlist
-    expected_risk_id: R-020
-
-  - id: cve-flask-27205
-    signature: [pip-audit, CVE-2026-27205, "flask 3.1.0"]
-    expected_verdict: true_positive
-    expected_disposition: allowlist
-    expected_risk_id: R-020
-
-  - id: cve-dotenv-28684
-    signature: [pip-audit, CVE-2026-28684, "python-dotenv 1.0.1"]
-    expected_verdict: true_positive
-    expected_disposition: allowlist
-    expected_risk_id: R-020
-
-  - id: cve-pytest-71176
-    signature: [pip-audit, CVE-2025-71176, "pytest 8.3.4"]
-    expected_verdict: true_positive
-    expected_disposition: allowlist
-    expected_risk_id: R-020
+  # ── SCA (pip-audit) — RETIRED on remediation (R-020 / F-032) ──
+  #
+  # The golden set tracks the LIVE scan surface. The four dependency CVEs that
+  # made up the original 7/7 baseline (F-030) — CVE-2025-47278 / CVE-2026-27205
+  # (flask), CVE-2026-28684 (python-dotenv), CVE-2025-71176 (pytest) — were all
+  # judged true_positive -> allowlist -> R-020 by the agent, then remediated by
+  # bumping the SUT's pinned versions. They no longer appear in the scan, so they
+  # are retired from the active set rather than left as perpetual "not found"
+  # cases. The 7/7 SCA-inclusive baseline is preserved in F-030 and git history;
+  # the write-back re-arm that removed their allowlist lines is the F-032
+  # evidence. Current live surface = the three SAST findings above.

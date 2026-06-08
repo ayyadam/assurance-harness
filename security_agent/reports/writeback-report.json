@@ -1,12 +1,24 @@
 {
-  "mode": "propose",
-  "in_sync": [
-    "CVE-2025-47278",
-    "CVE-2025-71176",
-    "CVE-2026-27205",
-    "CVE-2026-28684"
-  ],
+  "mode": "apply",
+  "in_sync": [],
   "propose_add": [],
-  "propose_remove": [],
+  "propose_remove": [
+    {
+      "cve": "CVE-2025-47278",
+      "line": "CVE-2025-47278   # flask 3.1.0 -> 3.1.1  (R-020)"
+    },
+    {
+      "cve": "CVE-2025-71176",
+      "line": "CVE-2025-71176   # pytest 8.3.4 -> 9.0.3  (R-020)"
+    },
+    {
+      "cve": "CVE-2026-27205",
+      "line": "CVE-2026-27205   # flask 3.1.0 -> 3.1.3  (R-020)"
+    },
+    {
+      "cve": "CVE-2026-28684",
+      "line": "CVE-2026-28684   # python-dotenv 1.0.1 -> 1.2.2  (R-020)"
+    }
+  ],
   "conflict": []
 }
