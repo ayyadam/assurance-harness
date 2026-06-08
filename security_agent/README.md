@@ -4,7 +4,9 @@ The agentic-layer interpreter over the security findings produced by the
 deterministic [`nonfunctional/security/`](../nonfunctional/security/) gate (B1).
 The scanners **detect**; this agent **judges**. It is the mirror of
 [`triage_agent`](../triage_agent/) — same heuristic-spine / LLM-judgement /
-golden-set-eval shape — applied to SAST + SCA findings instead of CI failures.
+golden-set-eval shape — applied to security findings instead of CI failures. It
+is **SARIF-native**: it judges SAST (Bandit), SCA (raw pip-audit), secrets
+(gitleaks, redacted), and any SARIF source passed via `--sarif` (e.g. CodeQL).
 Advisory, per [test strategy](../docs/test-strategy.md) Principle 5: judgement,
 not a gate.
 
@@ -195,10 +197,19 @@ future changes are measured against.
 
 - [x] v1: SAST (bandit) + SCA (pip-audit) findings, verdict + disposition + R-ID,
       7/7 golden-set baseline.
-- [ ] **Secrets + SARIF tools.** gitleaks (secrets), CodeQL and ZAP (SARIF) are
-      out of v1 — gitleaks adds little FP-triage signal here (clean), and CodeQL/ZAP
-      output is a CI artifact, not produced locally. Folding them in needs a SARIF
-      normaliser in `findings.py`.
+- [x] **SARIF-native ingestion + secrets (F-033).** `findings.normalize_sarif`
+      parses any SARIF log, so the agent is now tool-agnostic. **gitleaks**
+      (secrets) is folded in as a local default — secret *values* are redacted, so
+      the judge keys off the rule id + file path (a match under `app/`/config is
+      `true_positive` → remediate; one under `tests/`/`fixtures/` is
+      `false_positive` → accept). The live repo is clean, so this is proven not by
+      the eval but by a hermetic positive control
+      ([`tests/agents/test_security_secrets_control.py`](../tests/agents/test_security_secrets_control.py),
+      mirroring F-024) plus a non-gated normaliser unit test
+      ([`tests/test_sarif_normalize.py`](../tests/test_sarif_normalize.py)).
+      **CodeQL** is ingestible through the same path via `--sarif <file>` (fetch the
+      SARIF from GitHub code-scanning). **ZAP** stays out — its DAST baseline does
+      not emit SARIF by default.
 - [x] **Write-back ([`writeback.py`](writeback.py)).** Reconciles the agent's
       `allowlist` judgement against the live `sca_allowlist.txt` and proposes a
       diff (add / remove-stale / conflict / in-sync); `--apply` writes it. Register

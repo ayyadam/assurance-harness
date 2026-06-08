@@ -33,13 +33,19 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--refresh", action="store_true", help="Re-run the scanners before judging (slow).")
     parser.add_argument("--model", default=DEFAULT_MODEL, help=f"Ollama model (default: {DEFAULT_MODEL})")
     parser.add_argument("--host", default=None, help="Ollama host (default: env or localhost)")
+    parser.add_argument(
+        "--sarif",
+        action="append",
+        default=[],
+        help="Path to an extra SARIF file to judge (e.g. a CodeQL log). Repeatable.",
+    )
     parser.add_argument("--no-llm", action="store_true", help="Normalise only; skip LLM judgement.")
     parser.add_argument("--no-write", action="store_true", help="Print markdown but do not save reports.")
     args = parser.parse_args(argv)
 
     sut = Path(args.sut).resolve()
     print(f"collecting findings from {sut} (refresh={args.refresh})...", file=sys.stderr)
-    findings = collect_findings(sut, refresh=args.refresh)
+    findings = collect_findings(sut, refresh=args.refresh, sarif_paths=args.sarif)
     print(f"normalised {len(findings)} finding(s)", file=sys.stderr)
 
     if not args.no_llm and findings:

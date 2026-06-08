@@ -54,6 +54,12 @@ _SYSTEM = (
     "     row. Match by mechanism, not vibe. If no row matches (most SAST false positives), return null.\n\n"
     "4) rationale — one or two sentences grounded in THIS finding's specifics (the rule id, the "
     "   flagged value, the file, the package/CVE). No generic security talk.\n\n"
+    "Secret-scanner findings (tool=gitleaks, kind=secret): the matched VALUE is redacted — judge "
+    "from the rule id and the file PATH. A real credential committed in application / config / "
+    "deployment code is true_positive -> remediate (it must be rotated and removed). A match in a "
+    "TEST FIXTURE, example, placeholder, sample, or documentation is false_positive -> accept. "
+    "Paths under tests/, fixtures/, examples/, sample, or docs/ lean false_positive; paths under "
+    "app/, config, deploy, or a committed .env lean true_positive.\n\n"
     "Judge the single finding you are given — not the codebase as a whole."
 )
 
