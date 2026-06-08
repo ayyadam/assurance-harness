@@ -2,7 +2,7 @@
 
 **Status:** living document — updated as the assurance harness matures.
 **Owner:** Adam (acting as Digital Assurance Engineer)
-**Last updated:** 2026-06-07 *(added a prioritised enhancement & capability backlog — net-new pillars (security, mutation, metamorphic AI) alongside the existing deferred items, with a cross-board steer)*
+**Last updated:** 2026-06-08 *(F-029 — B1 security/DevSecOps gate: SAST (Bandit + CodeQL) + SCA (pip-audit) + secrets (gitleaks) + DAST (ZAP baseline) under `nonfunctional/security/`; ratchet gating, detect + report)*
 
 ---
 
@@ -63,6 +63,7 @@ Layers planned across the project. Each layer has an explicit "why this exists" 
 | UI / E2E journeys | **Done** | Playwright + pytest | `assurance-harness/functional/` | Exercise the booking journey, the natural-language booking assistant, and access-control boundaries in a real browser, as a member experiences them |
 | Accessibility | **Done** | axe-core (axe-playwright-python) | `assurance-harness/nonfunctional/accessibility/` | WCAG 2.1 A/AA sweep of key pages; gate the PR on serious + critical violations, track the rest |
 | Performance | **Done** | k6 (thresholds-as-code) | `assurance-harness/nonfunctional/performance/` | Latency/error budgets on the read-path API; fail the PR on regression beyond budget |
+| Security | **Done (B1)** | Bandit + CodeQL (SAST), pip-audit (SCA), gitleaks (secrets), OWASP ZAP baseline (DAST) | `assurance-harness/nonfunctional/security/` | Shift-left security gate: dependency CVEs (gate any non-allowlisted), secret scanning (hard gate), static analysis + a DAST baseline (advisory, ratchet). See [F-029](#f-029--b1-security-gate-shift-left-sast-sca-secrets-and-dast) |
 | Data quality | **Done** | pandera (schemas + invariants) | `assurance-harness/data_quality/` | Validate the live database against column contracts and business-rule invariants (e.g. 18 holes with a 1..18 stroke-index permutation) |
 | AI evaluation | **Done (phase 8 v1)** | Black-box golden-set scoring (deterministic + LLM-judge) | [`assurance-harness/ai_evaluation/`](../ai_evaluation/README.md) | Quantifies model accuracy, safety, latency across a model list. Two grading tiers — deterministic field equality + an LLM-judge (holistic 0-10 + per-rubric fuzzy pass/fail). Current 5-model report: [`ai_evaluation/reports/report.md`](../ai_evaluation/reports/report.md) |
 | Risk-prioritisation (advisory) | **Done (phase 13 v3)** | Local Ollama agent + deterministic register pre-filter (path + content) + deterministic post-processing + golden-set eval | [`assurance-harness/risk_agent/`](../risk_agent/README.md) | Given a PR diff + the live risk register, produces a ranked test plan with `covered_by` per risk, coverage-gap flags, relevance label (`direct` / `plausible`), and exploratory probes. Advisory only, not a CI gate. Phase 9 v2 v1 → v4 v2: prompt + row tuning iterations (F1 0.526 → 0.462 across the 9-case set). Phase 13: deterministic register pre-filter — v1 path-based filtering (F1 → 0.710); v2 mapping tightening (F1 → 0.733); **v3 content-aware filtering** for R-007, R-009, R-010, R-012, R-019 + R-002 path narrowing + comment-line stripping in marker matching. **F1: 0.733 → 0.929** (precision 0.688 → 0.929, recall 0.786 → 0.929; **7 of 9 cases at F1 1.000**). Single FP and single FN remaining are both honest LLM-calibration calls. F-017's cross-row coupling hypothesis confirmed via a side-effect of v3's R-007 filter. Phase 13 closed. See [F-013](#f-013--risk_agent-subject-vs-adjacent-rule--sharpened-rows-lift-f1-0526--0588), [F-014](#f-014--golden-set-growth-4--9-cases-surfaces-three-new-failure-modes-honest-baseline-f1-0421), [F-015](#f-015--r-006-row-sharpening-lifts-f1-0421--0462-three-attempted-sharpenings-reveal-the-llm-tuning-ceiling), [F-016](#f-016--deterministic-register-pre-filter-phase-13-v1-lifts-f1-0462--0710), [F-017](#f-017--mapping-tightening-phase-13-v2-lifts-f1-0710--0733-cross-row-coupling-surfaced), [F-018](#f-018--content-aware-filtering-phase-13-v3-lifts-f1-0733--0929-phase-13-closed), and [`risk_agent/reports/eval-report.md`](../risk_agent/reports/eval-report.md) |
@@ -1334,6 +1335,59 @@ The regenerated report shows `public-pages` going `finished (4 steps)` → `hit 
 - [`explore_agent/README.md`](../explore_agent/README.md) — perception-gap known-limitation removed (now fixed); the open-ended-goal `finish` behaviour noted.
 - This finding + sub-roadmap flip (F-028 done) + Last updated bump.
 
+### F-029 — B1 security gate: shift-left SAST, SCA, secrets, and DAST
+
+**Date:** 2026-06-08
+**Surfaced by:** The cross-board enhancement backlog (§13) — security was the single biggest categorical gap (the gate covered correctness, contract, a11y, performance, and data quality, but the only security testing was the explore_agent's auth-bypass probing). B1 was prioritised "start here". This is the first round: **deterministic scanning** (the `security_agent` interpretation layer is a tracked fast-follow).
+**Severity:** Significant — adds a whole assurance *pillar*, not a fix. Every PR is now scanned for vulnerable dependencies, leaked secrets, insecure code, and live attack-surface issues, with results as a gating signal + downloadable evidence + GitHub Security-tab alerts.
+
+**What B1 ships — four techniques under `nonfunctional/security/`**
+
+Security is a quality attribute, so it joins the existing non-functional grouping (peer of `accessibility/`, `performance/`) rather than a new top level.
+
+| Technique | Tool | Target | Gate |
+|---|---|---|---|
+| SAST | Bandit | SUT app code | advisory |
+| SAST (deep) | CodeQL | harness Python → Security tab | advisory |
+| SCA | pip-audit | SUT requirements + harness env | gate any non-allowlisted |
+| secrets | gitleaks | both repos (history + tree) → SARIF to Security tab | hard gate |
+| DAST | OWASP ZAP baseline (passive) | running SUT | advisory |
+
+[`nonfunctional/security/scan.py`](../nonfunctional/security/scan.py) is the single source of truth for *what runs* and *how it gates* — runnable locally and in CI, applying the gate via exit code. Three new CI jobs: "Security (SAST/SCA/secrets)" (static — no SUT build), "CodeQL (SAST)", and "Security — DAST (ZAP baseline)" against the running SUT. All validated green.
+
+**The ratchet gating posture**
+
+Security scanners are noisy on day one, so the posture **ratchets** rather than hard-gating everything:
+
+- **secrets → hard gate** (any committed secret fails, now). Baseline: clean (104 commits scanned, no leaks; plain test passwords don't trip gitleaks).
+- **SCA → gate any non-allowlisted vuln** (pip-audit's native behaviour; the allowlist controls noise and pins each accepted CVE to a risk row). pip-audit doesn't expose CVSS reliably, so the gate keys on *presence*, not severity; Trivy is the upgrade path if severity-based gating is wanted.
+- **SAST (Bandit, CodeQL) + DAST (ZAP) → advisory** — reported, ratchet to gating once the baseline is clean.
+
+**Baseline findings — detect + report (per the locked scope)**
+
+B1 detects and reports; it does not remediate the SUT this round.
+
+- **SCA — 4 CVEs, all allowlisted under R-020:** flask 3.1.0 (CVE-2025-47278, CVE-2026-27205), python-dotenv 1.0.1 (CVE-2026-28684), and the harness's own pytest 8.3.4 (CVE-2025-71176). The SUT bumps are trivial cross-repo changes; the pytest bump is a major upgrade — both deferred and tracked.
+- **SAST — triaged to no genuine issues:** 1 medium (`0.0.0.0` bind in `run.py`, expected for a container) + 2 lows confirmed false positives (`api-v1-token` is an itsdangerous *salt*, not a credential; `'Bearer'` is the auth-scheme literal). Advisory.
+- **secrets — clean. DAST — ZAP baseline report uploaded as an artifact.**
+
+**Decisions (locked during design)**
+
+Scope = deterministic scanning (the `security_agent` is a fast-follow); SAST = Bandit + CodeQL (CodeQL targets the harness's own Python — cross-repo CodeQL-on-checked-out-SUT was avoided for its commit-SHA-association fragility, the pre-agreed fallback; Bandit covers the SUT); gate posture = ratchet; SCA = gate any non-allowlisted; findings = detect + report.
+
+**What B1 ships**
+
+- [`nonfunctional/security/`](../nonfunctional/security/) — `scan.py` (orchestrator + gate), `sca_allowlist.txt`, `README.md`.
+- `.github/workflows/assurance.yml` — three CI jobs; gitleaks SARIF → Security tab (best-effort); reports as artifacts.
+- `pyproject.toml` — Bandit + pip-audit dev deps.
+- `docs/risk-register.md` — R-020 (dependency CVEs, partially mitigated). This finding + the security layer-table row + Last updated bump + §13 backlog update.
+
+**What B1 does NOT do (tracked)**
+
+- **Remediate the SUT findings** — the 4 CVEs (and any future SUT fixes) are detected + tracked, not fixed (cross-repo, deferred).
+- **The `security_agent`** — clustering scanner output against the risk register (mirroring `triage_agent`) is the interpretation crown, a fast-follow in the agentic layer.
+- **bandit / ZAP → Security-tab SARIF** — bandit needs the SARIF-formatter plugin and ZAP needs a SARIF plugin; CodeQL + gitleaks cover the Security tab for now, the rest are downloadable artifacts.
+
 ## 12. Roadmap
 
 The full phased plan lives in conversational notes; the abbreviated public form:
@@ -1390,7 +1444,7 @@ This consolidates future work into one prioritised view: **net-new capability ar
 
 ### Net-new capability areas
 
-- **B1 — Security / DevSecOps gate.** SAST (Bandit or GitHub CodeQL), dependency/SCA scanning (pip-audit / Trivy), secret scanning (gitleaks), and a DAST baseline (OWASP ZAP) against the running SUT. Today only the explore_agent's auth-bypass probing (F-019) touches security. Optional crown: a **security-triage agent** that clusters findings against the risk register, mirroring `triage_agent`. *Biggest categorical gap; most on-brand for the role; reuses the CI build-and-seed-SUT pattern.*
+- **B1 — Security / DevSecOps gate.** **Deterministic scanning done (F-029):** Bandit + CodeQL (SAST), pip-audit (SCA, gate any non-allowlisted), gitleaks (secrets, hard gate), OWASP ZAP baseline (DAST), under `nonfunctional/security/` with ratchet gating — all green in CI. **Remaining:** the **security-triage agent** (clusters findings against the risk register, mirroring `triage_agent`) as a fast-follow in the agentic layer; and remediation of the detected SUT/dep findings (R-020, deferred). Trivy (severity-based SCA) and bandit/ZAP → Security-tab SARIF are optional refinements.
 - **B2 — Mutation testing.** mutmut / cosmic-ray against the SUT's logic (slot generation, the NL intent parser, booking rules) to measure whether the suite actually *catches* injected bugs (kill rate). Measures test *effectiveness*, which coverage cannot.
 - **B3 — Metamorphic / invariance testing of the AI feature.** Assert that semantically-equivalent NL phrasings yield the same booking intent (invariance to casing / typos / word-order / synonyms) — robustness the fixed phase-8 golden set cannot express. Builds on the existing eval infra.
 - **B4 — Resilience / chaos testing.** Fault-inject the compose stack (pause `db`, add Postgres latency via toxiproxy, kill `web` mid-request); assert graceful degradation + recovery, and that the incident surfaces in Grafana. Ties to R-013.
