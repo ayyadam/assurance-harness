@@ -19,21 +19,21 @@ _Run: 2026-06-08_  •  SUT: `D:\Dev\Repos\golf-web-app`  •  judge: `qwen2.5:3
 - **tool:** bandit (SAST)  •  **severity:** MEDIUM / conf MEDIUM
 - **title:** Possible binding to all interfaces.
 - **verdict:** `expected_by_design`  •  **disposition:** `accept`  •  **risk:** none
-- **rationale:** The code binds to '0.0.0.0', which is flagged as binding to all interfaces, but this behavior is intentional for the local development environment where it's expected to listen on all network interfaces.
+- **rationale:** The code binds to '0.0.0.0' which is flagged as a potential security issue by Bandit (B104). However, this binding is intentional and necessary for the application to be accessible from all network interfaces in its deployment context.
 
 ### `B105` — app/api/auth.py:16
 
 - **tool:** bandit (SAST)  •  **severity:** LOW / conf MEDIUM
 - **title:** Possible hardcoded password: 'api-v1-token'
 - **verdict:** `false_positive`  •  **disposition:** `accept`  •  **risk:** none
-- **rationale:** The string 'api-v1-token' is flagged as a hardcoded password, but it appears to be used as a salt in the context of `TOKEN_SALT`. This value does not represent an actual credential and thus is not a security concern.
+- **rationale:** The value 'api-v1-token' is flagged as a hardcoded password, but it appears to be used as a salt in the context of `TOKEN_SALT`. This does not represent a secret credential and thus is a false positive.
 
 ### `B105` — app/api/views.py:57
 
 - **tool:** bandit (SAST)  •  **severity:** LOW / conf MEDIUM
 - **title:** Possible hardcoded password: 'Bearer'
 - **verdict:** `false_positive`  •  **disposition:** `accept`  •  **risk:** none
-- **rationale:** The string 'Bearer' is flagged as a hardcoded password, but it is actually used as a token type in the context of an authentication scheme. This is not a secret or credential and does not pose a security risk.
+- **rationale:** The string 'Bearer' is flagged as a hardcoded password, but it is used in the context of an authorization token type and not as an actual secret or credential. This is a common pattern for OAuth2 tokens and does not represent a security vulnerability.
 
 ---
 

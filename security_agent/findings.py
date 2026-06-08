@@ -5,23 +5,28 @@ allowlist applied — the agent must see what the gate suppresses in order to
 judge it) and flattens every tool's output into one ``Finding`` record the LLM
 can reason over uniformly.
 
-Sources (B1c v1 scope — SAST + SCA):
-  - bandit   (SAST) over the SUT application code.
+Sources:
+  - bandit   (SAST) over the SUT application code (native JSON).
   - pip-audit (SCA) over the SUT ``requirements.txt`` + ``requirements-dev.txt``,
     run RAW (no ``--ignore-vuln``) so the allowlisted CVEs are visible for the
-    agent to re-derive the allowlist recommendation itself.
+    agent to re-derive the allowlist recommendation itself (native JSON).
+  - gitleaks (secrets) over the harness + SUT repos (SARIF). Skipped if the
+    gitleaks binary is absent. Secret *values* are redacted — the judge keys off
+    the rule id and file path (fixture/example vs app/config), never the match.
+  - any SARIF file passed via ``--sarif`` — the agent is SARIF-native, so CodeQL
+    (CI → GitHub code-scanning, fetched as SARIF) or any other SARIF tool can be
+    judged through the same generic normaliser. ZAP (DAST) does not emit SARIF
+    by default and is out of this scope.
 
-Secrets (gitleaks) and the SARIF-only tools (CodeQL, ZAP) are a documented
-fast-follow — they need CI artifacts or add little FP-triage signal.
-
-Raw tool JSON is cached under ``reports/raw/`` (gitignored — bandit snippets
-echo SUT source). ``--refresh`` re-runs the scanners; the default reads the
-cache so re-judging after a prompt change is free.
+Raw tool output is cached under ``reports/raw/`` (gitignored — snippets echo SUT
+source). ``--refresh`` re-runs the scanners; the default reads the cache so
+re-judging after a prompt change is free.
 """
 
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -140,8 +145,97 @@ def collect_pip_audit(sut: Path, refresh: bool) -> list[Finding]:
     return list(by_sig.values())
 
 
-def collect_findings(sut: Path, refresh: bool = False) -> list[Finding]:
-    """All in-scope findings (SAST + SCA), deduped, deterministically ordered."""
-    findings = collect_bandit(sut, refresh) + collect_pip_audit(sut, refresh)
+# ── SARIF (gitleaks secrets + any SARIF tool, e.g. CodeQL) ─────────────────
+
+_SARIF_SEVERITY = {"error": "HIGH", "warning": "MEDIUM", "note": "LOW", "none": "LOW"}
+
+
+def normalize_sarif(path: Path, kind: str, redact: bool = False) -> list[Finding]:
+    """Parse any SARIF log into Finding records — the generic, tool-agnostic path.
+
+    ``redact`` is set for secret scanners so the matched value never reaches the
+    committed report; the judge keys off the rule id and file path instead.
+    """
+    data = json.loads(path.read_text(encoding="utf-8") or "{}")
+    findings: list[Finding] = []
+    for run in data.get("runs", []):
+        tool = (run.get("tool", {}).get("driver", {}) or {}).get("name", "sarif")
+        for r in run.get("results", []):
+            rule = r.get("ruleId", "?")
+            sev = _SARIF_SEVERITY.get(r.get("level", "warning"), "MEDIUM")
+            locs = r.get("locations") or [{}]
+            phys = (locs[0] or {}).get("physicalLocation", {})
+            uri = (phys.get("artifactLocation", {}) or {}).get("uri", "?")
+            line = (phys.get("region", {}) or {}).get("startLine")
+            location = f"{uri}:{line}" if line else uri
+            msg = (r.get("message", {}) or {}).get("text", "") or ""
+            if redact:
+                title = f"potential secret ({rule})"
+                detail = f"rule={rule}; secret value redacted; judge from path + rule"
+            else:
+                title = msg[:120]
+                detail = f"rule={rule}; {msg[:160]}"
+            findings.append(
+                Finding(
+                    tool=tool,
+                    kind=kind,
+                    rule_id=rule,
+                    location=location,
+                    severity=sev,
+                    confidence="",
+                    title=title,
+                    detail=detail,
+                )
+            )
+    return findings
+
+
+def collect_gitleaks(sut: Path, refresh: bool) -> list[Finding]:
+    """Secret scan over the harness + SUT repos. [] if gitleaks is not installed."""
+    if not shutil.which("gitleaks"):
+        return []
+    findings: list[Finding] = []
+    for repo in (ROOT, sut):
+        cache = RAW_DIR / f"gitleaks-{repo.name}.sarif"
+        if refresh or not cache.exists():
+            RAW_DIR.mkdir(parents=True, exist_ok=True)
+            _run(
+                [
+                    "gitleaks",
+                    "detect",
+                    "--source",
+                    str(repo),
+                    "--report-format",
+                    "sarif",
+                    "--report-path",
+                    str(cache),
+                    "--no-banner",
+                    "--exit-code",
+                    "0",
+                ]
+            )
+        if cache.exists():
+            findings += normalize_sarif(cache, kind="secret", redact=True)
+    return findings
+
+
+def collect_sarif_files(paths: list[str]) -> list[Finding]:
+    """Ingest externally-provided SARIF (e.g. a CodeQL log fetched from CI)."""
+    findings: list[Finding] = []
+    for p in paths:
+        path = Path(p)
+        if path.exists():
+            findings += normalize_sarif(path, kind="SAST")
+    return findings
+
+
+def collect_findings(sut: Path, refresh: bool = False, sarif_paths: list[str] | None = None) -> list[Finding]:
+    """All in-scope findings (SAST + SCA + secrets + any SARIF), deduped + ordered."""
+    findings = (
+        collect_bandit(sut, refresh)
+        + collect_pip_audit(sut, refresh)
+        + collect_gitleaks(sut, refresh)
+        + collect_sarif_files(sarif_paths or [])
+    )
     # Stable order: kind, then rule_id, then location — deterministic reports.
     return sorted(findings, key=lambda f: (f.kind, f.rule_id, f.location))

@@ -12,7 +12,7 @@ Currently in place across the two repos:
 - **Local on-demand agent layers (Ollama-backed):** AI evaluation harness ([`ai_evaluation/`](ai_evaluation/README.md), phase 8), risk-prioritisation agent with a deterministic register pre-filter ([`risk_agent/`](risk_agent/README.md), phase 9 + phase 13), triage agent ([`triage_agent/`](triage_agent/README.md), phase 10), exploratory agent — API + UI surfaces plus spec-aware auth-bypass probing ([`explore_agent/`](explore_agent/README.md), phase 12), and security agent — judges the B1 scanner findings (FP-vs-real + disposition + register R-ID) and reconciles the SCA allowlist ([`security_agent/`](security_agent/README.md), B1c). All five use a local Ollama runtime so the per-PR path stays fast and reproducible; each carries a deterministic golden-set eval tier, and their evidence artefacts are committed under each module's `reports/` dir.
 - **Production-style observability:** Prometheus + Grafana stack ([`observability/`](observability/README.md), phase 11) scraping the SUT's `/metrics`; SLO thresholds on the dashboard match the k6 perf gate's pre-merge budget. Closes R-013.
 - **Tests of the harness's own agents:** a gated regression suite ([`tests/agents/`](tests/agents/README.md), phase 12 v2 v2 + F-024) running `risk_agent`, `triage_agent`, and the `explore_agent` judge N times against fixed inputs, asserting schema/vocab invariants and stability under LLM jitter — including a non-blinding positive control on the explore judge.
-- **Documented findings:** F-001 through F-032 captured in the strategy with diagnosis, fix, and generalisation — including the full security lifecycle (F-029 detect → F-030 judge → F-031 reconcile → F-032 remediate + re-arm).
+- **Documented findings:** F-001 through F-033 captured in the strategy with diagnosis, fix, and generalisation — including the full security lifecycle (F-029 detect → F-030 judge → F-031 reconcile → F-032 remediate + re-arm → F-033 SARIF-native + secrets).
 
 ## Stack
 
@@ -111,7 +111,7 @@ assurance-harness/
 │   ├── eval.py                     # v2 v1: deterministic golden-set scorer
 │   └── reports/                    # committed evidence (report.md + ui/report.md + screenshots)
 ├── security_agent/                 # B1c: judges the B1 security findings
-│   ├── findings.py                 # normalise raw Bandit + pip-audit findings
+│   ├── findings.py                 # normalise Bandit + pip-audit + gitleaks/any SARIF (SARIF-native)
 │   ├── judge.py                    # LLM: verdict + disposition + R-ID xref
 │   ├── writeback.py                # F-031: reconcile + propose SCA allowlist diff (--apply)
 │   ├── render.py + run.py          # CLI + markdown
