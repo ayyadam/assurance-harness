@@ -59,7 +59,11 @@ def _read_sca_allowlist() -> list[str]:
 
 
 def run_bandit(sut: Path) -> list[dict]:
-    """SAST over the SUT application code. Advisory — returns the findings."""
+    """SAST over the SUT application code. Advisory — returns the findings.
+
+    JSON only (artifact + summary); deep SAST on the GitHub Security tab is
+    provided by the CodeQL job, so bandit does not need the SARIF formatter plugin.
+    """
     targets = [str(p) for p in (sut / "app", sut / "seed.py", sut / "run.py") if p.exists()]
     report = REPORTS_DIR / "bandit.json"
     _run(["bandit", "-r", *targets, "-f", "json", "-o", str(report), "-q"])
@@ -92,12 +96,16 @@ def run_pip_audit(pip_args: list[str], ignore: list[str], fname: str) -> list[di
 
 
 def run_gitleaks(paths: list[Path]) -> list[dict] | None:
-    """Secret scan (git history + tree). None if gitleaks is not installed."""
+    """Secret scan (git history + tree). None if gitleaks is not installed.
+
+    Emits SARIF per repo (for the GitHub Security tab) and returns the flattened
+    SARIF results for the hard-gate count.
+    """
     if not shutil.which("gitleaks"):
         return None
     findings: list[dict] = []
     for p in paths:
-        report = REPORTS_DIR / f"gitleaks-{p.name}.json"
+        sarif = REPORTS_DIR / f"gitleaks-{p.name}.sarif"
         _run(
             [
                 "gitleaks",
@@ -105,16 +113,18 @@ def run_gitleaks(paths: list[Path]) -> list[dict] | None:
                 "--source",
                 str(p),
                 "--report-format",
-                "json",
+                "sarif",
                 "--report-path",
-                str(report),
+                str(sarif),
                 "--no-banner",
                 "--exit-code",
                 "0",
             ]
         )
-        if report.exists():
-            findings += json.loads(report.read_text(encoding="utf-8") or "[]")
+        if sarif.exists():
+            data = json.loads(sarif.read_text(encoding="utf-8") or "{}")
+            for run in data.get("runs", []):
+                findings += run.get("results", [])
     return findings
 
 
@@ -164,7 +174,8 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print(f"\n## secrets (gitleaks) — hard gate\n\n{len(gitleaks)} finding(s)")
         for g in gitleaks[:20]:
-            print(f"  - {g.get('RuleID')} {g.get('File')}:{g.get('StartLine')}")
+            loc = g.get("locations", [{}])[0].get("physicalLocation", {}).get("artifactLocation", {}).get("uri", "?")
+            print(f"  - {g.get('ruleId', '?')} {loc}")
 
     # ── gate ──
     secrets_fail = bool(gitleaks)
