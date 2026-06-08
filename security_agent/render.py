@@ -90,6 +90,7 @@ def to_json(findings: list[Finding]) -> str:
                 "severity": f.severity,
                 "confidence": f.confidence,
                 "title": f.title,
+                "fix": f.fix,
                 "verdict": f.verdict,
                 "disposition": f.disposition,
                 "candidate_risk_id": f.candidate_risk_id,

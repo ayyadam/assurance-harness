@@ -75,10 +75,41 @@ uv run python -m security_agent.run                  # judge cached findings
 uv run python -m security_agent.run --no-llm         # normalise only, no judgement
 uv run python -m security_agent.eval                 # score against the golden set
 uv run python -m security_agent.eval --refresh       # re-run the agent, then score
+uv run python -m security_agent.writeback            # reconcile + propose allowlist diff
+uv run python -m security_agent.writeback --apply    # write the additions + stale removals
 ```
 
 Outputs under [`reports/`](reports/): `report.md` / `report.json` (the judged
-findings) and `eval-report.md` / `eval-report.json` (the golden-set score).
+findings), `eval-report.md` / `eval-report.json` (the golden-set score), and
+`writeback-report.md` / `writeback-report.json` (the allowlist reconciliation).
+
+## Write-back — reconcile the judgement with the live allowlist
+
+Judging is advisory until something acts on it. [`writeback.py`](writeback.py)
+closes the loop: it compares the agent's `allowlist`-disposition findings against
+the live [`sca_allowlist.txt`](../nonfunctional/security/sca_allowlist.txt) and
+proposes a diff — mirroring `risk_agent`'s propose-don't-apply stance. The
+allowlist is the natural target: every `allowlist` finding already carries the
+package, version, fix, and R-ID that make up a line, so the agent can generate it
+deterministically. Reconciliation runs **both directions**:
+
+- **propose-add** — a CVE the agent judges `allowlist` that isn't in the file yet.
+- **propose-remove (re-arm)** — a line in the file the agent *didn't* encounter
+  this run: the dependency was bumped/removed, so the line suppresses nothing and
+  the gate should re-arm.
+- **conflict** — a CVE in the file the agent now judges something other than
+  `allowlist`; flagged for a human, never auto-changed (a judgement disagreement
+  is not a mechanical edit).
+- **in-sync** — present and agreed; no action.
+
+Default is **propose** (a reconciliation report + diff, touching nothing);
+`--apply` rewrites the file, adding proposed lines and removing only the *stale*
+(re-arm) entries. The committed
+[`reports/writeback-report.md`](reports/writeback-report.md) shows the current
+state: all four CVEs **in sync**, nothing to apply — exactly right, since the
+allowlist was hand-written from the same triage. The re-arm direction earns its
+place the moment those CVEs are remediated (the dependency bumps): the next run
+sees them gone and proposes removing the now-stale lines.
 
 ## Evidence: this repo's real B1 findings
 
@@ -153,8 +184,10 @@ future changes are measured against.
       out of v1 — gitleaks adds little FP-triage signal here (clean), and CodeQL/ZAP
       output is a CI artifact, not produced locally. Folding them in needs a SARIF
       normaliser in `findings.py`.
-- [ ] **Write-back.** The agent recommends `allowlist` + R-020 but does not edit
-      `sca_allowlist.txt` or the register; a human still applies it. A propose-diff
-      step (mirroring `risk_agent`'s plan output) is the natural next move.
+- [x] **Write-back ([`writeback.py`](writeback.py)).** Reconciles the agent's
+      `allowlist` judgement against the live `sca_allowlist.txt` and proposes a
+      diff (add / remove-stale / conflict / in-sync); `--apply` writes it. Register
+      write-back (prose rows) remains out of scope — the line-based allowlist is
+      the deterministic target.
 - [ ] **Harder cases.** The eval only bites once the SUT grows a finding that
       should be *remediated now* or a genuinely ambiguous SAST hit.

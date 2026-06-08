@@ -1,0 +1,12 @@
+{
+  "mode": "propose",
+  "in_sync": [
+    "CVE-2025-47278",
+    "CVE-2025-71176",
+    "CVE-2026-27205",
+    "CVE-2026-28684"
+  ],
+  "propose_add": [],
+  "propose_remove": [],
+  "conflict": []
+}
