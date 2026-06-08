@@ -2,7 +2,7 @@
 
 _Run: 2026-06-08_  •  SUT: `D:\Dev\Repos\golf-web-app`  •  judge: `qwen2.5:32b-instruct-q4_K_M`
 
-7 finding(s) judged — **4 true-positive**, 2 false-positive, 1 expected-by-design. True positives carry a disposition + register cross-reference; noise is explained, not silently dropped.
+3 finding(s) judged — **0 true-positive**, 2 false-positive, 1 expected-by-design. True positives carry a disposition + register cross-reference; noise is explained, not silently dropped.
 
 ## Summary
 
@@ -11,10 +11,6 @@ _Run: 2026-06-08_  •  SUT: `D:\Dev\Repos\golf-web-app`  •  judge: `qwen2.5:3
 | `B104` run.py:7 | SAST | OK | accept | — |
 | `B105` app/api/auth.py:16 | SAST | FP | accept | — |
 | `B105` app/api/views.py:57 | SAST | FP | accept | — |
-| `CVE-2025-47278` flask 3.1.0 | SCA | **TP** | allowlist | R-020 |
-| `CVE-2025-71176` pytest 8.3.4 | SCA | **TP** | allowlist | R-020 |
-| `CVE-2026-27205` flask 3.1.0 | SCA | **TP** | allowlist | R-020 |
-| `CVE-2026-28684` python-dotenv 1.0.1 | SCA | **TP** | allowlist | R-020 |
 
 ## Findings
 
@@ -38,34 +34,6 @@ _Run: 2026-06-08_  •  SUT: `D:\Dev\Repos\golf-web-app`  •  judge: `qwen2.5:3
 - **title:** Possible hardcoded password: 'Bearer'
 - **verdict:** `false_positive`  •  **disposition:** `accept`  •  **risk:** none
 - **rationale:** The string 'Bearer' is flagged as a hardcoded password, but it is actually used as a token type in the context of an authentication scheme. This is not a secret or credential and does not pose a security risk.
-
-### `CVE-2025-47278` — flask 3.1.0
-
-- **tool:** pip-audit (SCA)  •  **severity:** UNKNOWN
-- **title:** flask 3.1.0 affected by CVE-2025-47278
-- **verdict:** `true_positive`  •  **disposition:** `allowlist`  •  **risk:** R-020
-- **rationale:** The finding is a genuine issue as Flask 3.1.0 is affected by CVE-2025-47278, which impacts the fallback key configuration used for signing. The fix is available in version 3.1.1, but it has been allowlisted for now under risk register row R-020.
-
-### `CVE-2025-71176` — pytest 8.3.4
-
-- **tool:** pip-audit (SCA)  •  **severity:** UNKNOWN
-- **title:** pytest 8.3.4 affected by CVE-2025-71176
-- **verdict:** `true_positive`  •  **disposition:** `allowlist`  •  **risk:** R-020
-- **rationale:** pytest version 8.3.4 is affected by CVE-2025-71176, which allows local users to cause a denial of service or possibly gain privileges due to reliance on predictable directory names in `/tmp/`. This vulnerability is known and the fix is available in pytest 9.0.3. Given that this dependency is used in the development environment (`requirements-dev.txt`), it can be allowlisted with a plan for remediation.
-
-### `CVE-2026-27205` — flask 3.1.0
-
-- **tool:** pip-audit (SCA)  •  **severity:** UNKNOWN
-- **title:** flask 3.1.0 affected by CVE-2026-27205
-- **verdict:** `true_positive`  •  **disposition:** `allowlist`  •  **risk:** R-020
-- **rationale:** The finding indicates that Flask version 3.1.0 is affected by CVE-2026-27205, which requires a fix in version 3.1.3. This is a genuine issue, but it has been allowlisted as part of the known-vulnerable dependencies tracked under R-020.
-
-### `CVE-2026-28684` — python-dotenv 1.0.1
-
-- **tool:** pip-audit (SCA)  •  **severity:** UNKNOWN
-- **title:** python-dotenv 1.0.1 affected by CVE-2026-28684
-- **verdict:** `true_positive`  •  **disposition:** `allowlist`  •  **risk:** R-020
-- **rationale:** The finding is a genuine issue as python-dotenv version 1.0.1 is affected by CVE-2026-28684, which allows a local attacker to overwrite arbitrary files via crafted symlinks when rewriting `.env` files. This vulnerability is tracked under R-020 and will be remediated in the future.
 
 ---
 

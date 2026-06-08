@@ -1,11 +1,11 @@
 {
   "totals": {
-    "cases": 7,
-    "found": 7,
-    "verdict_correct": 7,
-    "disposition_correct": 7,
-    "risk_id_correct": 7,
-    "all_correct": 7,
+    "cases": 3,
+    "found": 3,
+    "verdict_correct": 3,
+    "disposition_correct": 3,
+    "risk_id_correct": 3,
+    "all_correct": 3,
     "verdict_accuracy": 1.0,
     "disposition_accuracy": 1.0,
     "risk_id_accuracy": 1.0,
@@ -74,98 +74,6 @@
         "verdict": "expected_by_design",
         "disposition": "accept",
         "risk_id": null
-      },
-      "found": true,
-      "verdict_match": true,
-      "disposition_match": true,
-      "risk_id_match": true,
-      "all_match": true
-    },
-    {
-      "case_id": "cve-flask-47278",
-      "signature": [
-        "pip-audit",
-        "CVE-2025-47278",
-        "flask 3.1.0"
-      ],
-      "expected": {
-        "verdict": "true_positive",
-        "disposition": "allowlist",
-        "risk_id": "R-020"
-      },
-      "actual": {
-        "verdict": "true_positive",
-        "disposition": "allowlist",
-        "risk_id": "R-020"
-      },
-      "found": true,
-      "verdict_match": true,
-      "disposition_match": true,
-      "risk_id_match": true,
-      "all_match": true
-    },
-    {
-      "case_id": "cve-flask-27205",
-      "signature": [
-        "pip-audit",
-        "CVE-2026-27205",
-        "flask 3.1.0"
-      ],
-      "expected": {
-        "verdict": "true_positive",
-        "disposition": "allowlist",
-        "risk_id": "R-020"
-      },
-      "actual": {
-        "verdict": "true_positive",
-        "disposition": "allowlist",
-        "risk_id": "R-020"
-      },
-      "found": true,
-      "verdict_match": true,
-      "disposition_match": true,
-      "risk_id_match": true,
-      "all_match": true
-    },
-    {
-      "case_id": "cve-dotenv-28684",
-      "signature": [
-        "pip-audit",
-        "CVE-2026-28684",
-        "python-dotenv 1.0.1"
-      ],
-      "expected": {
-        "verdict": "true_positive",
-        "disposition": "allowlist",
-        "risk_id": "R-020"
-      },
-      "actual": {
-        "verdict": "true_positive",
-        "disposition": "allowlist",
-        "risk_id": "R-020"
-      },
-      "found": true,
-      "verdict_match": true,
-      "disposition_match": true,
-      "risk_id_match": true,
-      "all_match": true
-    },
-    {
-      "case_id": "cve-pytest-71176",
-      "signature": [
-        "pip-audit",
-        "CVE-2025-71176",
-        "pytest 8.3.4"
-      ],
-      "expected": {
-        "verdict": "true_positive",
-        "disposition": "allowlist",
-        "risk_id": "R-020"
-      },
-      "actual": {
-        "verdict": "true_positive",
-        "disposition": "allowlist",
-        "risk_id": "R-020"
       },
       "found": true,
       "verdict_match": true,

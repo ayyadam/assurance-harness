@@ -1,14 +1,11 @@
 # SCA allowlist — pip-audit --ignore-vuln (B1 / F-029).
 #
-# Each line is a known vulnerability ACCEPTED for this round under the
-# "detect + report" decision: the finding is recorded in the risk register
-# (R-020) and remediation is deferred, NOT applied here. Removing a line
-# re-arms the gate for that CVE.
+# Each non-comment line is a known vulnerability ACCEPTED for this round: the
+# finding is recorded in the risk register and the gate is told to ignore it.
+# Removing a line re-arms the gate for that CVE.
 #
-# SUT runtime deps (golf-web-app) — fix is a trivial cross-repo bump:
-CVE-2025-47278   # flask 3.1.0 -> 3.1.1  (R-020)
-CVE-2026-27205   # flask 3.1.0 -> 3.1.3  (R-020)
-CVE-2026-28684   # python-dotenv 1.0.1 -> 1.2.2  (R-020)
-# Harness test tooling (not deployed) — fix is a MAJOR pytest upgrade needing
-# its own suite validation, so deferred rather than bundled into B1:
-CVE-2025-71176   # pytest 8.3.4 -> 9.0.3  (R-020)
+# The allowlist is currently EMPTY — every previously-accepted CVE was
+# remediated under R-020 (F-032: Flask 3.1.0->3.1.3, python-dotenv 1.0.1->1.2.2,
+# pytest 8.3.4->9.0.3 in the SUT). The four lines were removed by
+# `security_agent.writeback --apply` once the bumps landed and the scan went
+# clean, so the SCA gate is fully armed: any new CVE now fails the build.

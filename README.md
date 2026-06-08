@@ -8,11 +8,11 @@ Strategy and risk register are the source of truth — [`docs/test-strategy.md`]
 
 Currently in place across the two repos:
 
-- **Per-PR CI gates (`assurance-harness/.github/workflows/assurance.yml`):** lint (ruff), harness pytest, contract (Schemathesis), functional (Playwright), accessibility (axe-core), performance (k6), data quality (pandera) — every gate runs against an ephemeral SUT brought up from `golf-web-app`'s source.
-- **Local on-demand agent layers (Ollama-backed):** AI evaluation harness ([`ai_evaluation/`](ai_evaluation/README.md), phase 8), risk-prioritisation agent with a deterministic register pre-filter ([`risk_agent/`](risk_agent/README.md), phase 9 + phase 13), triage agent ([`triage_agent/`](triage_agent/README.md), phase 10), and exploratory agent — API + UI surfaces plus spec-aware auth-bypass probing ([`explore_agent/`](explore_agent/README.md), phase 12). All four use a local Ollama runtime so the per-PR path stays fast and reproducible; each carries a deterministic golden-set eval tier, and their evidence artefacts are committed under each module's `reports/` dir.
+- **Per-PR CI gates (`assurance-harness/.github/workflows/assurance.yml`):** lint (ruff), harness pytest, contract (Schemathesis), functional (Playwright), accessibility (axe-core), performance (k6), data quality (pandera), and a shift-left **security** gate — Bandit + CodeQL (SAST), pip-audit (SCA), gitleaks (secrets), OWASP ZAP baseline (DAST) under [`nonfunctional/security/`](nonfunctional/security/README.md) (B1) with ratchet gating. Every gate runs against an ephemeral SUT brought up from `golf-web-app`'s source.
+- **Local on-demand agent layers (Ollama-backed):** AI evaluation harness ([`ai_evaluation/`](ai_evaluation/README.md), phase 8), risk-prioritisation agent with a deterministic register pre-filter ([`risk_agent/`](risk_agent/README.md), phase 9 + phase 13), triage agent ([`triage_agent/`](triage_agent/README.md), phase 10), exploratory agent — API + UI surfaces plus spec-aware auth-bypass probing ([`explore_agent/`](explore_agent/README.md), phase 12), and security agent — judges the B1 scanner findings (FP-vs-real + disposition + register R-ID) and reconciles the SCA allowlist ([`security_agent/`](security_agent/README.md), B1c). All five use a local Ollama runtime so the per-PR path stays fast and reproducible; each carries a deterministic golden-set eval tier, and their evidence artefacts are committed under each module's `reports/` dir.
 - **Production-style observability:** Prometheus + Grafana stack ([`observability/`](observability/README.md), phase 11) scraping the SUT's `/metrics`; SLO thresholds on the dashboard match the k6 perf gate's pre-merge budget. Closes R-013.
 - **Tests of the harness's own agents:** a gated regression suite ([`tests/agents/`](tests/agents/README.md), phase 12 v2 v2 + F-024) running `risk_agent`, `triage_agent`, and the `explore_agent` judge N times against fixed inputs, asserting schema/vocab invariants and stability under LLM jitter — including a non-blinding positive control on the explore judge.
-- **Documented findings:** F-001 through F-024 captured in the strategy with diagnosis, fix, and generalisation.
+- **Documented findings:** F-001 through F-032 captured in the strategy with diagnosis, fix, and generalisation — including the full security lifecycle (F-029 detect → F-030 judge → F-031 reconcile → F-032 remediate + re-arm).
 
 ## Stack
 
@@ -23,7 +23,8 @@ Currently in place across the two repos:
 - **axe-core** (axe-playwright-python) for WCAG 2.1 A/AA accessibility checks
 - **k6** for performance budgets (thresholds-as-code)
 - **pandera** for data-quality checks on the live database
-- **Ollama** for the four agent layers — AI evaluation, risk-prioritisation, triage, and exploration (local on-demand only — not in CI)
+- **Bandit + CodeQL** (SAST), **pip-audit** (SCA), **gitleaks** (secrets), **OWASP ZAP** (DAST baseline) for the security gate
+- **Ollama** for the five agent layers — AI evaluation, risk-prioritisation, triage, exploration, and security triage (local on-demand only — not in CI)
 - **ruff** for lint + format
 - **GitHub Actions** for CI
 
@@ -66,6 +67,9 @@ assurance-harness/
 │   │   └── test_accessibility.py
 │   ├── performance/                # phase 5b: k6 thresholds-as-code
 │   │   └── api_load.js
+│   ├── security/                   # B1: shift-left security gate
+│   │   ├── scan.py                 # SAST (Bandit) + SCA (pip-audit) + secrets (gitleaks), ratchet gating
+│   │   └── sca_allowlist.txt       # accepted CVEs (re-armed to empty after F-032)
 │   └── reports/                    # CI-only evidence (a11y + perf), gitignored,
 │                                   # uploaded as GitHub Actions artefacts
 ├── data_quality/                   # phase 6: pandera schemas + invariants
@@ -106,6 +110,14 @@ assurance-harness/
 │   ├── ui_judge.py + ui_run.py
 │   ├── eval.py                     # v2 v1: deterministic golden-set scorer
 │   └── reports/                    # committed evidence (report.md + ui/report.md + screenshots)
+├── security_agent/                 # B1c: judges the B1 security findings
+│   ├── findings.py                 # normalise raw Bandit + pip-audit findings
+│   ├── judge.py                    # LLM: verdict + disposition + R-ID xref
+│   ├── writeback.py                # F-031: reconcile + propose SCA allowlist diff (--apply)
+│   ├── render.py + run.py          # CLI + markdown
+│   ├── golden_set.yaml             # expected (verdict, disposition, R-ID) per finding
+│   ├── eval.py                     # deterministic scorer
+│   └── reports/                    # committed evidence (report + eval + writeback)
 ├── tests/                          # tests OF the harness itself
 │   ├── test_smoke.py
 │   ├── test_prefilter.py           # phase 13: risk_agent register pre-filter unit tests
@@ -161,9 +173,16 @@ SUT_BASE_URL=http://host.docker.internal:5000 \
   grafana/k6 run nonfunctional/performance/api_load.js
 ```
 
+The security gate's static scans (SAST + SCA + secrets) need only the SUT *source* checked out as a sibling, not a running SUT:
+
+```bash
+# Shift-left security scan (Bandit + pip-audit + gitleaks), ratchet gating
+uv run python nonfunctional/security/scan.py --sut ../golf-web-app
+```
+
 ### Local-on-demand layers (Ollama-backed)
 
-The four agent layers (phases 8, 9, 10, 12) use a local Ollama runtime — they are deliberately *not* in CI so the per-PR gate stays fast and reproducible, and the model isn't a moving budget on the critical path.
+The five agent layers (phases 8, 9, 10, 12 + B1c) use a local Ollama runtime — they are deliberately *not* in CI so the per-PR gate stays fast and reproducible, and the model isn't a moving budget on the critical path.
 
 ```bash
 # AI evaluation harness — score the booking assistant across a model list
@@ -191,7 +210,7 @@ uv run python -m triage_agent.eval --refresh                       # re-run the 
 uv run python -m explore_agent.run                                 # default model, full LLM run
 uv run python -m explore_agent.run --no-llm                        # deterministic empty-body probes only
 
-# Exploratory agent — UI tours via Playwright (LLM plans, LLM judges per step)
+# Exploratory agent — UI tours via Playwright (adaptive: LLM decides one step at a time, LLM judges per step)
 uv run python -m explore_agent.ui_run                              # all tours, headless
 uv run python -m explore_agent.ui_run --tour booking-assistant     # single tour
 uv run python -m explore_agent.ui_run --headed                     # show the browser
@@ -199,6 +218,12 @@ uv run python -m explore_agent.ui_run --headed                     # show the br
 # Exploratory agent — eval against the golden set (API surface)
 uv run python -m explore_agent.eval                                # score against cached report
 uv run python -m explore_agent.eval --refresh                      # re-run the agent first
+
+# Security agent — judge the B1 scanner findings (verdict + disposition + R-ID)
+uv run python -m security_agent.run --refresh                      # re-scan + judge
+uv run python -m security_agent.eval                               # score against the golden set
+uv run python -m security_agent.writeback                          # reconcile + propose allowlist diff
+uv run python -m security_agent.writeback --apply                  # write additions + stale removals
 
 # Agent regression suite (phase 12 v2 v2 + F-024) — runs risk_agent,
 # triage_agent, and the explore_agent judge N times against fixed inputs;
@@ -219,7 +244,7 @@ cd observability && docker compose up -d
 # Prometheus: http://localhost:9090
 ```
 
-See each module's README — [`ai_evaluation/`](ai_evaluation/README.md), [`risk_agent/`](risk_agent/README.md), [`triage_agent/`](triage_agent/README.md), [`explore_agent/`](explore_agent/README.md), [`observability/`](observability/README.md) — for the full design notes and committed evidence.
+See each module's README — [`ai_evaluation/`](ai_evaluation/README.md), [`risk_agent/`](risk_agent/README.md), [`triage_agent/`](triage_agent/README.md), [`explore_agent/`](explore_agent/README.md), [`security_agent/`](security_agent/README.md), [`nonfunctional/security/`](nonfunctional/security/README.md), [`observability/`](observability/README.md) — for the full design notes and committed evidence.
 
 ## Related
 
