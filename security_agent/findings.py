@@ -49,6 +49,7 @@ class Finding:
     confidence: str  # bandit confidence; "" for SCA
     title: str  # human summary of the issue
     detail: str  # snippet / fix-version hint for the prompt
+    fix: str = ""  # SCA fix version(s); "" for SAST. Used by write-back to render allowlist lines.
 
     # ── filled by the LLM judge ──
     verdict: str = ""  # "true_positive" | "false_positive" | "expected_by_design"
@@ -133,6 +134,7 @@ def collect_pip_audit(sut: Path, refresh: bool) -> list[Finding]:
                         f"found in {req.name}; "
                         f"{(v.get('description') or '').strip()[:200]}"
                     ),
+                    fix=", ".join(fix),
                 )
                 by_sig[f.signature] = f  # dedup flask/dotenv across both req files
     return list(by_sig.values())
