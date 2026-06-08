@@ -1,0 +1,66 @@
+# Security-agent golden set — expected (verdict, disposition, R-ID) per finding.
+#
+# Ground truth for the evaluation tier. Each entry is a real finding from the B1
+# scanners against golf-web-app, paired with the judgement a Digital Assurance
+# Engineer reaches after reading the finding IN CONTEXT (the flagged value, the
+# file, the package/CVE) plus the register row it maps to.
+#
+# Construction principle: this set IS the manual B1 triage (F-029) made
+# machine-checkable. Every SAST finding here is scanner noise; every SCA CVE is
+# real-but-deferred. Defensibility > convenience.
+#
+# Signatures must match findings.py output exactly: (tool, rule_id, location),
+# where SAST location = "<path>:<line>" and SCA location = "<package> <version>".
+
+findings:
+  # ── SAST (bandit) — all three are scanner false alarms in context ──
+
+  # itsdangerous SALT, not a credential. B105 pattern-matches the literal
+  # 'api-v1-token' as a "hardcoded password"; it is the non-secret salt string
+  # passed to the signer, so there is nothing to remediate.
+  - id: bandit-b105-auth-token-salt
+    signature: [bandit, B105, "app/api/auth.py:16"]
+    expected_verdict: false_positive
+    expected_disposition: accept
+    expected_risk_id: null
+
+  # The auth-scheme word 'Bearer' (an HTTP Authorization keyword), not a secret.
+  - id: bandit-b105-bearer-scheme
+    signature: [bandit, B105, "app/api/views.py:57"]
+    expected_verdict: false_positive
+    expected_disposition: accept
+    expected_risk_id: null
+
+  # Binding to 0.0.0.0 is required to serve from inside the container; intended
+  # behaviour, not a misconfiguration. Technically correct, expected by design.
+  - id: bandit-b104-bind-all-interfaces
+    signature: [bandit, B104, "run.py:7"]
+    expected_verdict: expected_by_design
+    expected_disposition: accept
+    expected_risk_id: null
+
+  # ── SCA (pip-audit) — all four are real CVEs, accepted + tracked (R-020) ──
+
+  - id: cve-flask-47278
+    signature: [pip-audit, CVE-2025-47278, "flask 3.1.0"]
+    expected_verdict: true_positive
+    expected_disposition: allowlist
+    expected_risk_id: R-020
+
+  - id: cve-flask-27205
+    signature: [pip-audit, CVE-2026-27205, "flask 3.1.0"]
+    expected_verdict: true_positive
+    expected_disposition: allowlist
+    expected_risk_id: R-020
+
+  - id: cve-dotenv-28684
+    signature: [pip-audit, CVE-2026-28684, "python-dotenv 1.0.1"]
+    expected_verdict: true_positive
+    expected_disposition: allowlist
+    expected_risk_id: R-020
+
+  - id: cve-pytest-71176
+    signature: [pip-audit, CVE-2025-71176, "pytest 8.3.4"]
+    expected_verdict: true_positive
+    expected_disposition: allowlist
+    expected_risk_id: R-020

@@ -219,8 +219,8 @@ __marimo__/
 
 # Generated test reports
 reports/
-# ...except the AI evaluation, risk-agent, triage-agent, and explore-agent reports,
-# which are committed evidence artefacts.
+# ...except the AI evaluation, risk-agent, triage-agent, explore-agent, and
+# security-agent reports, which are committed evidence artefacts.
 !ai_evaluation/reports/
 !ai_evaluation/reports/**
 !risk_agent/reports/
@@ -229,7 +229,11 @@ reports/
 !triage_agent/reports/**
 !explore_agent/reports/
 !explore_agent/reports/**
+!security_agent/reports/
+!security_agent/reports/**
 !tests/agents/reports/
 !tests/agents/reports/**
-# ...but the raw fetched logs cached under triage_agent/reports/raw/ are not committed.
+# ...but the raw fetched logs / scanner output cached under <agent>/reports/raw/
+# are not committed (they echo SUT source).
 triage_agent/reports/raw/
+security_agent/reports/raw/
