@@ -1,7 +1,7 @@
 [project]
 name = "assurance-harness"
 version = "0.1.0"
-description = "Assurance harness for golf-web-app — Digital Assurance Engineer portfolio demo"
+description = "Assurance harness targeting golf-web-app — an automation-led quality-engineering portfolio demo"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = []
