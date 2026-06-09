@@ -1,7 +1,7 @@
 # Test Strategy — golf-web-app
 
 **Status:** living document — updated as the assurance harness matures.
-**Owner:** Adam (acting as Digital Assurance Engineer)
+**Owner:** Adam
 **Last updated:** 2026-06-08 *(F-033 — `security_agent` goes SARIF-native: a generic SARIF normaliser folds in gitleaks (secrets, values redacted, path-based judgement) and makes CodeQL ingestible via `--sarif`; proven by a hermetic positive control since the live surface is clean)*
 
 ---
@@ -11,7 +11,7 @@
 This document describes how we assure the quality of [golf-web-app](https://github.com/ayyadam/golf-web-app) — the system under test — using the [assurance-harness](https://github.com/ayyadam/assurance-harness) harness. It exists to:
 
 - Make our assurance approach explicit so delivery decisions can be informed by it
-- Give a hiring panel reviewing this portfolio a clear picture of *judgement*, not just tooling
+- Give a reviewer of this work a clear picture of *judgement*, not just tooling
 - Provide a stable reference that newer artifacts (test suites, dashboards, reports) link back to
 
 It is deliberately a *living* document — every phase of work updates the relevant section and adds findings to §11.
@@ -1552,6 +1552,7 @@ This consolidates future work into one prioritised view: **net-new capability ar
 - **B8 — Test-authoring agent.** A new agent *role*: read a PR / spec and **write** Playwright / pytest tests — closing the loop from `risk_agent` ("what to test") to the test itself.
 - **B9 — Systematic flake detection.** A tier that runs the suite N× and quantifies a flake budget, versus the ad-hoc R-018 / R-019 firefighting.
 - **B10 — Stateful / sequence API testing.** Schemathesis-stateful or Hypothesis-stateful to exercise call *sequences* (create-then-cancel honouring spec links), deeper than per-endpoint conformance.
+- **B19 — Cross-repo shift-left wiring (SUT-PR-triggered, gating assurance).** Today the harness assures `golf-web-app@develop` *when the harness changes* (`assurance.yml` checks out the SUT at a moving `ref: develop`); the two pipelines are disconnected and the harness gates nothing on the SUT. Real shift-left inverts this: a **SUT PR triggers the suite against its own code**, and the result **gates merge/release**. Mechanics: (1) **Trigger + target** — convert `assurance.yml` to a reusable `workflow_call` workflow parameterised on the SUT ref/image (the five `ref: develop` checkouts → `ref: ${{ inputs.sut_ref || 'develop' }}`), and add a caller job to `golf-web-app/.github/workflows/ci-cd.yml` (`uses: ayyadam/assurance-harness/.github/workflows/assurance.yml@v1` with `sut_ref: ${{ github.event.pull_request.head.sha }}`, pinned tag so harness evolution doesn't surprise-break SUT PRs); (2) **Assure the artifact** — build-once-test-the-artifact: publish `ghcr.io/...:<sha>` as the immutable *candidate*, run the harness against it, promote `:latest` / deploy only on green (resolves the publish-vs-test circularity); (3) **Gate** — make the assurance jobs **required status checks** via a golf-web-app branch-protection ruleset, and gate deploy behind a protected Environment so the image cannot ship unassured. Pair with a **flake policy** (retry-once + quarantine; `triage_agent` classifying flake-vs-defect) so the gate stays trusted (cf. R-018, which would otherwise block legitimate PRs and train "just rerun"); run `risk_agent` on the diff as an advisory PR comment (deterministic spine gates, agentic layer advises). Alternative topology for separate-team ownership: `repository_dispatch` round-trip + Statuses-API commit status (looser, async). ~30 lines of YAML across two repos; the single most direct demonstration of the "shift-left of assurance" competency. Documented from the 2026-06-08 design discussion.
 
 ### Existing deferred enhancements (tracked in their phases)
 
@@ -1568,13 +1569,14 @@ This consolidates future work into one prioritised view: **net-new capability ar
 
 | Tier | Items | Rationale |
 |---|---|---|
-| **Start here** | **B1 — Security gate** | Closes the single biggest categorical gap; adds a whole pillar; most recognisably "assurance"; reuses CI + SUT-spin-up; incremental on-ramp (SAST/SCA/secrets are a fast first PR, ZAP DAST a natural second, security-triage agent a high-signal third). |
+| **Done** | ~~**B1 — Security gate**~~ | Complete: SAST/SCA/secrets/DAST + `security_agent` (judge → write-back → re-arm) + SARIF-native secrets. See F-029–F-033. |
+| **Start here next** | **B19 — Cross-repo shift-left wiring** | Highest *role*-leverage at lowest effort (~30 lines): turns the harness from "tests `develop` on harness changes" into "every SUT change is assured against its own code before merge/ship" — the literal shift-left of assurance, and the most direct demonstration of the headline competency. Reuses all existing CI + SUT-spin-up. |
 | **Tier 1 — high impact, distinctive** | B2 mutation testing · B3 metamorphic AI testing | "Test the tests" and "test the AI under variation" — two signals few portfolios show; each builds on existing infra. |
 | **Tier 2 — strong / good leverage** | B11 state-mutating tours · B4 chaos · B5 visual regression | Reach the real (mutation-path) risk surface and add resilience/visual pillars. |
 | **Quick wins — low effort** | B7 mypy gate · B6 cross-browser/responsive · B15 eval auth-mode cases | Cheap, standard, round out coverage; good for momentum. |
 | **Later / situational** | B8 test-authoring agent · B9 flake detection · B10 stateful API · B12 free-form · B13 cross-tour memory · B14 self-termination · B16 PR-comment Action · B17 Loki/Alertmanager · B18 ruff migration | Higher effort, narrower, dependency-gated, or housekeeping. |
 
-**Steer — start with B1 (security gate).** It closes the biggest gap, produces immediate new evidence artifacts (a security report alongside the existing ones), and has a low-friction, incremental path: SAST + dependency + secret scans as a fast first CI job; a ZAP baseline against the already-spun-up SUT as a second; and a security-triage agent — clustering findings against the risk register, mirroring `triage_agent` — as a third that ties the new pillar back into the agentic layer.
+**Steer — B1 (security gate) is done** (F-029–F-033: the deterministic SAST/SCA/secrets/DAST gate, the `security_agent` judge, write-back, the R-020 remediation + re-arm, and SARIF-native secrets). **The natural next pick is B19 (cross-repo shift-left wiring).** It's the lowest-effort, highest-*role*-leverage item on the board: ~30 lines of YAML converts the harness into a reusable workflow the SUT's PR pipeline calls against its own head SHA, gated by branch protection — moving the demonstration from "the harness runs on its own schedule" to "assurance is a required, automated property of every SUT change, before merge and release." After that, B2 (mutation) and B3 (metamorphic AI) remain the most distinctive net-new pillars.
 
 ## Appendix A: Glossary
 

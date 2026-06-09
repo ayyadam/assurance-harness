@@ -217,6 +217,9 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# Local private working notes — never published
+assurance_harness.md
+
 # Generated test reports
 reports/
 # ...except the AI evaluation, risk-agent, triage-agent, explore-agent, and
