@@ -11,6 +11,7 @@ dev = [
     "pytest>=8.3",
     "pytest-html>=4.1",
     "pytest-cov>=6.0",
+    "pytest-rerunfailures>=15.0",
     "ruff>=0.7",
     "schemathesis>=4.20.2",
     "requests>=2.34.2",
