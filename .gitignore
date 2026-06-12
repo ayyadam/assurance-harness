@@ -220,6 +220,11 @@ __marimo__/
 # Local private working notes — never published
 assurance_harness.md
 
+# Node / TypeScript E2E layer (e2e_ts/)
+node_modules/
+e2e_ts/test-results/
+# (e2e_ts/reports/ is already covered by the global `reports/` rule below.)
+
 # Generated test reports
 reports/
 # ...except the AI evaluation, risk-agent, triage-agent, explore-agent, and

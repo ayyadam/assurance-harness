@@ -8,7 +8,7 @@ Strategy and risk register are the source of truth — [`docs/test-strategy.md`]
 
 Currently in place across the two repos:
 
-- **Per-PR CI gates (`assurance-harness/.github/workflows/assurance.yml`):** lint (ruff), harness pytest, contract (Schemathesis), functional (Playwright), accessibility (axe-core), performance (k6), data quality (pandera), and a shift-left **security** gate — Bandit + CodeQL (SAST), pip-audit (SCA), gitleaks (secrets), OWASP ZAP baseline (DAST) under [`nonfunctional/security/`](nonfunctional/security/README.md) (B1) with ratchet gating. Every gate runs against an ephemeral SUT brought up from `golf-web-app`'s source.
+- **Per-PR CI gates (`assurance-harness/.github/workflows/assurance.yml`):** lint (ruff), harness pytest, contract (Schemathesis), functional (Playwright), TypeScript E2E (Playwright/TS — the polyglot [`e2e_ts/`](e2e_ts/README.md) layer, B20), accessibility (axe-core), performance (k6), data quality (pandera), and a shift-left **security** gate — Bandit + CodeQL (SAST), pip-audit (SCA), gitleaks (secrets), OWASP ZAP baseline (DAST) under [`nonfunctional/security/`](nonfunctional/security/README.md) (B1) with ratchet gating. Every gate runs against an ephemeral SUT brought up from `golf-web-app`'s source.
 - **Local on-demand agent layers (Ollama-backed):** AI evaluation harness ([`ai_evaluation/`](ai_evaluation/README.md), phase 8), risk-prioritisation agent with a deterministic register pre-filter ([`risk_agent/`](risk_agent/README.md), phase 9 + phase 13), triage agent ([`triage_agent/`](triage_agent/README.md), phase 10), exploratory agent — API + UI surfaces plus spec-aware auth-bypass probing ([`explore_agent/`](explore_agent/README.md), phase 12), and security agent — judges the B1 scanner findings (FP-vs-real + disposition + register R-ID) and reconciles the SCA allowlist ([`security_agent/`](security_agent/README.md), B1c). All five use a local Ollama runtime so the per-PR path stays fast and reproducible; each carries a deterministic golden-set eval tier, and their evidence artefacts are committed under each module's `reports/` dir.
 - **Production-style observability:** Prometheus + Grafana stack ([`observability/`](observability/README.md), phase 11) scraping the SUT's `/metrics`; SLO thresholds on the dashboard match the k6 perf gate's pre-merge budget. Closes R-013.
 - **Tests of the harness's own agents:** a gated regression suite ([`tests/agents/`](tests/agents/README.md), phase 12 v2 v2 + F-024) running `risk_agent`, `triage_agent`, and the `explore_agent` judge N times against fixed inputs, asserting schema/vocab invariants and stability under LLM jitter — including a non-blinding positive control on the explore judge.
@@ -20,6 +20,7 @@ Currently in place across the two repos:
 - **pytest** as the test runner, with JUnit + HTML reporting
 - **Schemathesis** for property-based API contract tests
 - **Playwright** for UI / E2E functional tests
+- **TypeScript + Playwright** for a second, polyglot E2E layer ([`e2e_ts/`](e2e_ts/README.md)) — the same journeys in TS, on a Node 22 / npm toolchain (B20)
 - **axe-core** (axe-playwright-python) for WCAG 2.1 A/AA accessibility checks
 - **k6** for performance budgets (thresholds-as-code)
 - **pandera** for data-quality checks on the live database
@@ -61,6 +62,14 @@ assurance-harness/
 │   ├── test_member_journey.py
 │   ├── test_access_control.py
 │   └── test_booking_assistant.py
+├── e2e_ts/                         # B20: TypeScript / Playwright E2E (polyglot twin of functional/)
+│   ├── package.json                # pinned: Node 22 LTS, exact @playwright/test
+│   ├── playwright.config.ts        # baseURL from env, CI retries, gating
+│   ├── tsconfig.json
+│   ├── fixtures.ts                 # creds, login, memberPage, R-018 scroll shim
+│   ├── components/                 # component objects (NavBar — shared nav)
+│   ├── pages/                      # page objects (Home, Login, MemberDashboard, Booking)
+│   └── tests/                      # member-journey, public-pages, access-control
 ├── nonfunctional/
 │   ├── accessibility/              # phase 5a: axe-core WCAG 2.1 A/AA sweep
 │   │   ├── conftest.py
@@ -136,7 +145,7 @@ assurance-harness/
 
 ## Running the suites locally
 
-The contract, functional, accessibility, performance, and data-quality layers need the SUT running. Bring it up first:
+The contract, functional, TypeScript E2E, accessibility, performance, and data-quality layers need the SUT running. Bring it up first:
 
 ```bash
 cd ../golf-web-app && docker compose up -d && docker compose exec web python seed.py
@@ -157,6 +166,15 @@ uv run pytest nonfunctional/accessibility/
 
 # Data-quality checks (pandera against the live database)
 uv run pytest data_quality/
+```
+
+The TypeScript E2E layer ([`e2e_ts/`](e2e_ts/README.md)) uses its own Node toolchain (not uv/pytest):
+
+```bash
+cd e2e_ts
+npm ci                            # install pinned deps
+npx playwright install chromium   # one-time browser download
+npm test                          # gating; SUT_BASE_URL overrides the target
 ```
 
 Performance is run by k6 (not pytest). With k6 installed:

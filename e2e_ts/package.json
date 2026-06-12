@@ -1,0 +1,19 @@
+{
+  "name": "golf-web-app-e2e-ts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TypeScript / Playwright E2E layer for golf-web-app — the polyglot counterpart to the Python functional/ suite (../functional). See README.md.",
+  "engines": {
+    "node": ">=22 <25"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "report": "playwright show-report reports/html"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.60.0",
+    "@types/node": "25.9.3",
+    "typescript": "6.0.3"
+  }
+}
