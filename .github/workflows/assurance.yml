@@ -49,7 +49,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint
     # Harness-self job (tests the harness's own code) — skip when the SUT calls us.
-    if: ${{ github.event_name != 'workflow_call' }}
+    # NB: in a called reusable workflow github.event_name is the CALLER's event
+    # (e.g. pull_request), never 'workflow_call' — so detect a call via an input
+    # the caller always sets. Empty harness_ref == a harness self-run.
+    if: ${{ inputs.harness_ref == '' }}
     steps:
       - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v5
@@ -422,7 +425,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint
     # Harness-self job (analyses the harness's own Python) — skip on SUT calls.
-    if: ${{ github.event_name != 'workflow_call' }}
+    # NB: in a called reusable workflow github.event_name is the CALLER's event
+    # (e.g. pull_request), never 'workflow_call' — so detect a call via an input
+    # the caller always sets. Empty harness_ref == a harness self-run.
+    if: ${{ inputs.harness_ref == '' }}
     permissions:
       contents: read
       security-events: write
