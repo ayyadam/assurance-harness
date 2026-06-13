@@ -25,6 +25,17 @@ mirror (maintaining full parity is ongoing cost for little extra signal):
 | `tests/public-pages.spec.ts` | `functional/test_public_pages.py` | Site is alive; top-nav renders real pages |
 | `tests/access-control.spec.ts` | `functional/test_access_control.py` | Auth-boundary enforcement — maps to risk **R-004** |
 
+### A deliberate dual-idiom
+
+This layer uses the **Page Object Model + a NavBar component object** — idiomatic
+for Playwright/TypeScript. The Python `functional/` suite uses **pytest fixtures**
+(`login`, `member_page`, the R-018 `page` shim) — idiomatic for pytest-playwright.
+The difference is **intentional**: each suite follows its own ecosystem's native
+convention. Converting the Python suite to POM is deferred until its coverage grows
+(more recurring traffic through the member/admin dashboards), at which point the
+locator-centralisation payoff turns real — tracked as **B21** in
+[docs/test-strategy.md](../docs/test-strategy.md) §13.
+
 ## Layout
 
 ```

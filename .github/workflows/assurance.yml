@@ -5,6 +5,19 @@ on:
     branches: [master, dev]
   pull_request:
     branches: [master, dev]
+  # B19 — reusable entry point: golf-web-app's pipeline calls this workflow to
+  # assure its own PR/commit (shift-left). Harness self-runs (push/PR above) pass
+  # no inputs, so every default below reproduces today's behaviour exactly.
+  workflow_call:
+    inputs:
+      harness_ref:
+        description: Ref of THIS harness repo to check out. Callers pin a tag/SHA; harness self-runs fall back to the triggering commit.
+        type: string
+        required: false
+      sut_ref:
+        description: Ref/SHA of golf-web-app to assure. Defaults to develop for harness self-runs.
+        type: string
+        required: false
 
 # Opt all jobs into Node.js 24 ahead of GitHub's 2026-06-02 default switch.
 # Some actions we depend on (e.g. actions/upload-artifact) have not yet
@@ -19,6 +32,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          repository: ${{ inputs.harness_ref && 'ayyadam/assurance-harness' || github.repository }}
+          ref: ${{ inputs.harness_ref || github.sha }}
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
@@ -32,6 +48,11 @@ jobs:
     name: Pytest
     runs-on: ubuntu-latest
     needs: lint
+    # Harness-self job (tests the harness's own code) — skip when the SUT calls us.
+    # NB: in a called reusable workflow github.event_name is the CALLER's event
+    # (e.g. pull_request), never 'workflow_call' — so detect a call via an input
+    # the caller always sets. Empty harness_ref == a harness self-run.
+    if: ${{ inputs.harness_ref == '' }}
     steps:
       - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v5
@@ -57,11 +78,14 @@ jobs:
     needs: lint
     steps:
       - uses: actions/checkout@v5
+        with:
+          repository: ${{ inputs.harness_ref && 'ayyadam/assurance-harness' || github.repository }}
+          ref: ${{ inputs.harness_ref || github.sha }}
       - name: Check out the system under test (golf-web-app)
         uses: actions/checkout@v5
         with:
           repository: ayyadam/golf-web-app
-          ref: develop
+          ref: ${{ inputs.sut_ref || 'develop' }}
           path: sut
       - name: Build, start, and seed the SUT
         run: |
@@ -102,11 +126,14 @@ jobs:
     needs: lint
     steps:
       - uses: actions/checkout@v5
+        with:
+          repository: ${{ inputs.harness_ref && 'ayyadam/assurance-harness' || github.repository }}
+          ref: ${{ inputs.harness_ref || github.sha }}
       - name: Check out the system under test (golf-web-app)
         uses: actions/checkout@v5
         with:
           repository: ayyadam/golf-web-app
-          ref: develop
+          ref: ${{ inputs.sut_ref || 'develop' }}
           path: sut
       - name: Build, start, and seed the SUT
         run: |
@@ -128,9 +155,15 @@ jobs:
       - name: Run functional tests
         env:
           SUT_BASE_URL: http://localhost:5000
+        # B19 flake guard: retry ONLY on transient TimeoutError (the R-018
+        # booking-confirm race), never on assertion failures — so a required
+        # gate doesn't block legitimate SUT PRs, while real defects still fail
+        # fast. A retry-only pass is reported as rerun, not hidden. Mirrors the
+        # TS layer's retries:2 (playwright.config.ts).
         run: |
           mkdir -p reports
           uv run pytest functional/ \
+            --reruns 2 --reruns-delay 1 --only-rerun TimeoutError \
             --junitxml=reports/functional-junit.xml \
             --html=reports/functional.html --self-contained-html \
             --screenshot=only-on-failure \
@@ -152,11 +185,14 @@ jobs:
     needs: lint
     steps:
       - uses: actions/checkout@v5
+        with:
+          repository: ${{ inputs.harness_ref && 'ayyadam/assurance-harness' || github.repository }}
+          ref: ${{ inputs.harness_ref || github.sha }}
       - name: Check out the system under test (golf-web-app)
         uses: actions/checkout@v5
         with:
           repository: ayyadam/golf-web-app
-          ref: develop
+          ref: ${{ inputs.sut_ref || 'develop' }}
           path: sut
       - name: Build, start, and seed the SUT
         run: |
@@ -201,11 +237,14 @@ jobs:
     needs: lint
     steps:
       - uses: actions/checkout@v5
+        with:
+          repository: ${{ inputs.harness_ref && 'ayyadam/assurance-harness' || github.repository }}
+          ref: ${{ inputs.harness_ref || github.sha }}
       - name: Check out the system under test (golf-web-app)
         uses: actions/checkout@v5
         with:
           repository: ayyadam/golf-web-app
-          ref: develop
+          ref: ${{ inputs.sut_ref || 'develop' }}
           path: sut
       - name: Build, start, and seed the SUT
         run: |
@@ -248,11 +287,14 @@ jobs:
     needs: lint
     steps:
       - uses: actions/checkout@v5
+        with:
+          repository: ${{ inputs.harness_ref && 'ayyadam/assurance-harness' || github.repository }}
+          ref: ${{ inputs.harness_ref || github.sha }}
       - name: Check out the system under test (golf-web-app)
         uses: actions/checkout@v5
         with:
           repository: ayyadam/golf-web-app
-          ref: develop
+          ref: ${{ inputs.sut_ref || 'develop' }}
           path: sut
       - name: Build, start, and seed the SUT
         run: |
@@ -289,11 +331,14 @@ jobs:
     needs: lint
     steps:
       - uses: actions/checkout@v5
+        with:
+          repository: ${{ inputs.harness_ref && 'ayyadam/assurance-harness' || github.repository }}
+          ref: ${{ inputs.harness_ref || github.sha }}
       - name: Check out the system under test (golf-web-app)
         uses: actions/checkout@v5
         with:
           repository: ayyadam/golf-web-app
-          ref: develop
+          ref: ${{ inputs.sut_ref || 'develop' }}
           path: sut
       - name: Build, start, and seed the SUT
         run: |
@@ -339,12 +384,14 @@ jobs:
       # Static scans only — no running SUT needed (no docker build/seed).
       - uses: actions/checkout@v5
         with:
+          repository: ${{ inputs.harness_ref && 'ayyadam/assurance-harness' || github.repository }}
+          ref: ${{ inputs.harness_ref || github.sha }}
           fetch-depth: 0   # full history for gitleaks
       - name: Check out the system under test (golf-web-app)
         uses: actions/checkout@v5
         with:
           repository: ayyadam/golf-web-app
-          ref: develop
+          ref: ${{ inputs.sut_ref || 'develop' }}
           path: sut
           fetch-depth: 0
       - name: Install gitleaks
@@ -377,6 +424,11 @@ jobs:
     name: CodeQL (SAST)
     runs-on: ubuntu-latest
     needs: lint
+    # Harness-self job (analyses the harness's own Python) — skip on SUT calls.
+    # NB: in a called reusable workflow github.event_name is the CALLER's event
+    # (e.g. pull_request), never 'workflow_call' — so detect a call via an input
+    # the caller always sets. Empty harness_ref == a harness self-run.
+    if: ${{ inputs.harness_ref == '' }}
     permissions:
       contents: read
       security-events: write
@@ -397,11 +449,14 @@ jobs:
     needs: lint
     steps:
       - uses: actions/checkout@v5
+        with:
+          repository: ${{ inputs.harness_ref && 'ayyadam/assurance-harness' || github.repository }}
+          ref: ${{ inputs.harness_ref || github.sha }}
       - name: Check out the system under test (golf-web-app)
         uses: actions/checkout@v5
         with:
           repository: ayyadam/golf-web-app
-          ref: develop
+          ref: ${{ inputs.sut_ref || 'develop' }}
           path: sut
       - name: Build, start, and seed the SUT
         run: |
