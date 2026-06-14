@@ -1,6 +1,6 @@
 {
   "meta": {
-    "run_at": "2026-06-13T23:04:57",
+    "run_at": "2026-06-14T08:39:03",
     "base_url": "http://localhost:5000",
     "runs": 3,
     "floor": 0.6666666666666666,
@@ -14,7 +14,7 @@
         "dates"
       ],
       "seed_modal": [
-        "2026-06-14",
+        "2026-06-15",
         "any",
         1,
         [],
@@ -22,13 +22,14 @@
         null
       ],
       "seed_agreement": 1.0,
+      "floor": 0.6666666666666666,
       "variants": [
         {
           "seed_id": "tomorrow-bare",
           "transform": "casing",
           "variant_text": "I'D LIKE TO PLAY TOMORROW",
           "variant_modal": [
-            "2026-06-14",
+            "2026-06-15",
             "any",
             1,
             [],
@@ -43,7 +44,7 @@
           "transform": "casing",
           "variant_text": "i'd like to play tomorrow",
           "variant_modal": [
-            "2026-06-14",
+            "2026-06-15",
             "any",
             1,
             [],
@@ -58,7 +59,7 @@
           "transform": "whitespace",
           "variant_text": "I'd  like  to  play  tomorrow  ",
           "variant_modal": [
-            "2026-06-14",
+            "2026-06-15",
             "any",
             1,
             [],
@@ -73,7 +74,7 @@
           "transform": "filler",
           "variant_text": "i'd like to I'd like to play tomorrow",
           "variant_modal": [
-            "2026-06-14",
+            "2026-06-15",
             "any",
             1,
             [],
@@ -88,7 +89,7 @@
           "transform": "filler",
           "variant_text": "I'd like to play tomorrow, cheers",
           "variant_modal": [
-            "2026-06-14",
+            "2026-06-15",
             "any",
             1,
             [],
@@ -103,7 +104,7 @@
           "transform": "typo",
           "variant_text": "I'd liek to play tomorrow",
           "variant_modal": [
-            "2026-06-14",
+            "2026-06-15",
             "any",
             1,
             [],
@@ -113,7 +114,8 @@
           "variant_agreement": 1.0,
           "holds": true
         }
-      ]
+      ],
+      "directional": []
     },
     {
       "seed_id": "this-saturday-morning",
@@ -131,6 +133,7 @@
         null
       ],
       "seed_agreement": 1.0,
+      "floor": 0.6666666666666666,
       "variants": [
         {
           "seed_id": "this-saturday-morning",
@@ -184,13 +187,13 @@
           "variant_modal": [
             "2026-06-20",
             "morning",
-            2,
+            1,
             [],
             null,
             null
           ],
-          "variant_agreement": 0.6666666666666666,
-          "holds": false
+          "variant_agreement": 1.0,
+          "holds": true
         },
         {
           "seed_id": "this-saturday-morning",
@@ -237,6 +240,31 @@
           "variant_agreement": 1.0,
           "holds": true
         }
+      ],
+      "directional": [
+        {
+          "seed_id": "this-saturday-morning",
+          "relation": "period\u2192afternoon",
+          "variant_text": "fancy a knock this Saturday afternoon",
+          "expected_modal": [
+            "2026-06-20",
+            "afternoon",
+            1,
+            [],
+            null,
+            null
+          ],
+          "variant_modal": [
+            "2026-06-20",
+            "afternoon",
+            1,
+            [],
+            null,
+            null
+          ],
+          "variant_agreement": 1.0,
+          "holds": true
+        }
       ]
     },
     {
@@ -255,6 +283,7 @@
         null
       ],
       "seed_agreement": 1.0,
+      "floor": 0.6666666666666666,
       "variants": [
         {
           "seed_id": "thursday-afternoon",
@@ -331,6 +360,31 @@
           "variant_agreement": 1.0,
           "holds": true
         }
+      ],
+      "directional": [
+        {
+          "seed_id": "thursday-afternoon",
+          "relation": "period\u2192morning",
+          "variant_text": "Thursday morning",
+          "expected_modal": [
+            "2026-06-18",
+            "morning",
+            1,
+            [],
+            null,
+            null
+          ],
+          "variant_modal": [
+            "2026-06-18",
+            "morning",
+            1,
+            [],
+            null,
+            null
+          ],
+          "variant_agreement": 1.0,
+          "holds": true
+        }
       ]
     },
     {
@@ -349,13 +403,14 @@
         null
       ],
       "seed_agreement": 1.0,
+      "floor": 0.6666666666666666,
       "variants": [
         {
           "seed_id": "sunday-fourball",
           "transform": "casing",
           "variant_text": "A 4-BALL ON SUNDAY",
           "variant_modal": [
-            "2026-06-14",
+            "2026-06-21",
             "any",
             4,
             [],
@@ -363,7 +418,7 @@
             null
           ],
           "variant_agreement": 1.0,
-          "holds": false
+          "holds": true
         },
         {
           "seed_id": "sunday-fourball",
@@ -440,6 +495,31 @@
           "variant_agreement": 1.0,
           "holds": true
         }
+      ],
+      "directional": [
+        {
+          "seed_id": "sunday-fourball",
+          "relation": "group:4-ball\u2192threesome",
+          "variant_text": "a threesome on Sunday",
+          "expected_modal": [
+            "2026-06-21",
+            "any",
+            3,
+            [],
+            null,
+            null
+          ],
+          "variant_modal": [
+            "2026-06-21",
+            "any",
+            3,
+            [],
+            null,
+            null
+          ],
+          "variant_agreement": 1.0,
+          "holds": true
+        }
       ]
     },
     {
@@ -458,6 +538,7 @@
         null
       ],
       "seed_agreement": 1.0,
+      "floor": 0.6666666666666666,
       "variants": [
         {
           "seed_id": "threesome-wednesday",
@@ -524,7 +605,7 @@
           "transform": "filler",
           "variant_text": "a threesome on Wednesday, cheers",
           "variant_modal": [
-            "2026-06-17",
+            "2026-06-18",
             "any",
             3,
             [
@@ -533,7 +614,7 @@
             null,
             null
           ],
-          "variant_agreement": 1.0,
+          "variant_agreement": 0.6666666666666666,
           "holds": false
         },
         {
@@ -541,9 +622,34 @@
           "transform": "synonym",
           "variant_text": "a 3-ball on Wednesday",
           "variant_modal": [
-            "2026-06-17",
+            "2026-06-18",
             "any",
             3,
+            [],
+            null,
+            null
+          ],
+          "variant_agreement": 1.0,
+          "holds": false
+        }
+      ],
+      "directional": [
+        {
+          "seed_id": "threesome-wednesday",
+          "relation": "group:threesome\u2192foursome",
+          "variant_text": "a foursome on Wednesday",
+          "expected_modal": [
+            "2026-06-17",
+            "any",
+            4,
+            [],
+            null,
+            null
+          ],
+          "variant_modal": [
+            "2026-06-17",
+            "any",
+            4,
             [],
             null,
             null
@@ -561,7 +667,7 @@
         "group_size"
       ],
       "seed_modal": [
-        "2026-06-14",
+        "2026-06-15",
         "any",
         2,
         [],
@@ -569,13 +675,14 @@
         null
       ],
       "seed_agreement": 1.0,
+      "floor": 0.6666666666666666,
       "variants": [
         {
           "seed_id": "two-of-us-tomorrow",
           "transform": "casing",
           "variant_text": "TWO OF US TOMORROW",
           "variant_modal": [
-            "2026-06-14",
+            "2026-06-15",
             "any",
             2,
             [],
@@ -590,7 +697,7 @@
           "transform": "casing",
           "variant_text": "two of us tomorrow",
           "variant_modal": [
-            "2026-06-14",
+            "2026-06-15",
             "any",
             2,
             [],
@@ -605,7 +712,7 @@
           "transform": "whitespace",
           "variant_text": "two  of  us  tomorrow  ",
           "variant_modal": [
-            "2026-06-14",
+            "2026-06-15",
             "any",
             2,
             [],
@@ -620,7 +727,7 @@
           "transform": "filler",
           "variant_text": "hi, two of us tomorrow",
           "variant_modal": [
-            "2026-06-14",
+            "2026-06-15",
             "any",
             2,
             [],
@@ -635,7 +742,7 @@
           "transform": "filler",
           "variant_text": "two of us tomorrow, cheers",
           "variant_modal": [
-            "2026-06-14",
+            "2026-06-15",
             "any",
             2,
             [],
@@ -645,7 +752,8 @@
           "variant_agreement": 1.0,
           "holds": true
         }
-      ]
+      ],
+      "directional": []
     },
     {
       "seed_id": "with-dave-sunday",
@@ -656,7 +764,7 @@
         "group_size"
       ],
       "seed_modal": [
-        "2026-06-14",
+        "2026-06-21",
         "any",
         2,
         [
@@ -666,13 +774,14 @@
         null
       ],
       "seed_agreement": 1.0,
+      "floor": 0.6666666666666666,
       "variants": [
         {
           "seed_id": "with-dave-sunday",
           "transform": "casing",
           "variant_text": "A ROUND WITH DAVE ON SUNDAY",
           "variant_modal": [
-            "2026-06-14",
+            "2026-06-21",
             "any",
             2,
             [
@@ -689,7 +798,7 @@
           "transform": "casing",
           "variant_text": "a round with dave on sunday",
           "variant_modal": [
-            "2026-06-20",
+            "2026-06-21",
             "any",
             2,
             [
@@ -699,14 +808,14 @@
             null
           ],
           "variant_agreement": 1.0,
-          "holds": false
+          "holds": true
         },
         {
           "seed_id": "with-dave-sunday",
           "transform": "whitespace",
           "variant_text": "a  round  with  Dave  on  Sunday  ",
           "variant_modal": [
-            "2026-06-14",
+            "2026-06-21",
             "any",
             2,
             [
@@ -723,7 +832,7 @@
           "transform": "filler",
           "variant_text": "hi, a round with Dave on Sunday",
           "variant_modal": [
-            "2026-06-20",
+            "2026-06-21",
             "any",
             2,
             [
@@ -733,14 +842,14 @@
             null
           ],
           "variant_agreement": 1.0,
-          "holds": false
+          "holds": true
         },
         {
           "seed_id": "with-dave-sunday",
           "transform": "filler",
           "variant_text": "a round with Dave on Sunday, thanks",
           "variant_modal": [
-            "2026-06-20",
+            "2026-06-21",
             "any",
             2,
             [
@@ -750,7 +859,7 @@
             null
           ],
           "variant_agreement": 1.0,
-          "holds": false
+          "holds": true
         },
         {
           "seed_id": "with-dave-sunday",
@@ -767,14 +876,14 @@
             null
           ],
           "variant_agreement": 1.0,
-          "holds": false
+          "holds": true
         },
         {
           "seed_id": "with-dave-sunday",
           "transform": "synonym",
           "variant_text": "a knock with Dave on Sunday",
           "variant_modal": [
-            "2026-06-14",
+            "2026-06-21",
             "any",
             2,
             [
@@ -786,7 +895,8 @@
           "variant_agreement": 1.0,
           "holds": true
         }
-      ]
+      ],
+      "directional": []
     },
     {
       "seed_id": "me-dave-sarah-saturday",
@@ -809,6 +919,7 @@
         null
       ],
       "seed_agreement": 1.0,
+      "floor": 0.6666666666666666,
       "variants": [
         {
           "seed_id": "me-dave-sarah-saturday",
@@ -900,6 +1011,37 @@
           "variant_agreement": 1.0,
           "holds": true
         }
+      ],
+      "directional": [
+        {
+          "seed_id": "me-dave-sarah-saturday",
+          "relation": "period\u2192afternoon",
+          "variant_text": "me, Dave and Sarah, Saturday afternoon",
+          "expected_modal": [
+            "2026-06-20",
+            "afternoon",
+            3,
+            [
+              "dave",
+              "sarah"
+            ],
+            null,
+            null
+          ],
+          "variant_modal": [
+            "2026-06-20",
+            "afternoon",
+            3,
+            [
+              "dave",
+              "sarah"
+            ],
+            null,
+            null
+          ],
+          "variant_agreement": 1.0,
+          "holds": true
+        }
       ]
     },
     {
@@ -918,6 +1060,7 @@
         null
       ],
       "seed_agreement": 1.0,
+      "floor": 0.6666666666666666,
       "variants": [
         {
           "seed_id": "saturday-from-9am",
@@ -994,6 +1137,31 @@
           "variant_agreement": 1.0,
           "holds": true
         }
+      ],
+      "directional": [
+        {
+          "seed_id": "saturday-from-9am",
+          "relation": "time:9am\u219211am",
+          "variant_text": "Saturday from 11am",
+          "expected_modal": [
+            "2026-06-20",
+            "morning",
+            1,
+            [],
+            "11:00",
+            null
+          ],
+          "variant_modal": [
+            "2026-06-20",
+            "morning",
+            1,
+            [],
+            "11:00",
+            null
+          ],
+          "variant_agreement": 1.0,
+          "holds": true
+        }
       ]
     },
     {
@@ -1014,13 +1182,14 @@
         null
       ],
       "seed_agreement": 1.0,
+      "floor": 0.6666666666666666,
       "variants": [
         {
           "seed_id": "fourball-saturday-morning-from-9",
           "transform": "casing",
           "variant_text": "A 4-BALL NEXT SATURDAY MORNING FROM 9AM",
           "variant_modal": [
-            "2026-06-20",
+            "2026-06-27",
             "morning",
             4,
             [],
@@ -1028,7 +1197,7 @@
             null
           ],
           "variant_agreement": 1.0,
-          "holds": true
+          "holds": false
         },
         {
           "seed_id": "fourball-saturday-morning-from-9",
@@ -1057,7 +1226,7 @@
             "09:00",
             null
           ],
-          "variant_agreement": 1.0,
+          "variant_agreement": 0.6666666666666666,
           "holds": true
         },
         {
@@ -1095,7 +1264,7 @@
           "transform": "typo",
           "variant_text": "a 4-ball netx Saturday morning from 9am",
           "variant_modal": [
-            "2026-06-20",
+            "2026-06-27",
             "morning",
             4,
             [],
@@ -1103,7 +1272,7 @@
             null
           ],
           "variant_agreement": 1.0,
-          "holds": true
+          "holds": false
         },
         {
           "seed_id": "fourball-saturday-morning-from-9",
@@ -1115,6 +1284,77 @@
             4,
             [],
             "09:00",
+            null
+          ],
+          "variant_agreement": 1.0,
+          "holds": true
+        }
+      ],
+      "directional": [
+        {
+          "seed_id": "fourball-saturday-morning-from-9",
+          "relation": "period\u2192afternoon",
+          "variant_text": "a 4-ball next Saturday afternoon from 9am",
+          "expected_modal": [
+            "2026-06-20",
+            "afternoon",
+            4,
+            [],
+            "09:00",
+            null
+          ],
+          "variant_modal": [
+            "2026-06-20",
+            "afternoon",
+            4,
+            [],
+            "09:00",
+            null
+          ],
+          "variant_agreement": 1.0,
+          "holds": true
+        },
+        {
+          "seed_id": "fourball-saturday-morning-from-9",
+          "relation": "group:4-ball\u2192threesome",
+          "variant_text": "a threesome next Saturday morning from 9am",
+          "expected_modal": [
+            "2026-06-20",
+            "morning",
+            3,
+            [],
+            "09:00",
+            null
+          ],
+          "variant_modal": [
+            "2026-06-20",
+            "morning",
+            3,
+            [],
+            "09:00",
+            null
+          ],
+          "variant_agreement": 1.0,
+          "holds": true
+        },
+        {
+          "seed_id": "fourball-saturday-morning-from-9",
+          "relation": "time:9am\u219211am",
+          "variant_text": "a 4-ball next Saturday morning from 11am",
+          "expected_modal": [
+            "2026-06-20",
+            "morning",
+            4,
+            [],
+            "11:00",
+            null
+          ],
+          "variant_modal": [
+            "2026-06-20",
+            "morning",
+            4,
+            [],
+            "11:00",
             null
           ],
           "variant_agreement": 1.0,

@@ -7,9 +7,9 @@ The second evaluation method over the booking assistant (see the [parent README]
 Metamorphic testing sidesteps the LLM "oracle problem" (you can't enumerate the exact correct output for free text) by asserting **relations between the outputs of related inputs** instead of exact outputs:
 
 - **v1 — invariance:** transform a seed request in a way that *shouldn't* change its meaning → the structured `BookingIntent` must be **unchanged**.
-- **v2 — directional** (next): transform it in a way that *should* change one field predictably (e.g. `4-ball → 2-ball`) → that field changes, everything else stays put. The framework in [`relations.py`](relations.py) (`expected_variant_key`) is built for this.
+- **v2 — directional:** transform it in a way that *should* change one field predictably → that field changes to the expected value, **everything else stays put**. `relations.py` (`directional_expected_key`) applies the relation's delta to the seed's intent to compute what the variant *should* be.
 
-## Transforms ([`transforms.py`](transforms.py))
+## Invariance transforms ([`transforms.py`](transforms.py))
 
 Each turns a seed into meaning-preserving variants. The honest hard part is keeping them *genuinely* equivalent — a sloppy "synonym" that drifts meaning manufactures a false violation — so:
 
@@ -20,6 +20,17 @@ Each turns a seed into meaning-preserving variants. The honest hard part is keep
 | `filler` | `could you please book…`, `…, thanks` | adds no booking information |
 | `typo` | one transposed char on a **non-semantic** word | never touches weekdays/numbers/periods/times/names |
 | `synonym` | `4-ball → foursome`, `knock → round` | a **curated golf-domain map**, not a generic thesaurus |
+
+## Directional relations (v2, [`transforms.py`](transforms.py))
+
+Each rewrites one phrase so exactly **one** intent field should change to a known value (the others unchanged); the swaps are unambiguous so the expected outcome isn't a judgement call. A violation is a variant that changed the wrong field, by the wrong amount, or more than the one intended field.
+
+| Relation | Rewrite | Expected change |
+|---|---|---|
+| `period→afternoon` / `period→morning` | `morning ↔ afternoon` | `period` only |
+| `group:4-ball→threesome` | `4-ball → threesome` | `group_size` 4 → 3 |
+| `group:threesome→foursome` | `threesome → foursome` | `group_size` 3 → 4 |
+| `time:9am→11am` | `9am → 11am` | `not_before` → 11:00 |
 
 ## The crux — telling a finding from LLM noise
 
@@ -33,10 +44,11 @@ This is the same jitter discipline the agent regression tests use (measure N bef
 ## Output ([`reports/metamorphic/`](../reports/metamorphic/))
 
 `report.md` + `report.json`:
-- **Invariance score** (variants that kept the seed's intent, over reliable baselines).
+- **Invariance score** (variants that kept the seed's intent) + **directional score** (variants that changed exactly the intended field), both over reliable baselines.
 - **Stability by transform** — *which* perturbation the model is most fragile to (the actionable axis).
 - **Stability by intent dimension** (date / period / group_size / players / time-window).
-- **Violations** — each fragile rephrasing with the seed→variant field diff.
+- **Invariance violations** — each fragile rephrasing with the seed→variant field diff.
+- **Directional relations** — per-relation correctness + **directional violations** (expected vs actual diff).
 - **Seed self-consistency** — per-seed agreement, flagging unstable baselines.
 
 ## Running
