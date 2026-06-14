@@ -31,11 +31,12 @@ from pathlib import Path
 from ai_evaluation.evaluator import DEFAULT_BASE_URL, SUTClient, load_cases
 from ai_evaluation.metamorphic.relations import (
     IntentKey,
+    directional_expected_key,
     key_to_fields,
     modal,
     relation_holds,
 )
-from ai_evaluation.metamorphic.transforms import TRANSFORMS
+from ai_evaluation.metamorphic.transforms import DIRECTIONAL, TRANSFORMS, apply_directional
 
 REPORTS_DIR = Path(__file__).resolve().parents[1] / "reports" / "metamorphic"
 DEFAULT_RUNS = 3
@@ -67,17 +68,33 @@ class VariantResult:
 
 
 @dataclass
+class DirectionalResult:
+    """A meaning-CHANGING variant (v2): `expected_modal` is the seed intent with
+    the relation's delta applied; `holds` is variant_modal == expected_modal."""
+
+    seed_id: str
+    relation: str
+    variant_text: str
+    expected_modal: IntentKey
+    variant_modal: IntentKey
+    variant_agreement: float
+    holds: bool
+
+
+@dataclass
 class SeedResult:
     seed_id: str
     text: str
     categories: list[str]
     seed_modal: IntentKey
     seed_agreement: float
+    floor: float = DEFAULT_RELIABLE_FLOOR
     variants: list[VariantResult] = field(default_factory=list)
+    directional: list[DirectionalResult] = field(default_factory=list)
 
     @property
     def reliable(self) -> bool:
-        return self.seed_agreement >= DEFAULT_RELIABLE_FLOOR and self.seed_modal is not None
+        return self.seed_agreement >= self.floor and self.seed_modal is not None
 
 
 # ── orchestration ────────────────────────────────────────────────────────────
@@ -95,15 +112,32 @@ def evaluate(client: SUTClient, cases_by_id: dict, runs: int, floor: float) -> l
         text = case["input"]
         rng = random.Random(idx)  # deterministic variant generation
         seed_modal, seed_agree = _run_n(client, text, runs)
-        sr = SeedResult(seed_id, text, list(case.get("category", [])), seed_modal, seed_agree)
+        sr = SeedResult(seed_id, text, list(case.get("category", [])), seed_modal, seed_agree, floor=floor)
 
+        # v1 — invariance: meaning-preserving variants must keep the intent.
         for tf in TRANSFORMS:
             for variant_text in tf.fn(text, rng):
                 v_modal, v_agree = _run_n(client, variant_text, runs)
                 holds = relation_holds(seed_modal, v_modal, tf)
                 sr.variants.append(VariantResult(seed_id, tf.name, variant_text, v_modal, v_agree, holds))
+
+        # v2 — directional: meaning-changing variants must change one field
+        # predictably and nothing else.
+        for d in DIRECTIONAL:
+            variant_text = apply_directional(text, d)
+            if variant_text is None:
+                continue  # this relation doesn't apply to this seed
+            v_modal, v_agree = _run_n(client, variant_text, runs)
+            expected = directional_expected_key(seed_modal, d)
+            sr.directional.append(
+                DirectionalResult(seed_id, d.name, variant_text, expected, v_modal, v_agree, v_modal == expected)
+            )
+
         results.append(sr)
-        print(f"[metamorphic] {seed_id}: self-agreement {seed_agree:.0%}, {len(sr.variants)} variants")
+        print(
+            f"[metamorphic] {seed_id}: self-agreement {seed_agree:.0%}, "
+            f"{len(sr.variants)} invariance + {len(sr.directional)} directional variants"
+        )
     return results
 
 
@@ -146,6 +180,26 @@ def by_category(results: list[SeedResult]) -> dict[str, tuple[int, int]]:
     return {k: (v[0], v[1]) for k, v in agg.items()}
 
 
+def directional_score(results: list[SeedResult]) -> tuple[int, int]:
+    """Held / total directional variants, over reliable-baseline seeds only."""
+    held = total = 0
+    for s in _reliable(results):
+        for d in s.directional:
+            total += 1
+            held += d.holds
+    return held, total
+
+
+def by_relation(results: list[SeedResult]) -> dict[str, tuple[int, int]]:
+    agg: dict[str, list[int]] = {}
+    for s in _reliable(results):
+        for d in s.directional:
+            a = agg.setdefault(d.relation, [0, 0])
+            a[0] += d.holds
+            a[1] += 1
+    return {k: (v[0], v[1]) for k, v in agg.items()}
+
+
 def _pct(n: int, d: int) -> str:
     return f"{n / d * 100:.0f}%" if d else "—"
 
@@ -165,12 +219,13 @@ def _fields_diff(seed_key: IntentKey, var_key: IntentKey) -> str:
 
 def render_markdown(meta: dict, results: list[SeedResult]) -> str:
     held, total = invariance_score(results)
+    dheld, dtotal = directional_score(results)
     reliable = _reliable(results)
     unstable = [s for s in results if not s.reliable]
     agrees = [s.seed_agreement for s in results]
 
     L: list[str] = []
-    L.append("# Metamorphic evaluation — booking assistant (invariance, v1)")
+    L.append("# Metamorphic evaluation — booking assistant (invariance + directional)")
     L.append("")
     L.append(f"- **Run:** {meta['run_at']}")
     L.append(f"- **SUT:** {meta['base_url']} (black-box via `/api/v1/booking-assistant`)")
@@ -183,6 +238,10 @@ def render_markdown(meta: dict, results: list[SeedResult]) -> str:
     L.append("## Summary")
     L.append("")
     L.append(f"- **Invariance score: {_pct(held, total)}** ({held}/{total} variants kept the seed's intent)")
+    L.append(
+        f"- **Directional score: {_pct(dheld, dtotal)}** ({dheld}/{dtotal} variants changed exactly the "
+        "intended field and nothing else)"
+    )
     if agrees:
         L.append(
             f"- **Mean seed self-consistency:** {statistics.fmean(agrees):.0%} "
@@ -219,6 +278,30 @@ def render_markdown(meta: dict, results: list[SeedResult]) -> str:
             L.append(f"  - seed: `{s.text}`")
             L.append(f"  - variant: `{v.variant_text}`")
             L.append(f"  - change: {_fields_diff(s.seed_modal, v.variant_modal)}")
+    L.append("")
+
+    L.append("## Directional relations (v2)")
+    L.append("")
+    L.append("Meaning-*changing* rephrasings: exactly one field should change predictably, the rest unchanged.")
+    L.append("")
+    L.append("| Relation | Correct |")
+    L.append("|---|---|")
+    for name, (h, t) in sorted(by_relation(results).items()):
+        L.append(f"| {name} | {_pct(h, t)} ({h}/{t}) |")
+    L.append("")
+
+    dviolations = [(s, d) for s in reliable for d in s.directional if not d.holds]
+    L.append(f"### Directional violations ({len(dviolations)})")
+    L.append("")
+    if not dviolations:
+        L.append("_None — every directional rephrasing produced exactly the expected change._")
+    else:
+        L.append("Each changed the wrong field, the wrong amount, or more than the one intended field.")
+        L.append("")
+        for s, d in dviolations:
+            L.append(f"- **{s.seed_id}** / `{d.relation}`")
+            L.append(f"  - seed: `{s.text}` → variant: `{d.variant_text}`")
+            L.append(f"  - expected vs actual: {_fields_diff(d.expected_modal, d.variant_modal)}")
     L.append("")
 
     L.append("## Seed self-consistency")

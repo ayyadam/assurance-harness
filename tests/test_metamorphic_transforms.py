@@ -11,12 +11,23 @@ they run in the standard pytest gate. They assert the two things the metamorphic
 import random
 
 from ai_evaluation.metamorphic.relations import (
+    directional_expected_key,
     intent_key,
     key_to_fields,
     modal,
     relation_holds,
 )
-from ai_evaluation.metamorphic.transforms import TRANSFORMS, _casing, _filler, _synonym, _typo, _whitespace
+from ai_evaluation.metamorphic.transforms import (
+    DIRECTIONAL,
+    TRANSFORMS,
+    Directional,
+    _casing,
+    _filler,
+    _synonym,
+    _typo,
+    _whitespace,
+    apply_directional,
+)
 
 RNG = random.Random(0)
 
@@ -122,3 +133,45 @@ def test_relation_holds_is_equality_for_invariance():
     k2 = intent_key({"date": "2026-06-13", "period": "any", "group_size": 2, "players": []})
     assert relation_holds(k1, k1, casing) is True
     assert relation_holds(k1, k2, casing) is False
+
+
+# ── directional relations (v2) ───────────────────────────────────────────────
+
+
+def test_apply_directional_rewrites_only_when_the_phrase_is_present():
+    period = next(d for d in DIRECTIONAL if d.name == "period→afternoon")
+    assert apply_directional("fancy a knock this Saturday morning", period) == ("fancy a knock this Saturday afternoon")
+    assert apply_directional("just me, Saturday", period) is None  # no "morning" to swap
+
+
+def test_apply_directional_is_case_insensitive_first_occurrence():
+    grp = next(d for d in DIRECTIONAL if d.name == "group:4-ball→threesome")
+    assert apply_directional("A 4-BALL on Sunday", grp) == "A threesome on Sunday"
+
+
+def test_directional_expected_key_applies_only_the_relations_field():
+    seed = intent_key(
+        {"date": "2026-06-20", "period": "morning", "group_size": 4, "players": [], "not_before": "09:00"}
+    )
+    period = next(d for d in DIRECTIONAL if d.name == "period→afternoon")
+    expected = key_to_fields(directional_expected_key(seed, period))
+    assert expected["period"] == "afternoon"  # the targeted field changed
+    # everything else is untouched
+    assert expected["group_size"] == 4
+    assert expected["date"] == "2026-06-20"
+    assert expected["not_before"] == "09:00"
+
+
+def test_directional_expected_key_handles_group_and_time_deltas():
+    seed = intent_key({"date": "2026-06-21", "period": "any", "group_size": 4, "players": []})
+    grp = next(d for d in DIRECTIONAL if d.name == "group:4-ball→threesome")
+    assert key_to_fields(directional_expected_key(seed, grp))["group_size"] == 3
+
+    seed2 = intent_key({"date": "2026-06-20", "period": "any", "group_size": 1, "players": [], "not_before": "09:00"})
+    tm = next(d for d in DIRECTIONAL if d.name == "time:9am→11am")
+    assert key_to_fields(directional_expected_key(seed2, tm))["not_before"] == "11:00"
+
+
+def test_directional_registry_well_formed():
+    assert all(isinstance(d, Directional) and d.kind == "directional" for d in DIRECTIONAL)
+    assert all(d.expected for d in DIRECTIONAL)  # each declares a field change

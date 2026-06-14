@@ -17,7 +17,7 @@ from datetime import datetime, time
 from typing import Any
 
 from ai_evaluation.evaluator import _norm_players
-from ai_evaluation.metamorphic.transforms import Transform
+from ai_evaluation.metamorphic.transforms import Directional, Transform
 
 INTENT_FIELDS = ("date", "period", "group_size", "players", "not_before", "not_after")
 
@@ -82,3 +82,14 @@ def expected_variant_key(seed_key: IntentKey, transform: Transform) -> IntentKey
 def relation_holds(seed_key: IntentKey, variant_key: IntentKey, transform: Transform) -> bool:
     """Did the variant satisfy the metamorphic relation for this transform?"""
     return variant_key == expected_variant_key(seed_key, transform)
+
+
+def directional_expected_key(seed_key: IntentKey, d: Directional) -> IntentKey:
+    """The expected variant key for a directional relation (v2): the seed's
+    intent with the relation's field overrides applied, everything else
+    unchanged. A directional violation is variant_modal != this."""
+    fields = key_to_fields(seed_key)
+    if fields is None:
+        return None
+    fields = {**fields, **d.expected}
+    return tuple(fields[f] for f in INTENT_FIELDS)

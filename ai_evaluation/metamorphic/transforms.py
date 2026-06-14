@@ -165,3 +165,38 @@ TRANSFORMS: list[Transform] = [
     Transform("typo", "invariance", _typo),
     Transform("synonym", "invariance", _synonym),
 ]
+
+
+# ── directional relations (v2): meaning-CHANGING transforms ───────────────────
+# Each rewrites one phrase so that EXACTLY ONE intent field should change to a
+# predictable value, everything else unchanged. The swaps are unambiguous golf
+# terms (foursome=4, threesome=3) and clear clock/period edits, so the expected
+# outcome is not a judgement call. `expected` values are in NORMALISED key form
+# (period lower-case, times "HH:MM", group_size int) so they compare directly.
+
+
+@dataclass(frozen=True)
+class Directional:
+    name: str  # label, e.g. "period→afternoon"
+    find: str  # phrase to look for (case-insensitive, first occurrence)
+    replace: str  # what to swap it to
+    expected: dict  # normalised field overrides the swap should produce
+    kind: str = "directional"
+
+
+DIRECTIONAL: list[Directional] = [
+    Directional("period→afternoon", "morning", "afternoon", {"period": "afternoon"}),
+    Directional("period→morning", "afternoon", "morning", {"period": "morning"}),
+    Directional("group:4-ball→threesome", "4-ball", "threesome", {"group_size": 3}),
+    Directional("group:threesome→foursome", "threesome", "foursome", {"group_size": 4}),
+    Directional("time:9am→11am", "9am", "11am", {"not_before": "11:00"}),
+]
+
+
+def apply_directional(text: str, d: Directional) -> str | None:
+    """Return the rewritten text if `d.find` occurs (case-insensitive, first
+    occurrence), else None (the relation does not apply to this seed)."""
+    idx = text.lower().find(d.find.lower())
+    if idx == -1:
+        return None
+    return text[:idx] + d.replace + text[idx + len(d.find) :]
