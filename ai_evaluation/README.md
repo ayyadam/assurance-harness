@@ -1,8 +1,11 @@
 # AI evaluation harness
 
-Evaluates the golf-web-app booking assistant's natural-language understanding by replaying a labelled golden set of requests through the SUT's live API endpoint (**black-box**) and scoring the returned `BookingIntent` against ground truth.
+Evaluates the golf-web-app booking assistant's natural-language understanding, black-box, through the SUT's live `POST /api/v1/booking-assistant` endpoint. It holds **two complementary evaluation methods** over that one feature, sharing the `SUTClient` in [`evaluator.py`](evaluator.py):
 
-This is phase 8 of the assurance roadmap. It complements — not replaces — the deterministic stub gate that runs in per-PR CI: the stub keeps the gate fast and reproducible; this harness measures the *real model* on quality, latency and safety, off the per-PR path.
+1. **Golden-set accuracy** (phase 8 — top-level modules here) — replay a labelled golden set and score the returned `BookingIntent` against ground truth. Answers *"is the intent correct for these exact phrasings?"*
+2. **Metamorphic invariance** ([`metamorphic/`](metamorphic/README.md), B3) — generate meaning-preserving *variations* of seed requests and assert the intent stays stable. Answers *"is the model robust to natural input variation?"* — the question a fixed golden set structurally cannot.
+
+Both are **local on-demand** (real Ollama-backed SUT, never hosted CI): the deterministic stub keeps the per-PR gate fast; these harnesses measure the *real model* off the per-PR path.
 
 ## Why black-box
 
@@ -69,11 +72,15 @@ The judge runs on its own Ollama model (default `qwen2.5:32b-instruct-q4_K_M`, c
 
 ```
 ai_evaluation/
-├── evaluator.py        # date-spec resolver, SUT client, field/safety scoring
-├── judge.py            # LLM-judge tier (holistic + fuzzy) via Ollama
-├── run.py              # CLI: single / compare / --score-only / --with-judge
-├── golden_set.yaml     # ground truth
-└── reports/            # committed evidence artefacts (md + json + raw + judge cache)
+├── evaluator.py        # SHARED: date-spec resolver, SUT client, field/safety scoring
+├── judge.py            # golden-set LLM-judge tier (holistic + fuzzy) via Ollama
+├── run.py              # golden-set CLI: single / compare / --score-only / --with-judge
+├── golden_set.yaml     # ground truth (also the seed source for metamorphic)
+├── metamorphic/        # METHOD 2 — invariance testing (B3); see metamorphic/README.md
+│   ├── transforms.py   #   meaning-preserving transforms (v1); directional in v2
+│   ├── relations.py    #   intent normalise / equality / modal + relation check
+│   └── run.py          #   metamorphic CLI
+└── reports/            # committed evidence (golden-set report + metamorphic/report)
 ```
 
 ## Roadmap (this harness)
