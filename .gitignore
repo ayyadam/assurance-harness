@@ -206,6 +206,9 @@ tempCodeRunnerFile.py
 # Ruff stuff:
 .ruff_cache/
 
+# Schemathesis CLI local run cache (created by `schemathesis run`)
+.schemathesis/
+
 # PyPI configuration file
 .pypirc
 
