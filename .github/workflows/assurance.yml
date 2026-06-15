@@ -110,6 +110,13 @@ jobs:
           uv run pytest contract/ \
             --junitxml=reports/contract-junit.xml \
             --html=reports/contract.html --self-contained-html
+      - name: Contract evidence (advisory — client report, does not gate)
+        if: always()
+        env:
+          SUT_BASE_URL: http://localhost:5000
+        # Schemathesis CLI -> per-operation summary + JUnit + VCR cassette. Never
+        # gates (the pytest step above is the gate); lands in the same artifact.
+        run: uv run python -m contract.evidence --report-dir reports
       - name: Upload contract reports
         uses: actions/upload-artifact@v5
         if: always()

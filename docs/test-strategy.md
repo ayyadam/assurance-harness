@@ -2,7 +2,7 @@
 
 **Status:** living document — updated as the assurance harness matures.
 **Owner:** Adam
-**Last updated:** 2026-06-15 *(Workstream B started — B1: a config-driven SUT profile (`core/profile.py` + `profiles/golf-web-app.yaml`) now feeds the contract + accessibility pillars; golf-web-app is profile #1, re-pointable via `$ASSURANCE_PROFILE`, CI unaffected. Also recasts the G1 framing to a personal portable toolkit (own-shop/SaaS out of scope). Prior: F-038 / B4 v2 grey-failure chaos.)*
+**Last updated:** 2026-06-15 *(Contract evidence reporting — advisory Schemathesis CLI run (`contract/evidence.py`) emits a per-operation summary + JUnit + VCR cassette as a client-worthy report alongside the pytest gate; profile-driven, non-gating. Prior: Workstream B B1 — config-driven SUT profile feeding contract + accessibility; G1 recast to a personal portable toolkit.)*
 
 ---
 
@@ -1589,7 +1589,7 @@ The full phased plan lives in conversational notes; the abbreviated public form:
 | 1 | Test strategy + risk register | **Done** |
 | 2 | golf-web-app JSON API + OpenAPI spec | **Done** |
 | 3 | Playwright user journeys (functional) | **Done** |
-| 4 | Schemathesis contract tests | **Done** |
+| 4 | Schemathesis contract tests | **Done** — pytest gate (pass/fail) + an **advisory CLI evidence run** ([`contract/evidence.py`](../contract/evidence.py)): per-operation summary + JUnit + a VCR cassette (every request/response) as a client-worthy report. Profile-driven; non-gating for now. Closing the coverage gap (skipped write ops needing referential data) + promoting the CLI to *be* the gate are the queued follow-up |
 | 5a | Accessibility (axe) sweep + gate in CI | **Done** |
 | 5b | Performance (k6) budgets in CI | **Done** |
 | 6 | Data quality (pandera) on the live database | **Done** |
