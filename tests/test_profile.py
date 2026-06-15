@@ -34,6 +34,25 @@ def test_loads_golf_web_app_profile(clean_env):
     assert ("book-tee-time", "/member/book-tee-time") in p.accessibility.member_pages
 
 
+def test_loads_contract_referential_ids(clean_env):
+    p = load_profile()
+    assert len(p.contract.referential_ids) == 1
+    ref = p.contract.referential_ids[0]
+    assert ref.path_param == "tee_time_id"
+    assert ref.list_endpoint == "/api/v1/tee-times"
+    assert ref.id_field == "id"
+    assert ref.prefer_fields == ("is_available", "slots_remaining")
+
+
+def test_contract_section_optional(clean_env, tmp_path):
+    prof = tmp_path / "min.yaml"
+    prof.write_text(
+        "name: m\nbase_url: http://x\nauth:\n  token_endpoint: /t\n  username: u\n  password: p\n",
+        encoding="utf-8",
+    )
+    assert load_profile(prof).contract.referential_ids == []
+
+
 def test_env_overrides_base_url_and_strips_trailing_slash(clean_env):
     clean_env.setenv("SUT_BASE_URL", "http://staging:8080/")
     p = load_profile()

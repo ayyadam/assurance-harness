@@ -40,12 +40,33 @@ class AccessibilityConfig:
 
 
 @dataclass(frozen=True)
+class ReferentialId:
+    """How to obtain a real id for a path parameter (so contract fuzzing of
+    parameterised operations hits success paths instead of fuzzed 404s). Generic
+    REST pattern: GET `list_endpoint`, take `id_field` from a (preferably
+    `prefer_fields`-truthy) item, inject into `path_param`."""
+
+    path_param: str
+    list_endpoint: str
+    id_field: str = "id"
+    prefer_fields: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class ContractConfig:
+    """SUT-specific facts the contract pillar needs (kept here, not in the engine)."""
+
+    referential_ids: list[ReferentialId]
+
+
+@dataclass(frozen=True)
 class Profile:
     name: str
     base_url: str
     openapi_spec_path: str
     auth: AuthConfig
     accessibility: AccessibilityConfig
+    contract: ContractConfig
 
     @property
     def openapi_url(self) -> str:
@@ -58,6 +79,22 @@ class Profile:
 
 def _pages(raw: list) -> list[tuple[str, str]]:
     return [(str(name), str(path)) for name, path in raw]
+
+
+def _referential_ids(raw: list) -> list[ReferentialId]:
+    out: list[ReferentialId] = []
+    for r in raw:
+        if not (r.get("path_param") and r.get("list_endpoint")):
+            raise ValueError("each contract.referential_ids entry needs 'path_param' and 'list_endpoint'")
+        out.append(
+            ReferentialId(
+                path_param=str(r["path_param"]),
+                list_endpoint=str(r["list_endpoint"]),
+                id_field=str(r.get("id_field") or "id"),
+                prefer_fields=tuple(r.get("prefer_fields") or ()),
+            )
+        )
+    return out
 
 
 def load_profile(path: str | os.PathLike | None = None) -> Profile:
@@ -84,6 +121,7 @@ def load_profile(path: str | os.PathLike | None = None) -> Profile:
         raise ValueError(f"SUT profile {profile_path} 'auth' needs token_endpoint, username, password")
 
     a11y_raw = data.get("accessibility") or {}
+    contract_raw = data.get("contract") or {}
     return Profile(
         name=str(name),
         base_url=base_url,
@@ -93,4 +131,5 @@ def load_profile(path: str | os.PathLike | None = None) -> Profile:
             public_pages=_pages(a11y_raw.get("public_pages") or []),
             member_pages=_pages(a11y_raw.get("member_pages") or []),
         ),
+        contract=ContractConfig(referential_ids=_referential_ids(contract_raw.get("referential_ids") or [])),
     )
