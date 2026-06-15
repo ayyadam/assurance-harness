@@ -19,12 +19,20 @@ collapses to three axes:
 |---|---|---|---|
 | Below the app — dependency *gone* | `docker compose pause db` | `db-outage` | data route fails *fast & clean* (5xx, no traceback), static route stays up, auto-recovers on unpause |
 | The app itself — process *death* | in-container kill of the app's PID 1 | `process-kill` | `restart: unless-stopped` recovers to 200 with no manual intervention (RestartCount increments); DB reconnects cleanly |
-| Between app & dependency — dependency *slow* (grey failure) | toxiproxy latency | *v2* | graceful degradation under latency **and** the SLO/Grafana panel breaches |
+| Between app & dependency — dependency *slow* (grey failure) | toxiproxy latency (~600ms) | `db-latency` (v2) | stays 200 but breaches the 500ms p95 SLO (degrades, doesn't break) **and** the breach is confirmed live in Prometheus |
 
 Each axis forces a *different* assertion — an outage is easy to handle (you know
 it's down); a grey failure is the nasty one (health checks pass, the system dies
 slowly); process death is a third thing (recovery + state integrity). That's why
-it's these three and not a dozen latency values.
+it's these three and not a dozen latency values. All three are shipped.
+
+> **Grey-failure note (v2):** the latency axis repoints the DB connection through
+> a toxiproxy sidecar (`web → toxiproxy → db`) on the **primary :5000 stack** — so
+> the Prometheus that already scrapes :5000 sees the degradation — then asserts
+> the p95 latency SLO breaches *live in Prometheus*, not just app-side. That is
+> what makes the observability stack earn its keep: an injected incident
+> measurably moves the SLO panel. The Prometheus step is **best-effort**
+> (confirm-or-abstain: it fails only on a contradiction, never on thin samples).
 
 > **Fault-model note (process death):** the crash is injected *inside* the
 > container (signalling the app's PID 1), **not** via `docker kill`/`compose
@@ -45,12 +53,19 @@ CI. Bring the SUT up first (sibling checkout), then:
 # in golf-web-app:
 docker compose up -d --build
 docker compose exec -T web python seed.py   # /course needs Hole rows
+# (for the v2 latency axis, also bring up the observability stack so the
+#  Prometheus SLO-breach can be asserted: cd observability && docker compose up -d)
 
 # in assurance-harness:
-uv run python -m chaos.run                       # both v1 scenarios
-uv run python -m chaos.run --scenario db-outage  # one
-uv run python -m chaos.run --compose-dir ../golf-web-app
+uv run python -m chaos.run                       # the two v1 axes (non-invasive)
+uv run python -m chaos.run --scenario db-outage  # one v1 scenario
+uv run python -m chaos.run --latency             # also the v2 grey-failure axis (INVASIVE: recreates + restores the stack)
 ```
+
+The committed report is from `--latency` (all three axes). The v2 path repoints
+`web` through toxiproxy via [`compose.latency.yml`](compose.latency.yml), runs the
+grey-failure scenario, then **always restores the normal stack** (toxiproxy
+removed, `web` back on `db:5432`, the SUT's auto override reapplied).
 
 Writes `chaos/reports/report.{md,json}` (committed evidence). Exit code is
 non-zero if any scenario fails, so a runner notices — but the report is always
@@ -69,7 +84,9 @@ the stack up, and that is the local-only evidence step above.
 
 | File | Role |
 |---|---|
-| `faults.py` | `probe()` + `ProbeResult` (classifies 200 / clean-5xx / hang / refused / leaked-traceback); `ComposeController` (pause/unpause/kill/up); `wait_for_recovery()` |
-| `scenarios.py` | `scenario_db_outage`, `scenario_process_kill` — each a steady-state hypothesis returning a `ScenarioResult` |
-| `run.py` | CLI + markdown/JSON report (incl. the exclusions table + v2 roadmap) |
+| `faults.py` | `probe()` + `ProbeResult` (classifies 200 / clean-5xx / hang / refused / leaked-traceback); `ComposeController` (pause/unpause/crash/up + `restart_count`); `wait_for_recovery()` |
+| `latency.py` | v2 grey-failure clients: `Toxiproxy` (admin-API latency toxic), `Prometheus` (p95 SLO query), `latency_compose_cmd` |
+| `compose.latency.yml` | v2 override: toxiproxy sidecar + `web` repointed through `toxiproxy:5432` |
+| `scenarios.py` | `scenario_db_outage`, `scenario_process_kill`, `scenario_db_latency` — each a steady-state hypothesis returning a `ScenarioResult` |
+| `run.py` | CLI + markdown/JSON report (exclusions table + roadmap); owns the v2 latency-topology lifecycle |
 | `reports/` | committed evidence artifact |

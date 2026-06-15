@@ -18,6 +18,7 @@ evidence.
 
 from __future__ import annotations
 
+import statistics
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -203,6 +204,109 @@ def scenario_process_kill(
             "restart policy did not recover web within budget; harness issued 'compose up' to restore the stack."
         )
 
+    return result._finalise()
+
+
+# ── scenario 3 (v2) — dependency slow / grey failure (degrade, don't break) ───
+
+
+def scenario_db_latency(
+    base_url: str,
+    toxi,
+    prom,
+    *,
+    get: Callable | None = None,
+    measure: Callable | None = None,
+    probe_timeout: float = 15.0,
+    latency_ms: int = 600,
+    slo_seconds: float = 0.5,
+    burst: int = 15,
+    settle_seconds: float = 20.0,
+    sleep: Callable[[float], None] = time.sleep,
+) -> ScenarioResult:
+    """Inject ~`latency_ms` on the DB path (via the `toxi` client) and assert the
+    *grey-failure* contract: the data route stays **200 (correctness preserved)**
+    but **slower than the SLO** — it degrades, it doesn't break — the breach is
+    **visible in Prometheus** (`prom`, best-effort), and latency returns to
+    baseline once the toxic is removed.
+
+    `toxi`/`prom` are duck-typed (`add_latency`/`remove_latency`, `p95()`), and
+    `measure(url) -> ProbeResult` defaults to a real `probe` — both injectable so
+    the flow is unit-testable with no Toxiproxy/Prometheus/SUT."""
+    name, axis = "DB latency (grey failure)", "between app & dependency — dependency slow"
+    slo_ms = slo_seconds * 1000
+    hypothesis = (
+        f"With ~{latency_ms}ms injected on the DB path, /course stays 200 (correctness preserved) but breaches the "
+        f"{slo_ms:.0f}ms p95 SLO, the breach is visible in Prometheus, and latency returns to baseline on removal."
+    )
+    if measure is None:
+
+        def measure(url: str):
+            return probe(url, timeout=probe_timeout, get=get)
+
+    course = f"{base_url}/course"
+    base_probe = measure(course)
+    if not base_probe.ok:
+        return _inconclusive(
+            name, axis, hypothesis, f"/course was {base_probe.describe()} before the fault — SUT up/seeded?"
+        )
+
+    result = ScenarioResult(name, axis, hypothesis)
+    result.steps.append(
+        Step(
+            "steady state",
+            f"/course == 200 and under the {slo_ms:.0f}ms SLO before fault",
+            f"{base_probe.describe()} in {base_probe.elapsed * 1000:.0f}ms",
+            base_probe.ok and base_probe.elapsed < slo_seconds,
+        )
+    )
+
+    try:
+        toxi.add_latency(latency_ms)
+        # a burst both measures the degradation and populates Prometheus' scrape window
+        samples = []
+        all_ok = True
+        for _ in range(burst):
+            m = measure(course)
+            all_ok = all_ok and m.ok
+            if m.reachable:
+                samples.append(m.elapsed)
+        median = statistics.median(samples) if samples else float("inf")
+        result.steps.append(
+            Step(
+                "graceful degradation under latency",
+                f"/course still 200 but slower than the {slo_ms:.0f}ms SLO (degrades, not breaks)",
+                f"{'all 200' if all_ok else 'NOT all 200'}, median {median * 1000:.0f}ms",
+                all_ok and median > slo_seconds,
+            )
+        )
+
+        sleep(settle_seconds)  # let Prometheus scrape the degraded window
+        p95 = prom.p95()
+        if p95 is None:
+            obs_ok, observed = True, "not asserted — Prometheus returned no/insufficient samples (best-effort)"
+        else:
+            obs_ok, observed = (p95 > slo_seconds), f"p95 {p95 * 1000:.0f}ms vs {slo_ms:.0f}ms SLO"
+        result.steps.append(
+            Step(
+                "SLO breach observed (Prometheus)",
+                "the injected latency breaches the p95 SLO panel — the observability stack catches the grey failure",
+                observed,
+                obs_ok,
+            )
+        )
+    finally:
+        toxi.remove_latency()  # always lift the toxic, even if an assertion above raised
+
+    rec = measure(course)
+    result.steps.append(
+        Step(
+            "recovery",
+            f"/course returns to 200 under the {slo_ms:.0f}ms SLO once the toxic is removed",
+            f"{rec.describe()} in {rec.elapsed * 1000:.0f}ms",
+            rec.ok and rec.elapsed < slo_seconds,
+        )
+    )
     return result._finalise()
 
 

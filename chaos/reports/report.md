@@ -1,6 +1,6 @@
 # Resilience / chaos evaluation — golf-web-app
 
-- **Run:** 2026-06-15T09:56:23
+- **Run:** 2026-06-15T11:13:14
 - **SUT:** http://localhost:5000 (compose stack at `D:\Dev\Repos\golf-web-app`)
 - **Method:** steady-state hypothesis → inject one fault → assert bounded degradation + automatic recovery. One representative fault per failure *axis*.
 - **CI posture:** local-only (mutates a live stack); scenario *logic* is gate-tested in `tests/test_chaos_scenarios.py`.
@@ -8,12 +8,13 @@
 
 ## Summary
 
-**1/2 scenarios passed.**
+**2/3 scenarios passed.**
 
 | Scenario | Failure axis | Result |
 |---|---|---|
 | DB outage | below the app — dependency gone | ❌ failed |
 | Process kill | the app itself — process death | ✅ passed |
+| DB latency (grey failure) | between app & dependency — dependency slow | ✅ passed |
 
 ## DB outage — ❌ failed
 
@@ -34,8 +35,19 @@ _Hypothesis:_ When the web process dies, the restart policy returns /course to 2
 |---|---|---|---|
 | steady state | /course == 200 before fault | HTTP 200 | ✅ |
 | auto-restart recovery | restart policy returns /course to 200 within 60s, no manual intervention | HTTP 200 after ~2s | ✅ |
-| restart policy engaged | container RestartCount increments — recovery was the policy, not a coincidence | RestartCount 1 → 2 | ✅ |
+| restart policy engaged | container RestartCount increments — recovery was the policy, not a coincidence | RestartCount 2 → 3 | ✅ |
 | clean DB reconnect | data route serves consistent data after restart (pool re-established) | HTTP 200 | ✅ |
+
+## DB latency (grey failure) — ✅ passed
+
+_Hypothesis:_ With ~600ms injected on the DB path, /course stays 200 (correctness preserved) but breaches the 500ms p95 SLO, the breach is visible in Prometheus, and latency returns to baseline on removal.
+
+| Step | Expected | Observed | Held |
+|---|---|---|---|
+| steady state | /course == 200 and under the 500ms SLO before fault | HTTP 200 in 19ms | ✅ |
+| graceful degradation under latency | /course still 200 but slower than the 500ms SLO (degrades, not breaks) | all 200, median 1824ms | ✅ |
+| SLO breach observed (Prometheus) | the injected latency breaches the p95 SLO panel — the observability stack catches the grey failure | p95 2425ms vs 500ms SLO | ✅ |
+| recovery | /course returns to 200 under the 500ms SLO once the toxic is removed | HTTP 200 in 4ms | ✅ |
 
 ## Excluded by design (scope discipline)
 
@@ -51,4 +63,5 @@ Chaos testing balloons into a fault-injection framework unless bounded. This lay
 
 ## Roadmap
 
-- **v2 — grey-failure axis:** inject Postgres latency via [toxiproxy](https://github.com/Shopify/toxiproxy) between `web` and `db`; assert graceful degradation under slowness **and** that the latency SLO/Grafana panel breaches (proving the observability stack catches a slow dependency, not just an outage).
+- **v2 — grey-failure axis (shipped):** Postgres latency injected via [toxiproxy](https://github.com/Shopify/toxiproxy) between `web` and `db` — asserts graceful degradation under slowness **and** that the p95 latency SLO breaches in Prometheus (the observability stack catching a slow dependency, not just an outage). Run with `--latency`.
+- **Possible v3:** alerting-side assertion (Alertmanager fires on the SLO breach) once a real alert sink exists — pairs with the deferred Loki/Alertmanager observability work.

@@ -1,9 +1,9 @@
 {
   "meta": {
-    "run_at": "2026-06-15T09:56:23",
+    "run_at": "2026-06-15T11:13:14",
     "base_url": "http://localhost:5000",
     "compose_dir": "D:\\Dev\\Repos\\golf-web-app",
-    "scenarios": 2
+    "scenarios": 3
   },
   "scenarios": [
     {
@@ -60,13 +60,46 @@
         {
           "name": "restart policy engaged",
           "expectation": "container RestartCount increments \u2014 recovery was the policy, not a coincidence",
-          "observed": "RestartCount 1 \u2192 2",
+          "observed": "RestartCount 2 \u2192 3",
           "ok": true
         },
         {
           "name": "clean DB reconnect",
           "expectation": "data route serves consistent data after restart (pool re-established)",
           "observed": "HTTP 200",
+          "ok": true
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "name": "DB latency (grey failure)",
+      "axis": "between app & dependency \u2014 dependency slow",
+      "hypothesis": "With ~600ms injected on the DB path, /course stays 200 (correctness preserved) but breaches the 500ms p95 SLO, the breach is visible in Prometheus, and latency returns to baseline on removal.",
+      "status": "passed",
+      "steps": [
+        {
+          "name": "steady state",
+          "expectation": "/course == 200 and under the 500ms SLO before fault",
+          "observed": "HTTP 200 in 19ms",
+          "ok": true
+        },
+        {
+          "name": "graceful degradation under latency",
+          "expectation": "/course still 200 but slower than the 500ms SLO (degrades, not breaks)",
+          "observed": "all 200, median 1824ms",
+          "ok": true
+        },
+        {
+          "name": "SLO breach observed (Prometheus)",
+          "expectation": "the injected latency breaches the p95 SLO panel \u2014 the observability stack catches the grey failure",
+          "observed": "p95 2425ms vs 500ms SLO",
+          "ok": true
+        },
+        {
+          "name": "recovery",
+          "expectation": "/course returns to 200 under the 500ms SLO once the toxic is removed",
+          "observed": "HTTP 200 in 4ms",
           "ok": true
         }
       ],

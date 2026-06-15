@@ -16,12 +16,14 @@ from pathlib import Path
 
 import requests
 
-from chaos.faults import ComposeController, probe, wait_for_recovery
+from chaos.faults import ComposeController, ProbeResult, probe, wait_for_recovery
+from chaos.latency import Prometheus, Toxiproxy
 from chaos.run import EXCLUSIONS, render_markdown
 from chaos.scenarios import (
     V1_SCENARIOS,
     ScenarioResult,
     Step,
+    scenario_db_latency,
     scenario_db_outage,
     scenario_process_kill,
 )
@@ -297,3 +299,146 @@ def test_render_markdown_has_results_and_scope_sections():
     # every exclusion rationale is surfaced in the evidence
     for what, _ in EXCLUSIONS:
         assert what in md
+
+
+# ── scenarios.py: DB latency (v2 grey failure) ───────────────────────────────
+
+
+class FakeToxi:
+    """Records latency calls; `active` flips so an injected `measure` can report a
+    fast baseline vs a slow degraded response."""
+
+    def __init__(self) -> None:
+        self.active = False
+        self.calls: list[str] = []
+
+    def add_latency(self, latency_ms, **_):
+        self.active = True
+        self.calls.append(f"add:{latency_ms}")
+
+    def remove_latency(self, **_):
+        self.active = False
+        self.calls.append("remove")
+
+
+def _latency_measure(toxi: FakeToxi, *, base: float = 0.05, slow: float = 0.7):
+    """An injected measure() returning a 200 whose elapsed depends on toxi state."""
+
+    def measure(url: str) -> ProbeResult:
+        return ProbeResult(url, 200, slow if toxi.active else base, body_excerpt="<holes>")
+
+    return measure
+
+
+class FakeProm:
+    def __init__(self, value):
+        self._value = value
+
+    def p95(self, **_):
+        return self._value
+
+
+def test_db_latency_passes_when_degrades_and_breach_observed():
+    tx = FakeToxi()
+    r = scenario_db_latency(
+        BASE,
+        tx,
+        FakeProm(0.62),
+        measure=_latency_measure(tx),
+        burst=3,
+        settle_seconds=0,
+        sleep=NO_SLEEP,
+        slo_seconds=0.5,
+    )
+    assert r.status == "passed"
+    assert tx.calls == ["add:600", "remove"]  # injected then always lifted
+    breach = next(s for s in r.steps if "Prometheus" in s.name)
+    assert breach.ok and "620ms" in breach.observed
+
+
+def test_db_latency_best_effort_when_prometheus_has_no_samples():
+    tx = FakeToxi()
+    r = scenario_db_latency(
+        BASE, tx, FakeProm(None), measure=_latency_measure(tx), burst=3, settle_seconds=0, sleep=NO_SLEEP
+    )
+    assert r.status == "passed"  # missing p95 does NOT fail the scenario (best-effort)
+    breach = next(s for s in r.steps if "Prometheus" in s.name)
+    assert breach.ok and "not asserted" in breach.observed
+
+
+def test_db_latency_fails_when_prometheus_contradicts_degradation():
+    tx = FakeToxi()
+    # app degraded (slow) but Prometheus shows p95 UNDER the SLO -> a real contradiction
+    r = scenario_db_latency(
+        BASE,
+        tx,
+        FakeProm(0.2),
+        measure=_latency_measure(tx),
+        burst=3,
+        settle_seconds=0,
+        sleep=NO_SLEEP,
+        slo_seconds=0.5,
+    )
+    assert r.status == "failed"
+    breach = next(s for s in r.steps if "Prometheus" in s.name)
+    assert not breach.ok
+
+
+def test_db_latency_fails_when_app_does_not_slow_down():
+    tx = FakeToxi()
+    # toxic added but the app stays fast (latency not biting) -> degradation step fails
+    r = scenario_db_latency(
+        BASE, tx, FakeProm(0.62), measure=_latency_measure(tx, slow=0.1), burst=3, settle_seconds=0, sleep=NO_SLEEP
+    )
+    assert r.status == "failed"
+    assert "remove" in tx.calls  # toxic still lifted
+
+
+def test_db_latency_inconclusive_when_sut_not_up():
+    tx = FakeToxi()
+
+    def down(url):
+        return ProbeResult(url, None, 0.0, error="ConnectionError")
+
+    r = scenario_db_latency(BASE, tx, FakeProm(0.62), measure=down, burst=3, settle_seconds=0, sleep=NO_SLEEP)
+    assert r.status == "inconclusive"
+    assert tx.calls == []  # never injected into an unhealthy system
+
+
+# ── latency.py: Toxiproxy / Prometheus request construction ──────────────────
+
+
+def test_toxiproxy_add_latency_builds_correct_toxic():
+    captured: list[tuple] = []
+
+    def request(method, url, **kw):
+        captured.append((method, url, kw.get("json")))
+        return FakeProc("")
+
+    Toxiproxy(request=request).add_latency(600)
+    method, url, body = captured[-1]
+    assert method == "POST" and url.endswith("/proxies/postgres/toxics")
+    assert body["type"] == "latency" and body["attributes"]["latency"] == 600
+
+
+def test_toxiproxy_remove_latency_targets_the_toxic():
+    captured: list[tuple] = []
+    Toxiproxy(request=lambda m, u, **k: captured.append((m, u)) or FakeProc("")).remove_latency()
+    assert captured[-1] == ("DELETE", "http://localhost:8474/proxies/postgres/toxics/latency_down")
+
+
+def test_prometheus_p95_parses_value_and_handles_empty_and_nan():
+    class Resp:
+        def __init__(self, payload):
+            self._p = payload
+
+        def json(self):
+            return self._p
+
+    def make(value_rows):
+        return lambda url, params, timeout: Resp({"data": {"result": value_rows}})
+
+    hit = Prometheus(get=make([{"value": [123, "0.62"]}]))
+    assert hit.p95() == 0.62
+    assert Prometheus(get=make([])).p95() is None  # empty result -> no signal
+    assert Prometheus(get=make([{"value": [123, "NaN"]}])).p95() is None  # NaN -> no signal

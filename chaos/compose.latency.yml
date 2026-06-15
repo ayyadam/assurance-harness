@@ -1,0 +1,32 @@
+# B4 v2 — latency-injection topology (grey-failure axis).
+#
+# Layered over golf-web-app's docker-compose.yml by the chaos runner:
+#
+#   docker compose -p golf-web-app \
+#     -f ../golf-web-app/docker-compose.yml -f chaos/compose.latency.yml up -d --build
+#
+# It inserts a Toxiproxy sidecar inline on the DB path (web -> toxiproxy -> db) so
+# a `latency` toxic can be added/removed at runtime via Toxiproxy's admin API
+# (:8474) WITHOUT touching the SUT's committed compose. `web`'s DATABASE_URL is
+# repointed at toxiproxy:5432; the proxy itself is created by the runner over the
+# API after boot (web's restart policy heals the brief startup race until then).
+#
+# Explicit `-f` files mean the SUT's auto-loaded docker-compose.override.yml is
+# NOT applied during the run; the runner restores the normal stack afterwards.
+services:
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:2.12.0
+    command: ["-host", "0.0.0.0"] # bind the admin API to 0.0.0.0 so the host can reach :8474
+    ports:
+      - "8474:8474"
+    restart: unless-stopped
+
+  web:
+    environment:
+      # route the DB connection through toxiproxy instead of straight to db:5432
+      - DATABASE_URL=postgresql://agc_user:agc_pass@toxiproxy:5432/agc_db
+    depends_on:
+      db:
+        condition: service_healthy
+      toxiproxy:
+        condition: service_started
