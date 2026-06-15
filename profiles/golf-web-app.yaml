@@ -11,6 +11,16 @@ base_url: "http://localhost:5000"
 # Contract pillar (Schemathesis): where the OpenAPI spec is served.
 openapi_spec_path: "/api/v1/openapi.json"
 
+# Contract: real referential ids so parameterised/write operations hit their
+# success paths deterministically (instead of fuzzed random ids that 404). The
+# engine's hook reads this generically — these are the only SUT-specific facts.
+contract:
+  referential_ids:
+    - path_param: "tee_time_id"
+      list_endpoint: "/api/v1/tee-times"
+      id_field: "id"
+      prefer_fields: ["is_available", "slots_remaining"] # prefer a bookable slot
+
 # Auth recipe for authenticated calls (seeded member; see golf-web-app/seed.py).
 auth:
   token_endpoint: "/api/v1/auth/token"
