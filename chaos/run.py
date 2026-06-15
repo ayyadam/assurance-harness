@@ -19,17 +19,21 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
+import time
 from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 
-from .faults import ComposeController
-from .scenarios import V1_SCENARIOS, ScenarioResult
+from .faults import ComposeController, wait_for_recovery
+from .latency import Prometheus, Toxiproxy, latency_compose_cmd
+from .scenarios import V1_SCENARIOS, ScenarioResult, scenario_db_latency
 
 REPORTS_DIR = Path(__file__).resolve().parent / "reports"
 DEFAULT_BASE_URL = "http://localhost:5000"
 # The SUT is a sibling checkout of the harness by default (Repos/golf-web-app).
 DEFAULT_COMPOSE_DIR = Path(__file__).resolve().parents[2] / "golf-web-app"
+LATENCY_OVERRIDE = Path(__file__).resolve().parent / "compose.latency.yml"
 
 # What we deliberately DON'T fault-inject, and why — scope discipline made
 # visible. One representative per real failure axis; everything below is either
@@ -74,6 +78,64 @@ def run_all(base_url: str, controller: ComposeController, only: str | None = Non
         print(f"[chaos]   -> {result.status.upper()} ({held}/{len(result.steps)} steps held)")
         results.append(result)
     return results
+
+
+# ── v2 — latency axis (manages its own compose lifecycle) ─────────────────────
+
+
+def _sh(cmd: list[str], cwd: Path | None = None, check: bool = True) -> subprocess.CompletedProcess:
+    print(f"[chaos]   $ {' '.join(cmd)}")
+    return subprocess.run(cmd, cwd=cwd, check=check, capture_output=True, text=True)
+
+
+def run_latency(
+    base_url: str,
+    sut_dir: Path,
+    *,
+    latency_ms: int = 600,
+    slo_seconds: float = 0.5,
+) -> ScenarioResult | None:
+    """Bring the stack up in the latency topology (web → toxiproxy → db), run the
+    grey-failure scenario, then ALWAYS restore the normal stack. Local-only and
+    invasive (it recreates `web`), so it is opt-in via `--latency`."""
+    sut_compose = sut_dir / "docker-compose.yml"
+    course = f"{base_url}/course"
+    print("[chaos] bringing up latency topology (web -> toxiproxy -> db) ...")
+    _sh(latency_compose_cmd(sut_compose, LATENCY_OVERRIDE, "up", "-d", "--build"))
+    try:
+        toxi = Toxiproxy()
+        # toxiproxy's API comes up fast; web crash-loops on DATABASE_URL until the
+        # proxy exists, so create it (with retry) then wait for /course to heal.
+        last_err: Exception | None = None
+        for _ in range(20):
+            try:
+                toxi.ensure_proxy()
+                break
+            except Exception as exc:  # noqa: BLE001 - API not ready yet
+                last_err = exc
+                time.sleep(2)
+        else:
+            print(f"[chaos] toxiproxy admin API never became ready: {last_err}")
+            return None
+
+        # the proxy now exists — restart web so it re-attempts the DB connection
+        # cleanly (rather than relying on crash-loop timing) and wait for /course.
+        _sh(latency_compose_cmd(sut_compose, LATENCY_OVERRIDE, "restart", "web"), check=False)
+        rec, waited = wait_for_recovery(course, timeout=120.0, interval=3.0)
+        if not rec.ok:
+            print(f"[chaos] latency topology did not become ready ({rec.describe()} after ~{waited:.0f}s); skipping")
+            return None
+
+        print("[chaos] running scenario 'db-latency' ...")
+        result = scenario_db_latency(base_url, toxi, Prometheus(), latency_ms=latency_ms, slo_seconds=slo_seconds)
+        held = sum(s.ok for s in result.steps)
+        print(f"[chaos]   -> {result.status.upper()} ({held}/{len(result.steps)} steps held)")
+        return result
+    finally:
+        print("[chaos] restoring the normal stack ...")
+        _sh(latency_compose_cmd(sut_compose, LATENCY_OVERRIDE, "stop", "toxiproxy"), check=False)
+        _sh(latency_compose_cmd(sut_compose, LATENCY_OVERRIDE, "rm", "-f", "toxiproxy"), check=False)
+        _sh(["docker", "compose", "up", "-d"], cwd=sut_dir, check=False)
 
 
 # ── reporting ────────────────────────────────────────────────────────────────
@@ -143,10 +205,14 @@ def render_markdown(meta: dict, results: list[ScenarioResult]) -> str:
     L.append("## Roadmap")
     L.append("")
     L.append(
-        "- **v2 — grey-failure axis:** inject Postgres latency via "
-        "[toxiproxy](https://github.com/Shopify/toxiproxy) between `web` and `db`; assert graceful "
-        "degradation under slowness **and** that the latency SLO/Grafana panel breaches (proving the "
-        "observability stack catches a slow dependency, not just an outage)."
+        "- **v2 — grey-failure axis (shipped):** Postgres latency injected via "
+        "[toxiproxy](https://github.com/Shopify/toxiproxy) between `web` and `db` — asserts graceful "
+        "degradation under slowness **and** that the p95 latency SLO breaches in Prometheus (the "
+        "observability stack catching a slow dependency, not just an outage). Run with `--latency`."
+    )
+    L.append(
+        "- **Possible v3:** alerting-side assertion (Alertmanager fires on the SLO breach) once a real "
+        "alert sink exists — pairs with the deferred Loki/Alertmanager observability work."
     )
     L.append("")
     return "\n".join(L)
@@ -173,7 +239,14 @@ def main(argv: list[str] | None = None) -> int:
         default=os.getenv("CHAOS_COMPOSE_DIR", str(DEFAULT_COMPOSE_DIR)),
         help="directory containing the SUT's docker-compose.yml",
     )
-    parser.add_argument("--scenario", choices=sorted(V1_SCENARIOS), default=None, help="run only this scenario")
+    parser.add_argument("--scenario", choices=sorted(V1_SCENARIOS), default=None, help="run only this v1 scenario")
+    parser.add_argument(
+        "--latency",
+        action="store_true",
+        help="also run the v2 grey-failure axis (toxiproxy latency) — INVASIVE: recreates the stack, then restores it",
+    )
+    parser.add_argument("--latency-ms", type=int, default=600, help="latency toxic magnitude (ms)")
+    parser.add_argument("--slo", type=float, default=0.5, help="p95 latency SLO in seconds")
     args = parser.parse_args(argv)
 
     compose_dir = Path(args.compose_dir)
@@ -182,6 +255,11 @@ def main(argv: list[str] | None = None) -> int:
 
     controller = ComposeController(compose_dir)
     results = run_all(args.base_url, controller, only=args.scenario)
+
+    if args.latency and not args.scenario:
+        lat = run_latency(args.base_url, compose_dir, latency_ms=args.latency_ms, slo_seconds=args.slo)
+        if lat is not None:
+            results.append(lat)
 
     meta = {
         "run_at": datetime.now().isoformat(timespec="seconds"),
