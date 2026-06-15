@@ -1,0 +1,29 @@
+# SUT profile #1 — golf-web-app (the reference/worked-example target).
+#
+# This is the config seam that makes the harness re-pointable: every
+# golf-web-app-specific fact a profile-aware pillar needs lives here, not in the
+# pillar code. Pointing the harness at another application = a new profile file
+# (set $ASSURANCE_PROFILE), with no code change. SUT_BASE_URL / SUT_USERNAME /
+# SUT_PASSWORD env vars still override these values for CI/local convenience.
+name: golf-web-app
+base_url: "http://localhost:5000"
+
+# Contract pillar (Schemathesis): where the OpenAPI spec is served.
+openapi_spec_path: "/api/v1/openapi.json"
+
+# Auth recipe for authenticated calls (seeded member; see golf-web-app/seed.py).
+auth:
+  token_endpoint: "/api/v1/auth/token"
+  username: "john.smith"
+  password: "Password1"
+
+# Accessibility pillar (axe): the risk-based set of pages to sweep.
+accessibility:
+  public_pages:
+    - ["home", "/"]
+    - ["login", "/auth/login"]
+    - ["membership", "/membership"]
+    - ["course", "/course"]
+  member_pages:
+    - ["member-dashboard", "/member/dashboard"]
+    - ["book-tee-time", "/member/book-tee-time"]

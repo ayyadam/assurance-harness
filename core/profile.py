@@ -1,0 +1,96 @@
+"""Declarative SUT profile — the config seam that makes the harness re-pointable.
+
+Instead of hardcoding golf-web-app facts in each pillar, the SUT-specific values
+live in a profile YAML (`profiles/<name>.yaml`) loaded here. Pointing the harness
+at a different application becomes "write a new profile", not "edit the pillars"
+— `golf-web-app` is simply profile #1.
+
+Resolution order for the profile path: explicit arg > `$ASSURANCE_PROFILE` > the
+default golf-web-app profile. A few long-standing env knobs (`SUT_BASE_URL`,
+`SUT_USERNAME`, `SUT_PASSWORD`) still override the profile so existing CI/local
+workflows are unaffected.
+"""
+
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass
+from pathlib import Path
+
+import yaml
+
+DEFAULT_PROFILE_PATH = Path(__file__).resolve().parent.parent / "profiles" / "golf-web-app.yaml"
+
+
+@dataclass(frozen=True)
+class AuthConfig:
+    """How to obtain a token for authenticated calls (the SUT's auth recipe)."""
+
+    token_endpoint: str  # path appended to base_url, e.g. /api/v1/auth/token
+    username: str
+    password: str
+
+
+@dataclass(frozen=True)
+class AccessibilityConfig:
+    """Pages the a11y sweep visits, as (name, path) pairs."""
+
+    public_pages: list[tuple[str, str]]
+    member_pages: list[tuple[str, str]]
+
+
+@dataclass(frozen=True)
+class Profile:
+    name: str
+    base_url: str
+    openapi_spec_path: str
+    auth: AuthConfig
+    accessibility: AccessibilityConfig
+
+    @property
+    def openapi_url(self) -> str:
+        return self.base_url + self.openapi_spec_path
+
+    @property
+    def token_url(self) -> str:
+        return self.base_url + self.auth.token_endpoint
+
+
+def _pages(raw: list) -> list[tuple[str, str]]:
+    return [(str(name), str(path)) for name, path in raw]
+
+
+def load_profile(path: str | os.PathLike | None = None) -> Profile:
+    """Load and validate a SUT profile. Env overrides (SUT_BASE_URL / SUT_USERNAME
+    / SUT_PASSWORD) win over the file so existing workflows keep working."""
+    profile_path = Path(path or os.getenv("ASSURANCE_PROFILE") or DEFAULT_PROFILE_PATH)
+    if not profile_path.exists():
+        raise FileNotFoundError(f"SUT profile not found: {profile_path}")
+    data = yaml.safe_load(profile_path.read_text(encoding="utf-8")) or {}
+
+    name = data.get("name")
+    if not name:
+        raise ValueError(f"SUT profile {profile_path} needs a 'name'")
+
+    base_url = (os.getenv("SUT_BASE_URL") or data.get("base_url") or "").rstrip("/")
+    if not base_url:
+        raise ValueError(f"SUT profile {profile_path} needs 'base_url' (or set $SUT_BASE_URL)")
+
+    auth_raw = data.get("auth") or {}
+    username = os.getenv("SUT_USERNAME") or auth_raw.get("username")
+    password = os.getenv("SUT_PASSWORD") or auth_raw.get("password")
+    token_endpoint = auth_raw.get("token_endpoint")
+    if not (username and password and token_endpoint):
+        raise ValueError(f"SUT profile {profile_path} 'auth' needs token_endpoint, username, password")
+
+    a11y_raw = data.get("accessibility") or {}
+    return Profile(
+        name=str(name),
+        base_url=base_url,
+        openapi_spec_path=data.get("openapi_spec_path") or "/api/v1/openapi.json",
+        auth=AuthConfig(token_endpoint=token_endpoint, username=username, password=password),
+        accessibility=AccessibilityConfig(
+            public_pages=_pages(a11y_raw.get("public_pages") or []),
+            member_pages=_pages(a11y_raw.get("member_pages") or []),
+        ),
+    )
