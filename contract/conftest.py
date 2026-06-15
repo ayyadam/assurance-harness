@@ -15,7 +15,6 @@ Contract tests are intentionally excluded from the default `pytest` run
 (which targets tests/ and needs no SUT). Run them explicitly as above.
 """
 
-import os
 from pathlib import Path
 
 import pytest
@@ -23,16 +22,21 @@ import requests
 import schemathesis
 from schemathesis.config import SchemathesisConfig
 
-SUT_BASE_URL = os.getenv("SUT_BASE_URL", "http://localhost:5000")
-OPENAPI_URL = f"{SUT_BASE_URL}/api/v1/openapi.json"
+from core.profile import load_profile
+
+# SUT-specific facts (base URL, spec location, auth recipe) come from the active
+# profile (profiles/golf-web-app.yaml by default; $ASSURANCE_PROFILE to swap).
+_PROFILE = load_profile()
+SUT_BASE_URL = _PROFILE.base_url
+OPENAPI_URL = _PROFILE.openapi_url
 
 # schemathesis.toml lives at the repo root; load it explicitly so the config
 # is picked up regardless of the working directory pytest runs from.
 _CONFIG_PATH = Path(__file__).resolve().parent.parent / "schemathesis.toml"
 
 # Seeded member credentials (see golf-web-app/seed.py).
-SEED_USERNAME = os.getenv("SUT_USERNAME", "john.smith")
-SEED_PASSWORD = os.getenv("SUT_PASSWORD", "Password1")
+SEED_USERNAME = _PROFILE.auth.username
+SEED_PASSWORD = _PROFILE.auth.password
 
 
 @pytest.fixture(scope="session")
@@ -55,7 +59,7 @@ def auth_token():
     generated request.
     """
     resp = requests.post(
-        f"{SUT_BASE_URL}/api/v1/auth/token",
+        _PROFILE.token_url,
         json={"username": SEED_USERNAME, "password": SEED_PASSWORD},
         timeout=15,
     )

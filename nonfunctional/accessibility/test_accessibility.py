@@ -18,6 +18,8 @@ import pytest
 from axe_playwright_python.sync_playwright import Axe
 from playwright.sync_api import Page
 
+from core.profile import load_profile
+
 # Impacts that fail the build. Tracked-but-non-blocking: minor, moderate.
 BLOCKING_IMPACTS = {"critical", "serious"}
 
@@ -27,17 +29,10 @@ AXE_OPTIONS = {
     "runOnly": {"type": "tag", "values": ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]},
 }
 
-PUBLIC_PAGES = [
-    ("home", "/"),
-    ("login", "/auth/login"),
-    ("membership", "/membership"),
-    ("course", "/course"),
-]
-
-MEMBER_PAGES = [
-    ("member-dashboard", "/member/dashboard"),
-    ("book-tee-time", "/member/book-tee-time"),
-]
+# The risk-based page set comes from the active SUT profile (B-i).
+_PROFILE = load_profile()
+PUBLIC_PAGES = _PROFILE.accessibility.public_pages
+MEMBER_PAGES = _PROFILE.accessibility.member_pages
 
 _axe = Axe()
 

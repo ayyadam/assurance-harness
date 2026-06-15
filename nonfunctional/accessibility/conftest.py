@@ -16,7 +16,6 @@ Accessibility tests are excluded from the default `pytest` run (which targets
 tests/ and needs no SUT). Run them explicitly as above.
 """
 
-import os
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -25,7 +24,12 @@ from pathlib import Path
 import pytest
 from playwright.sync_api import Page
 
-SUT_BASE_URL = os.getenv("SUT_BASE_URL", "http://localhost:5000")
+from core.profile import load_profile
+
+# SUT-specific facts come from the active profile (profiles/golf-web-app.yaml by
+# default; $ASSURANCE_PROFILE to swap).
+_PROFILE = load_profile()
+SUT_BASE_URL = _PROFILE.base_url
 
 # Where per-page axe JSON results are written for evidence / CI artifacts.
 # Nonfunctional layers own their evidence dir, matching ai_evaluation/ and risk_agent/.
@@ -54,10 +58,7 @@ def report_dir() -> Path:
 @pytest.fixture(scope="session")
 def member() -> Credentials:
     """A seeded non-admin member (see golf-web-app/seed.py)."""
-    return Credentials(
-        username=os.getenv("SUT_USERNAME", "john.smith"),
-        password=os.getenv("SUT_PASSWORD", "Password1"),
-    )
+    return Credentials(username=_PROFILE.auth.username, password=_PROFILE.auth.password)
 
 
 @pytest.fixture
