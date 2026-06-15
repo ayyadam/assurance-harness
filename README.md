@@ -12,8 +12,9 @@ Currently in place across the two repos:
 - **Cross-repo shift-left (B19, F-034):** `assurance.yml` is also a **reusable `workflow_call`** that `golf-web-app`'s own PR pipeline invokes against its head SHA — `build-and-publish` is gated behind it and a branch-protection ruleset makes the result a **required status check**, so no SUT change merges or ships unassured. The harness is pinned to a tag (`@v1`) so its evolution can't surprise-break the SUT pipeline.
 - **Local on-demand agent layers (Ollama-backed):** AI evaluation harness — two methods over the booking assistant: golden-set accuracy and **metamorphic invariance** ([`ai_evaluation/`](ai_evaluation/README.md), phase 8 + B3/F-035), risk-prioritisation agent with a deterministic register pre-filter ([`risk_agent/`](risk_agent/README.md), phase 9 + phase 13), triage agent ([`triage_agent/`](triage_agent/README.md), phase 10), exploratory agent — API + UI surfaces plus spec-aware auth-bypass probing ([`explore_agent/`](explore_agent/README.md), phase 12), and security agent — judges the B1 scanner findings (FP-vs-real + disposition + register R-ID) and reconciles the SCA allowlist ([`security_agent/`](security_agent/README.md), B1c). All five use a local Ollama runtime so the per-PR path stays fast and reproducible; each carries a deterministic golden-set eval tier, and their evidence artefacts are committed under each module's `reports/` dir.
 - **Production-style observability:** Prometheus + Grafana stack ([`observability/`](observability/README.md), phase 11) scraping the SUT's `/metrics`; SLO thresholds on the dashboard match the k6 perf gate's pre-merge budget. Closes R-013.
+- **Resilience / chaos testing (B4, F-037):** a local-on-demand [`chaos/`](chaos/README.md) pillar that fault-injects the running compose stack — *one representative fault per failure axis* — and asserts graceful degradation + automatic recovery. v1 surfaced a real DB-outage fail-fast gap (a paused DB makes `/course` hang — no statement timeout) and confirmed process-death auto-recovery via the restart policy (RestartCount-proven). Scenario *logic* is gate-tested with fakes; the live run is local-only. Grey-failure (toxiproxy latency) axis is v2.
 - **Tests of the harness's own agents:** a gated regression suite ([`tests/agents/`](tests/agents/README.md), phase 12 v2 v2 + F-024) running `risk_agent`, `triage_agent`, and the `explore_agent` judge N times against fixed inputs, asserting schema/vocab invariants and stability under LLM jitter — including a non-blinding positive control on the explore judge.
-- **Documented findings:** F-001 through F-036 captured in the strategy with diagnosis, fix, and generalisation — including the full security lifecycle (F-029 detect → F-030 judge → F-031 reconcile → F-032 remediate + re-arm → F-033 SARIF-native + secrets), the B19 cross-repo shift-left wiring (F-034), and B3 metamorphic testing of the AI feature — invariance (F-035) + directional (F-036).
+- **Documented findings:** F-001 through F-037 captured in the strategy with diagnosis, fix, and generalisation — including the full security lifecycle (F-029 detect → F-030 judge → F-031 reconcile → F-032 remediate + re-arm → F-033 SARIF-native + secrets), the B19 cross-repo shift-left wiring (F-034), B3 metamorphic testing of the AI feature — invariance (F-035) + directional (F-036), and B4 resilience/chaos testing (F-037).
 
 ## Stack
 
@@ -128,9 +129,15 @@ assurance-harness/
 │   ├── golden_set.yaml             # expected (verdict, disposition, R-ID) per finding
 │   ├── eval.py                     # deterministic scorer
 │   └── reports/                    # committed evidence (report + eval + writeback)
+├── chaos/                          # B4: resilience / chaos testing (local-only run)
+│   ├── faults.py                   # probe() classifier + ComposeController + wait_for_recovery
+│   ├── scenarios.py                # DB-outage + process-death steady-state hypotheses
+│   ├── run.py                      # CLI + markdown/JSON report (incl. scope-exclusions table)
+│   └── reports/                    # committed evidence (report.md + report.json)
 ├── tests/                          # tests OF the harness itself
 │   ├── test_smoke.py
 │   ├── test_prefilter.py           # phase 13: risk_agent register pre-filter unit tests
+│   ├── test_chaos_scenarios.py     # B4: chaos scenario logic (fakes, no Docker — gated)
 │   ├── test_auth_finding.py        # F-020: explore_agent spec-aware auth finding unit tests
 │   └── agents/                     # phase 12 v2 v2 + F-024: agent regression (gated)
 │       ├── fixtures/               # cached PR diffs + synthetic clusters

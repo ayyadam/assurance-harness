@@ -241,6 +241,8 @@ reports/
 !security_agent/reports/**
 !tests/agents/reports/
 !tests/agents/reports/**
+!chaos/reports/
+!chaos/reports/**
 # ...but the raw fetched logs / scanner output cached under <agent>/reports/raw/
 # are not committed (they echo SUT source).
 triage_agent/reports/raw/
