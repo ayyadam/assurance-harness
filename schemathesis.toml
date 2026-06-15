@@ -18,3 +18,14 @@ seed = 1234
 
 [checks.positive_data_acceptance]
 expected-statuses = [200, 201, 401, 403, 404, 409, 422]
+
+# POST /api/v1/auth/token inherently rejects generated data — you cannot encode
+# "must be valid credentials" in JSON Schema, so the API returns 400/401/422 for
+# almost all fuzzed bodies and Schemathesis raises its `validation_mismatch`
+# warning by design. Scope warnings off this one operation so the contract run
+# stays clean and deterministic (gate-able). The auth boundary itself is covered
+# elsewhere — explore_agent auth-bypass probing (F-019).
+[[operations]]
+include-path = "/api/v1/auth/token"
+include-method = "POST"
+warnings = false

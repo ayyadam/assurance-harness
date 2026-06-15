@@ -2,7 +2,7 @@
 
 **Status:** living document — updated as the assurance harness matures.
 **Owner:** Adam
-**Last updated:** 2026-06-15 *(Contract evidence reporting — advisory Schemathesis CLI run (`contract/evidence.py`) emits a per-operation summary + JUnit + VCR cassette as a client-worthy report alongside the pytest gate; profile-driven, non-gating. Prior: Workstream B B1 — config-driven SUT profile feeding contract + accessibility; G1 recast to a personal portable toolkit.)*
+**Last updated:** 2026-06-15 *(Contract evidence PR A — harness-side hook (`contract/hooks.py`) injects a real bookable tee_time_id so the referential operations hit their success paths deterministically; the auth/token `validation_mismatch` warning is scoped off in config. The CLI evidence run is now clean (7/7, exit 0), still advisory. Queued: PR B (SUT OpenAPI links), PR C (stateful phase + promote CLI to the gate). Prior: contract evidence reporting; Workstream B B1 profile.)*
 
 ---
 
@@ -1589,7 +1589,7 @@ The full phased plan lives in conversational notes; the abbreviated public form:
 | 1 | Test strategy + risk register | **Done** |
 | 2 | golf-web-app JSON API + OpenAPI spec | **Done** |
 | 3 | Playwright user journeys (functional) | **Done** |
-| 4 | Schemathesis contract tests | **Done** — pytest gate (pass/fail) + an **advisory CLI evidence run** ([`contract/evidence.py`](../contract/evidence.py)): per-operation summary + JUnit + a VCR cassette (every request/response) as a client-worthy report. Profile-driven; non-gating for now. Closing the coverage gap (skipped write ops needing referential data) + promoting the CLI to *be* the gate are the queued follow-up |
+| 4 | Schemathesis contract tests | **Done** — pytest gate (pass/fail) + an **advisory CLI evidence run** ([`contract/evidence.py`](../contract/evidence.py)): per-operation summary + JUnit + a VCR cassette (every request/response) as a client-worthy report. Profile-driven; non-gating for now. **PR A done:** a harness-side hook ([`contract/hooks.py`](../contract/hooks.py)) injects a real bookable `tee_time_id` so the referential ops hit their success paths *deterministically* (no longer by luck), and `POST /auth/token`'s inherent `validation_mismatch` warning is scoped off in config — the CLI run is now clean (7/7, exit 0). **Queued:** PR B adds OpenAPI `links` to the SUT (recommended spec improvement); PR C enables the stateful phase + promotes the CLI run to *be* the gate, retiring the pytest wrapper |
 | 5a | Accessibility (axe) sweep + gate in CI | **Done** |
 | 5b | Performance (k6) budgets in CI | **Done** |
 | 6 | Data quality (pandera) on the live database | **Done** |
