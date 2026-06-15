@@ -100,8 +100,17 @@ def main(argv: list[str] | None = None) -> int:
         phases=args.phases,
         token=fetch_token(profile),
     )
-    # Force UTF-8 in the child so its rich output encodes cleanly on every OS.
-    env = {**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
+    # Force UTF-8 in the child so its rich output encodes cleanly on every OS, and
+    # load the contract hooks (real tee_time_id injection) for THIS run only —
+    # scoping the hook to the evidence run keeps the pytest gate untouched.
+    repo_root = Path(__file__).resolve().parent.parent
+    env = {
+        **os.environ,
+        "PYTHONUTF8": "1",
+        "PYTHONIOENCODING": "utf-8",
+        "SCHEMATHESIS_HOOKS": "contract.hooks",
+        "PYTHONPATH": str(repo_root) + os.pathsep + os.environ.get("PYTHONPATH", ""),
+    }
     print(f"[contract-evidence] schemathesis run {profile.openapi_url} (n={args.max_examples}, phases={args.phases})")
     proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", env=env)
 
