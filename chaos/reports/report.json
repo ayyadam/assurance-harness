@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "run_at": "2026-06-15T09:56:23",
+    "base_url": "http://localhost:5000",
+    "compose_dir": "D:\\Dev\\Repos\\golf-web-app",
+    "scenarios": 2
+  },
+  "scenarios": [
+    {
+      "name": "DB outage",
+      "axis": "below the app \u2014 dependency gone",
+      "hypothesis": "With Postgres paused, /course fails fast with a clean 5xx (no traceback), / stays 200, and the app recovers automatically on unpause.",
+      "status": "failed",
+      "steps": [
+        {
+          "name": "steady state",
+          "expectation": "/course == 200 before fault",
+          "observed": "HTTP 200",
+          "ok": true
+        },
+        {
+          "name": "degrade \u2014 data route fails fast",
+          "expectation": "/course returns a clean 5xx within timeout, no leaked traceback",
+          "observed": "hang/timeout",
+          "ok": false
+        },
+        {
+          "name": "partial availability \u2014 static route",
+          "expectation": "/ stays 200 while the DB is down (graceful degradation, not total outage)",
+          "observed": "HTTP 200",
+          "ok": true
+        },
+        {
+          "name": "auto-recovery",
+          "expectation": "/course returns to 200 within 30s of unpause, no manual restart",
+          "observed": "HTTP 200 after ~0s",
+          "ok": true
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "name": "Process kill",
+      "axis": "the app itself \u2014 process death",
+      "hypothesis": "When the web process dies, the restart policy returns /course to 200 with no manual intervention (RestartCount increments), and data reads stay consistent.",
+      "status": "passed",
+      "steps": [
+        {
+          "name": "steady state",
+          "expectation": "/course == 200 before fault",
+          "observed": "HTTP 200",
+          "ok": true
+        },
+        {
+          "name": "auto-restart recovery",
+          "expectation": "restart policy returns /course to 200 within 60s, no manual intervention",
+          "observed": "HTTP 200 after ~2s",
+          "ok": true
+        },
+        {
+          "name": "restart policy engaged",
+          "expectation": "container RestartCount increments \u2014 recovery was the policy, not a coincidence",
+          "observed": "RestartCount 1 \u2192 2",
+          "ok": true
+        },
+        {
+          "name": "clean DB reconnect",
+          "expectation": "data route serves consistent data after restart (pool re-established)",
+          "observed": "HTTP 200",
+          "ok": true
+        }
+      ],
+      "notes": ""
+    }
+  ]
+}
