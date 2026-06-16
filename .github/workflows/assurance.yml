@@ -102,21 +102,17 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --dev
-      - name: Run contract tests
+      - name: Contract gate + evidence (Schemathesis CLI)
         env:
           SUT_BASE_URL: http://localhost:5000
+        # One run that gates AND reports: the Schemathesis CLI fuzzes every
+        # operation and follows the OpenAPI links (stateful phase), exits non-zero
+        # on any contract violation, and writes a per-operation summary + JUnit +
+        # VCR cassette into reports/ (uploaded below). Replaces the former split
+        # of a thin pytest wrapper (gate) beside an advisory CLI run (report).
         run: |
           mkdir -p reports
-          uv run pytest contract/ \
-            --junitxml=reports/contract-junit.xml \
-            --html=reports/contract.html --self-contained-html
-      - name: Contract evidence (advisory — client report, does not gate)
-        if: always()
-        env:
-          SUT_BASE_URL: http://localhost:5000
-        # Schemathesis CLI -> per-operation summary + JUnit + VCR cassette. Never
-        # gates (the pytest step above is the gate); lands in the same artifact.
-        run: uv run python -m contract.evidence --report-dir reports
+          uv run python -m contract.evidence --report-dir reports
       - name: Upload contract reports
         uses: actions/upload-artifact@v5
         if: always()
