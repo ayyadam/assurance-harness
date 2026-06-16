@@ -95,17 +95,24 @@ def run_pip_audit(pip_args: list[str], ignore: list[str], fname: str) -> list[di
     return vulns
 
 
-def run_gitleaks(paths: list[Path]) -> list[dict] | None:
+def run_gitleaks(targets: list[tuple[str, Path]]) -> list[dict] | None:
     """Secret scan (git history + tree). None if gitleaks is not installed.
 
-    Emits SARIF per repo (for the GitHub Security tab) and returns the flattened
-    SARIF results for the hard-gate count.
+    ``targets`` is a list of ``(role, path)`` pairs (e.g. ``("harness", ...)``,
+    ``("sut", ...)``). The SARIF filename encodes the *role*, not the checkout
+    directory name, so the outputs are stable across a harness self-run and a
+    reusable-workflow call (where the harness lands in a dir named after the
+    caller). Each SARIF is then uploaded to the GitHub Security tab under its own
+    category — code scanning rejects multiple SARIF runs sharing one category.
+
+    Emits one SARIF per role and returns the flattened results for the hard-gate
+    count.
     """
     if not shutil.which("gitleaks"):
         return None
     findings: list[dict] = []
-    for p in paths:
-        sarif = REPORTS_DIR / f"gitleaks-{p.name}.sarif"
+    for role, p in targets:
+        sarif = REPORTS_DIR / f"gitleaks-{role}.sarif"
         _run(
             [
                 "gitleaks",
@@ -168,7 +175,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  - {v['package']} {v['version']} — {v['id']} (fix: {v['fix'] or 'none'})")
 
     # ── secrets (hard gate) ──
-    gitleaks = run_gitleaks([ROOT, sut])
+    gitleaks = run_gitleaks([("harness", ROOT), ("sut", sut)])
     if gitleaks is None:
         print("\n## secrets (gitleaks) — hard gate\n\n  (skipped — gitleaks not installed; runs in CI)")
     else:

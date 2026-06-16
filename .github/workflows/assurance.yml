@@ -413,13 +413,24 @@ jobs:
       - run: uv sync --dev
       - name: Security scan (Bandit SAST + pip-audit SCA + gitleaks secrets)
         run: uv run python nonfunctional/security/scan.py --sut sut
-      - name: Upload secret-scan SARIF to code scanning
+      # Each gitleaks SARIF is uploaded under its OWN category: code scanning
+      # rejects multiple SARIF runs sharing a category (GitHub, 2025-07-21), and
+      # the scan emits one run per role (harness + sut). The gate is the scan
+      # step above; these Security-tab uploads are best-effort.
+      - name: Upload harness secret-scan SARIF to code scanning
         if: always()
-        continue-on-error: true   # the gate is the scan step above; Security-tab upload is best-effort
+        continue-on-error: true
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: nonfunctional/security/reports
-          category: gitleaks
+          sarif_file: nonfunctional/security/reports/gitleaks-harness.sarif
+          category: gitleaks-harness
+      - name: Upload SUT secret-scan SARIF to code scanning
+        if: always()
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: nonfunctional/security/reports/gitleaks-sut.sarif
+          category: gitleaks-sut
       - name: Upload security reports
         if: always()
         uses: actions/upload-artifact@v5
