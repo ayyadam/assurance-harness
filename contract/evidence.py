@@ -84,7 +84,7 @@ def build_command(
         "--suppress-health-check",
         "all",
         "--report",
-        "junit,vcr",
+        "junit,vcr,ndjson",
         "--report-dir",
         str(report_dir),
     ]

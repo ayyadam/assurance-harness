@@ -25,7 +25,7 @@ def test_build_command_includes_url_seed_phases_and_reports():
     assert "-n" in cmd and cmd[cmd.index("-n") + 1] == "20"
     assert cmd[cmd.index("--seed") + 1] == "1234"
     assert cmd[cmd.index("--phases") + 1] == "fuzzing,stateful"
-    assert cmd[cmd.index("--report") + 1] == "junit,vcr"
+    assert cmd[cmd.index("--report") + 1] == "junit,vcr,ndjson"
     assert cmd[cmd.index("--report-dir") + 1] == str(Path("/tmp/reports"))
     # health checks are generation-quality, not contract conformance — suppressed
     assert cmd[cmd.index("--suppress-health-check") + 1] == "all"
