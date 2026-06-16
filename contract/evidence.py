@@ -73,6 +73,16 @@ def build_command(
         str(seed),
         "--phases",
         phases,
+        # Hypothesis health checks (filter_too_much / data_too_large / too_slow /
+        # large_base_example) flag test-data *generation* inefficiency, not API
+        # *contract* conformance. On a gate they are noise: in a fast environment
+        # they can trip and mark an operation "failed" with zero failing cases —
+        # observed in CI as a phantom "Fuzzing: 3 failed" while case totals,
+        # JUnit, and "No issues found" all reported clean. Suppress them so the
+        # gate fails only on genuine contract violations (schema mismatch,
+        # undocumented status, server error), deterministically across machines.
+        "--suppress-health-check",
+        "all",
         "--report",
         "junit,vcr",
         "--report-dir",

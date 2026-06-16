@@ -27,6 +27,8 @@ def test_build_command_includes_url_seed_phases_and_reports():
     assert cmd[cmd.index("--phases") + 1] == "fuzzing,stateful"
     assert cmd[cmd.index("--report") + 1] == "junit,vcr"
     assert cmd[cmd.index("--report-dir") + 1] == str(Path("/tmp/reports"))
+    # health checks are generation-quality, not contract conformance — suppressed
+    assert cmd[cmd.index("--suppress-health-check") + 1] == "all"
     assert "-H" not in cmd  # no token => no auth header
     assert "--config-file" not in cmd  # none given => not added
 
