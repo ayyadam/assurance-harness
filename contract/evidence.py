@@ -7,9 +7,10 @@ plus **JUnit XML** and a **VCR cassette** (every request and response recorded) 
 wrapper (the gate) beside an advisory CLI run (the report): the CLI now does both,
 so "what did we actually test?" and "did it pass?" come from the same run.
 
-Three phases run by default:
-  - **coverage** — deterministic boundary testing: one targeted case per schema
-    facet (each enum value, numeric boundaries, missing-required, wrong type).
+Three phases run by default, exercising both **positive** (valid) and
+**negative** (schema-violating) inputs:
+  - **coverage** — deterministic structural probing: one targeted case per
+    schema facet (enum values, numeric boundaries, missing-required, wrong type).
   - **fuzzing** — every operation is fuzzed against its declared schema; the
     contract hook ([contract/hooks.py]) injects a real bookable id so the
     parameterised ops hit their success paths deterministically.
@@ -73,21 +74,28 @@ def build_command(
         str(seed),
         "--phases",
         phases,
-        # Hypothesis health checks (filter_too_much / data_too_large / too_slow /
-        # large_base_example) flag test-data *generation* inefficiency, not API
-        # *contract* conformance. On a gate they are noise: in a fast environment
-        # they can trip and mark an operation "failed" with zero failing cases —
-        # observed in CI as a phantom "Fuzzing: 3 failed" while case totals,
-        # JUnit, and "No issues found" all reported clean. Suppress them so the
-        # gate fails only on genuine contract violations (schema mismatch,
-        # undocumented status, server error), deterministically across machines.
-        "--suppress-health-check",
-        "all",
+        # Transport resilience — keeps the FULL positive+negative suite while
+        # absorbing a CI-only flake. Negative syntax-fuzzing (random/NUL-byte
+        # bodies) intermittently got *no response* on the constrained CI runner:
+        # the SUT's gunicorn sync workers don't hold HTTP keep-alive, so a pooled
+        # connection Schemathesis reused could already be server-closed. Retrying
+        # network-level failures recovers from that race; this is SAFE — it
+        # retries only transport failures, never HTTP responses, so a real
+        # contract violation (5xx / schema mismatch / undocumented status) is a
+        # *response* that is still checked and still fails the gate. See F-040.
+        "--request-retries",
+        "3",
         "--report",
         "junit,vcr,ndjson",
         "--report-dir",
         str(report_dir),
     ]
+    # Don't reuse connections: the SUT's gunicorn sync workers close the socket
+    # after each response (no keep-alive), so a pooled-connection reuse races a
+    # server-side close. `Connection: close` sidesteps the race; --request-retries
+    # is the backstop. Together they keep the full suite green without masking
+    # any contract failure (those are responses, not transport errors).
+    cmd += ["-H", "Connection: close"]
     if token:
         cmd += ["-H", f"Authorization: Bearer {token}"]
     return cmd
