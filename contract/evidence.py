@@ -74,28 +74,11 @@ def build_command(
         str(seed),
         "--phases",
         phases,
-        # Transport resilience — keeps the FULL positive+negative suite while
-        # absorbing a CI-only flake. Negative syntax-fuzzing (random/NUL-byte
-        # bodies) intermittently got *no response* on the constrained CI runner:
-        # the SUT's gunicorn sync workers don't hold HTTP keep-alive, so a pooled
-        # connection Schemathesis reused could already be server-closed. Retrying
-        # network-level failures recovers from that race; this is SAFE — it
-        # retries only transport failures, never HTTP responses, so a real
-        # contract violation (5xx / schema mismatch / undocumented status) is a
-        # *response* that is still checked and still fails the gate. See F-040.
-        "--request-retries",
-        "3",
         "--report",
         "junit,vcr,ndjson",
         "--report-dir",
         str(report_dir),
     ]
-    # Don't reuse connections: the SUT's gunicorn sync workers close the socket
-    # after each response (no keep-alive), so a pooled-connection reuse races a
-    # server-side close. `Connection: close` sidesteps the race; --request-retries
-    # is the backstop. Together they keep the full suite green without masking
-    # any contract failure (those are responses, not transport errors).
-    cmd += ["-H", "Connection: close"]
     if token:
         cmd += ["-H", f"Authorization: Bearer {token}"]
     return cmd

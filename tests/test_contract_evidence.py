@@ -27,12 +27,10 @@ def test_build_command_includes_url_seed_phases_and_reports():
     assert cmd[cmd.index("--phases") + 1] == "fuzzing,stateful"
     assert cmd[cmd.index("--report") + 1] == "junit,vcr,ndjson"
     assert cmd[cmd.index("--report-dir") + 1] == str(Path("/tmp/reports"))
-    # full positive+negative suite — no generation-mode restriction
+    # full positive+negative suite — no generation-mode restriction or check suppression
     assert "--mode" not in cmd
-    assert "--suppress-health-check" not in cmd  # unearned; removed
-    # transport resilience for the gunicorn-no-keepalive race (keeps full suite)
-    assert cmd[cmd.index("--request-retries") + 1] == "3"
-    assert cmd[cmd.index("-H") + 1] == "Connection: close"
+    assert "--suppress-health-check" not in cmd
+    assert "-H" not in cmd  # no token => no auth header
     assert "--config-file" not in cmd  # none given => not added
 
 
@@ -45,10 +43,7 @@ def test_build_command_adds_auth_header_when_token_present():
         phases="fuzzing",
         token="abc.def.ghi",
     )
-    # both header values present (Connection: close is always added, auth when a token is)
-    header_values = [cmd[i + 1] for i, a in enumerate(cmd) if a == "-H"]
-    assert "Authorization: Bearer abc.def.ghi" in header_values
-    assert "Connection: close" in header_values
+    assert cmd[cmd.index("-H") + 1] == "Authorization: Bearer abc.def.ghi"
 
 
 def test_build_command_config_file_precedes_run_subcommand():
