@@ -2,7 +2,7 @@
 
 **Status:** living document — updated as the assurance harness matures.
 **Owner:** Adam
-**Last updated:** 2026-06-16 *(Contract evidence PR C — the Schemathesis **CLI is now the contract gate** (one run gates *and* reports), running coverage + fuzzing + **stateful** phases (stateful follows PR B's OpenAPI `links`); the thin pytest wrapper + its conftest fixtures are retired. See F-040. Prior today: PR B added the SUT `links` (F-039) + first harness release `v1.1.0`; PR A / A.1 deterministic referential coverage; Workstream B B1 profile.)*
+**Last updated:** 2026-06-16 *(Contract evidence PR C — the Schemathesis **CLI is now the contract gate** (one run gates *and* reports), running coverage + fuzzing + **stateful** phases (stateful follows PR B's OpenAPI `links`); the thin pytest wrapper + its conftest fixtures are retired. See F-040. Plus an app-agnostic **coverage floor** (F-041): the gate now also fails unless every operation ran and every declared link was traversed — completeness is checked, not trusted. Prior today: PR B added the SUT `links` (F-039) + first harness release `v1.1.0`; PR A / A.1 deterministic referential coverage; Workstream B B1 profile.)*
 
 ---
 
@@ -59,7 +59,7 @@ Layers planned across the project. Each layer has an explicit "why this exists" 
 | Unit (in-process) | **Done** | pytest | `golf-web-app/tests/unit/` | Fast, deterministic coverage of services, models, route handlers |
 | Integration (Postgres-backed) | **Done** | pytest + Postgres service container | `golf-web-app/tests/unit/` (same suite, real DB) | Catch defects that depend on real DB behaviour (FK enforcement, transaction semantics) — SQLite locally hides these |
 | Deployability smoke | **Done** | Docker Compose health check | `golf-web-app/.github/workflows/ci-cd.yml` | Prove the production stack starts cleanly and serves `/` on every push |
-| Contract | **Done** | Schemathesis vs OpenAPI (CLI gate: coverage + fuzzing + stateful) | `assurance-harness/contract/` | Verify the JSON API conforms to its spec under property-based inputs *and* across linked operation sequences; one CLI run both gates and produces the client report |
+| Contract | **Done** | Schemathesis vs OpenAPI (CLI gate: coverage + fuzzing + stateful) + coverage floor | `assurance-harness/contract/` | Verify the JSON API conforms to its spec under property-based inputs *and* across linked operation sequences; one CLI run both gates and produces the client report; an app-agnostic coverage floor also fails the gate unless every operation ran and every declared link was traversed |
 | UI / E2E journeys | **Done** | Playwright + pytest | `assurance-harness/functional/` | Exercise the booking journey, the natural-language booking assistant, and access-control boundaries in a real browser, as a member experiences them |
 | Accessibility | **Done** | axe-core (axe-playwright-python) | `assurance-harness/nonfunctional/accessibility/` | WCAG 2.1 A/AA sweep of key pages; gate the PR on serious + critical violations, track the rest |
 | Performance | **Done** | k6 (thresholds-as-code) | `assurance-harness/nonfunctional/performance/` | Latency/error budgets on the read-path API; fail the PR on regression beyond budget |
@@ -1628,6 +1628,24 @@ The episode is itself the evidence: a red gate was scrutinised, **two** wrong th
 **Tests:** `tests/test_contract_evidence.py` — the `build_command` assertions cover the stateful default, `--config-file` placement, the `junit,vcr,ndjson` report set, and that mode/health-check are *not* CLI flags (they live in config), plus tests that `main` **gates on the child exit code** (stubbed subprocess: returns 1 → exit 1; 0 → exit 0) and that `--advisory` always exits 0. Full gated suite 106 passed / 9 skipped.
 
 **Files:** `contract/evidence.py` (gating, full suite, explicit `--config-file`, `junit,vcr,ndjson` reports), `pyproject.toml` + `uv.lock` (schemathesis 4.20.2 → 4.21.8, the actual fix), `contract/test_api_contract.py` + `contract/conftest.py` (**deleted**), `.github/workflows/assurance.yml` (single gating CLI step), `tests/test_contract_evidence.py`, `docs/test-strategy.md` (this finding + phase-4 row + layers/CI/evidence rows + header).
+
+### F-041 — Contract coverage floor: completeness becomes a checked property, not a trust exercise
+
+**Status:** Done — 2026-06-16.
+
+**Why.** Schemathesis answers *"did every executed case conform?"* — not *"did we actually exercise the whole contract?"*. A phase can pass having skipped an operation, or never traversed a declared link. The stateful phase legitimately *skips* a sequence when its source list comes back empty (Schemathesis fuzzes the `date` filter into dates with no slots, even absurd years like 0174) — so a healthy run shows a large "skipped" count. That count is **not missed contract coverage** (every operation, response, and link is still exercised by the cases that ran), but "≈200 skipped" *looks* like a 25% hole and invites the question from any rigorous reviewer. Rather than just explain it, the gate now **proves** completeness.
+
+**What it does.** A new app-agnostic module ([`contract/coverage.py`](../contract/coverage.py)) reads the **OpenAPI spec** (operation set + declared `links`) and the Schemathesis **ndjson** event stream (per-operation execution counts + stateful link-target executions) and **fails the gate** if either floor is breached:
+- every spec operation ran ≥ `min_cases_per_op` times;
+- every declared link was traversed ≥ `min_link_traversals` times in the **stateful** phase (an id-parameterised link target is only reachable there by following the link, so its appearance *is* the traversal — `is_transition_applied` proved unreliable, so target-execution-in-stateful is the signal).
+
+So Schemathesis-pass **and** coverage-floor-met are both required for exit 0. On the current SUT: all 7 operations (7–179 cases each) and both links (`GetTeeTimeById` 87×, `BookTeeTime` 57×) clear the floor; an impossible threshold flips the gate to exit 1 (verified).
+
+**App-agnostic by construction.** Operations and links are discovered from the spec, never hardcoded — point it at another API and it checks that API's surface. The only knobs (`min_cases_per_op`, `min_link_traversals`, default 1/1) live in the profile under `contract.coverage_floor`, so a SUT can demand a higher bar without code changes. Same principle as the PR A.1 hook: generic mechanism, facts (if any) in the profile. Maps to **R-006** — "the contract is covered" is now enforced, not asserted.
+
+**Tests:** `tests/test_contract_coverage.py` — 7 tests over a *fictional* library API (not golf-web-app) covering operation extraction, `operationRef`/`operationId` link resolution, full-coverage pass, zero-case op breach, never-traversed link breach, skipped-transition/wrong-method exclusion, and threshold enforcement. Plus `tests/test_profile.py` floor parsing/defaults. Gated suite 115 passed / 9 skipped.
+
+**Files:** `contract/coverage.py` (new — pure functions), `contract/evidence.py` (`fetch_spec` + `assess_coverage_floor` + dual gate condition), `core/profile.py` (`CoverageFloor` on `ContractConfig`), `profiles/golf-web-app.yaml` (explicit floor), `tests/test_contract_coverage.py` (new), `tests/test_profile.py`, `docs/test-strategy.md`.
 
 ## 12. Roadmap
 

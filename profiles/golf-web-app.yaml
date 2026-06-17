@@ -20,6 +20,13 @@ contract:
       list_endpoint: "/api/v1/tee-times"
       id_field: "id"
       prefer_fields: ["is_available", "slots_remaining"] # prefer a bookable slot
+  # Coverage floor: the gate also fails if the run didn't exercise the whole
+  # contract — every operation run >= min_cases_per_op, every declared OpenAPI
+  # link traversed >= min_link_traversals in the stateful phase. (Defaults are
+  # 1/1; shown explicitly to document the knob.)
+  coverage_floor:
+    min_cases_per_op: 1
+    min_link_traversals: 1
 
 # Auth recipe for authenticated calls (seeded member; see golf-web-app/seed.py).
 auth:

@@ -14,7 +14,7 @@ workflows are unaffected.
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
@@ -53,10 +53,23 @@ class ReferentialId:
 
 
 @dataclass(frozen=True)
+class CoverageFloor:
+    """Minimum coverage the contract gate enforces on top of Schemathesis's own
+    pass/fail: every operation the spec declares must be exercised at least
+    `min_cases_per_op` times, and every declared OpenAPI link traversed at least
+    `min_link_traversals` times in the stateful phase. App-agnostic — the
+    operation and link sets are read from the spec, never hardcoded."""
+
+    min_cases_per_op: int = 1
+    min_link_traversals: int = 1
+
+
+@dataclass(frozen=True)
 class ContractConfig:
     """SUT-specific facts the contract pillar needs (kept here, not in the engine)."""
 
     referential_ids: list[ReferentialId]
+    coverage_floor: CoverageFloor = field(default_factory=CoverageFloor)
 
 
 @dataclass(frozen=True)
@@ -97,6 +110,14 @@ def _referential_ids(raw: list) -> list[ReferentialId]:
     return out
 
 
+def _coverage_floor(raw: dict | None) -> CoverageFloor:
+    raw = raw or {}
+    return CoverageFloor(
+        min_cases_per_op=int(raw.get("min_cases_per_op", 1)),
+        min_link_traversals=int(raw.get("min_link_traversals", 1)),
+    )
+
+
 def load_profile(path: str | os.PathLike | None = None) -> Profile:
     """Load and validate a SUT profile. Env overrides (SUT_BASE_URL / SUT_USERNAME
     / SUT_PASSWORD) win over the file so existing workflows keep working."""
@@ -131,5 +152,8 @@ def load_profile(path: str | os.PathLike | None = None) -> Profile:
             public_pages=_pages(a11y_raw.get("public_pages") or []),
             member_pages=_pages(a11y_raw.get("member_pages") or []),
         ),
-        contract=ContractConfig(referential_ids=_referential_ids(contract_raw.get("referential_ids") or [])),
+        contract=ContractConfig(
+            referential_ids=_referential_ids(contract_raw.get("referential_ids") or []),
+            coverage_floor=_coverage_floor(contract_raw.get("coverage_floor")),
+        ),
     )
