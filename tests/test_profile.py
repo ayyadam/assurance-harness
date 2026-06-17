@@ -50,7 +50,27 @@ def test_contract_section_optional(clean_env, tmp_path):
         "name: m\nbase_url: http://x\nauth:\n  token_endpoint: /t\n  username: u\n  password: p\n",
         encoding="utf-8",
     )
-    assert load_profile(prof).contract.referential_ids == []
+    p = load_profile(prof)
+    assert p.contract.referential_ids == []
+    # coverage floor defaults to 1/1 when absent
+    assert p.contract.coverage_floor.min_cases_per_op == 1
+    assert p.contract.coverage_floor.min_link_traversals == 1
+
+
+def test_coverage_floor_parsed_from_profile(clean_env):
+    cf = load_profile().contract.coverage_floor  # golf-web-app sets it explicitly
+    assert cf.min_cases_per_op == 1 and cf.min_link_traversals == 1
+
+
+def test_coverage_floor_custom_values(clean_env, tmp_path):
+    prof = tmp_path / "cf.yaml"
+    prof.write_text(
+        "name: m\nbase_url: http://x\nauth:\n  token_endpoint: /t\n  username: u\n  password: p\n"
+        "contract:\n  coverage_floor:\n    min_cases_per_op: 5\n    min_link_traversals: 2\n",
+        encoding="utf-8",
+    )
+    cf = load_profile(prof).contract.coverage_floor
+    assert cf.min_cases_per_op == 5 and cf.min_link_traversals == 2
 
 
 def test_env_overrides_base_url_and_strips_trailing_slash(clean_env):

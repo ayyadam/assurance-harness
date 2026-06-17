@@ -20,9 +20,14 @@ Three phases run by default, exercising both **positive** (valid) and
     comes back empty (Schemathesis fuzzes the ``date`` filter with implausible
     dates) are *skipped*, not failed — there is simply no id to chain.
 
-Profile-driven: the OpenAPI URL and auth recipe come from the active SUT profile
-([core/profile.py]). Gating by default (exit code mirrors Schemathesis); pass
-``--advisory`` for an ad-hoc local run that always exits 0.
+On top of Schemathesis's own pass/fail, an app-agnostic **coverage floor**
+([contract/coverage.py]) gates on *completeness* — every spec operation must have
+run, and every declared link must have been traversed in the stateful phase — so
+the gate can't go green having silently skipped part of the contract.
+
+Profile-driven: the OpenAPI URL, auth recipe, and coverage-floor thresholds come
+from the active SUT profile ([core/profile.py]). Gating by default (fails on a
+Schemathesis failure *or* a coverage breach); pass ``--advisory`` to always exit 0.
 
     uv run python -m contract.evidence                       # gate (CI)
     uv run python -m contract.evidence --advisory            # report only
@@ -39,6 +44,7 @@ from pathlib import Path
 
 import requests
 
+from contract.coverage import assess_coverage, format_report, parse_ndjson
 from core.profile import Profile, load_profile
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -99,6 +105,40 @@ def fetch_token(profile: Profile) -> str | None:
         return None
 
 
+def fetch_spec(profile: Profile) -> dict | None:
+    """Fetch the OpenAPI spec (for the coverage floor's operation/link sets)."""
+    try:
+        resp = requests.get(profile.openapi_url, timeout=15)
+        resp.raise_for_status()
+        return resp.json()
+    except Exception as exc:  # noqa: BLE001 - coverage floor is best-effort on infra errors
+        print(f"[contract] could not fetch OpenAPI spec for coverage floor ({exc})")
+        return None
+
+
+def assess_coverage_floor(profile: Profile, report_dir: Path) -> tuple[str | None, bool]:
+    """Run the app-agnostic coverage floor over the ndjson + spec.
+
+    Returns (human report text, ok). Best-effort on *infra* failures (no ndjson,
+    spec unfetchable) — those warn and do NOT gate; an actual coverage breach does.
+    """
+    ndjsons = sorted(report_dir.glob("*.ndjson"))
+    if not ndjsons:
+        print("[contract] no ndjson report found — skipping coverage floor")
+        return None, True
+    spec = fetch_spec(profile)
+    if spec is None:
+        return None, True
+    floor = profile.contract.coverage_floor
+    report = assess_coverage(
+        parse_ndjson(ndjsons[-1]),
+        spec,
+        min_cases_per_op=floor.min_cases_per_op,
+        min_link_traversals=floor.min_link_traversals,
+    )
+    return format_report(report), report.passed
+
+
 def main(argv: list[str] | None = None) -> int:
     try:  # make the parent's own output UTF-8-safe (Schemathesis prints box-drawing chars)
         sys.stdout.reconfigure(encoding="utf-8")
@@ -148,16 +188,29 @@ def main(argv: list[str] | None = None) -> int:
     proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", env=env)
 
     output = (proc.stdout or "") + (proc.stderr or "")
-    summary_path = report_dir / "contract-summary.txt"
-    summary_path.write_text(output, encoding="utf-8")
     print(output)
-    print(f"[contract] reports written to {report_dir} (summary, JUnit, VCR cassette)")
 
+    # Coverage floor — complements Schemathesis ("did each case conform?") with
+    # "did we actually exercise the whole contract?", read from the ndjson + spec.
+    coverage_text, coverage_ok = assess_coverage_floor(profile, report_dir)
+    if coverage_text:
+        print(coverage_text)
+    summary_path = report_dir / "contract-summary.txt"
+    summary_path.write_text(output + ("\n\n" + coverage_text if coverage_text else ""), encoding="utf-8")
+    print(f"[contract] reports written to {report_dir} (summary, JUnit, VCR cassette, ndjson)")
+
+    floor = "pass" if coverage_ok else "FAIL"
     if args.advisory:
-        print(f"[contract] schemathesis exit={proc.returncode} (advisory — does not gate)")
+        print(f"[contract] schemathesis exit={proc.returncode}, coverage_floor={floor} (advisory — does not gate)")
         return 0
-    print(f"[contract] schemathesis exit={proc.returncode} (gating)")
-    return proc.returncode
+    if proc.returncode != 0:
+        print(f"[contract] schemathesis exit={proc.returncode} (gating)")
+        return proc.returncode
+    if not coverage_ok:
+        print("[contract] schemathesis passed but the coverage floor was breached (gating) → exit 1")
+        return 1
+    print("[contract] schemathesis passed and coverage floor met (gating) → exit 0")
+    return 0
 
 
 if __name__ == "__main__":
