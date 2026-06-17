@@ -178,9 +178,7 @@ def assess_coverage(
     """Assess the floor: pure function over the ndjson events and the spec."""
     ops = spec_operations(spec)
     total, stateful = tally_executions(events, ops)
-    operations = [
-        OperationCoverage(op, total.get(op, 0), total.get(op, 0) >= min_cases_per_op) for op in sorted(ops)
-    ]
+    operations = [OperationCoverage(op, total.get(op, 0), total.get(op, 0) >= min_cases_per_op) for op in sorted(ops)]
     links = [
         LinkCoverage(name, source, target, stateful.get(target, 0), stateful.get(target, 0) >= min_link_traversals)
         for name, source, target in declared_links(spec)
